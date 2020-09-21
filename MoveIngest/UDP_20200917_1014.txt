@@ -1,0 +1,37 @@
+UPD: Data received: RobotStateInformer;Pong;1
+UPD: Data received: RobotStateInformer;Info;
+---------------- Event received --------------------------
+Trigger: SafetyStateChanged
+Robot Name: LBR_Med_14_R820_1
+Device State: OK
+Is ready for normal use: true
+Failed condition for normal use: []
+Warning/Error tiles: 
+{Status=Tile name: Status; Tile level: Station; Tile state: WARNING; Error messages: [WARNING : Safety Control [WARNING : There are deactivated rows in the PSM configuration. ]]}
+----------------------------------------------------------
+
+UPD: Data received: RobotStateInformer;Pong;1
+UPD: Data received: RobotStateInformer;Info;
+---------------- Event received --------------------------
+Trigger: SafetyStateChanged
+Robot Name: LBR_Med_14_R820_1
+Device State: OK
+Is ready for normal use: true
+Failed condition for normal use: []
+Warning/Error tiles: 
+{Status=Tile name: Status; Tile level: Station; Tile state: WARNING; Error messages: [WARNING : Safety Control [WARNING : There are deactivated rows in the PSM configuration. ]]}
+----------------------------------------------------------
+
+UPD: Data received: RobotStateInformer;Pong;1
+UPD: Data received: RobotStateInformer;Info;
+---------------- Event received --------------------------
+Trigger: SafetyStateChanged
+Robot Name: LBR_Med_14_R820_1
+Device State: OK
+Is ready for normal use: true
+Failed condition for normal use: []
+Warning/Error tiles: 
+{Status=Tile name: Status; Tile level: Station; Tile state: WARNING; Error messages: [WARNING : Safety Control [WARNING : There are deactivated rows in the PSM configuration. ]]}
+----------------------------------------------------------
+
+UPD: Data received: RobotStateInformer;Pong;1

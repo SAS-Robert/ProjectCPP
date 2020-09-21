@@ -1,0 +1,72 @@
+%% Load data files
+path = pwd;
+% Add source directories
+data_path = genpath('MoveIngest');
+fcn_path = genpath('Matlab_scripts');
+addpath(data_path);
+addpath(fcn_path);
+% Find and filter files
+files1=dir('MoveIngest/file1_*.txt');
+% -> select somewhere here what files are going to be processed?
+% Load containing data into matlab variables/files
+file1_full_name = [files1(1).folder '\' files1(1).name];
+file1 = load(file1_full_name);
+file1_bio = file1(:,1)';     %value[0] : channel 1, bioimpedance measurement
+file1_emg1 = file1(:,2)';    %value[1] : channel 2, emg 1 measurement
+file1_emg2 = file1(:,3)';    %value[2] : channel 3, emg 2
+file1_alg = file1(:,4)';     %value[3] : channel 4, analog signal.
+file1_t = file1(:,5)';       %value[4] : time_ofset between last sample and actual sample
+% -> necessary to add files 2 and 3
+files2=dir('MoveIngest/file2_*.txt');
+[amount, dummy ] = size(files2);
+file2_full_name = [files2(amount).folder '\' files2(amount).name]; %Just take the last one
+file2 = load(file2_full_name);
+file2_data = file2(:,1)';
+
+%% Plotting data
+% Raw data
+f1_bio_n = {'Bioimpedance', 'Data [unit]'};
+f1_emg1_n = {'EMG 1', 'Data [unit]'};
+f1_emg2_n = {'EMG 2', 'Data [unit]'};
+f1_alg_n = {'Analog measurement', 'Data [unit]'};
+f1_t = {'Time offset', 'Data [unit]'};
+
+%Calculating time values:
+t = zeros(size(file1_t));
+t(1) = file1_t(1);
+for i = 2:length(t)
+ t(i) = t(i-1)+file1_t(i);
+end
+SubPlotData(file1(:,1:4)',t,[f1_bio_n; f1_emg1_n; f1_emg2_n; f1_alg_n]);
+%%SubPlotData(dataY,dataX,name) % content
+% dataY = file1(:,1:4)';
+% dataX = t;
+% name = [f1_bio_n; f1_emg1_n; f1_emg2_n; f1_alg_n];
+% [sizeplot sizedata] = size(dataY);
+% sizesub = round(sizeplot/2);
+% % Plot stuff
+% figure
+%     for i = 1:sizeplot
+%        subplot(sizesub, sizesub, i)
+%        grid on
+%        plot(dataX,dataY(i,:));
+%        title(name(i,1));
+%        ylabel(name(i,2));
+%        xlabel('time[absolute]');
+%     end
+
+%% Live session EMG data
+%Create socket
+PORT = 30002;
+SERVER = '172.31.1.147';
+SAS = udp(SERVER,PORT);
+set(SAS,'TimeOut',2);
+fopen(SAS);
+%while(true)
+for i=1:10
+%Send a message:
+    msg = 'Hellou :D';
+    fwrite(SAS,msg);
+    %Read a message
+    data = char(fread(SAS))';
+end
