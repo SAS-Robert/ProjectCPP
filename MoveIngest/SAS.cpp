@@ -42,28 +42,38 @@ void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init)
     ml_init->packet_number = smpt_packet_number_generator_next(device);
 }
 
-void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update)
+void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_ml_channel_config values)
 {
     /* Clear ml_update and set the data */
     smpt_clear_ml_update(ml_update);
     ml_update->enable_channel[Smpt_Channel_Red] = true;  /* Enable channel red */
     ml_update->packet_number = smpt_packet_number_generator_next(device);
 
-    ml_update->channel_config[Smpt_Channel_Red].number_of_points = 3;  /* Set the number of points */
-    ml_update->channel_config[Smpt_Channel_Red].ramp = 3;              /* Three lower pre-pulses   */
-    ml_update->channel_config[Smpt_Channel_Red].period = 20;           /* Frequency: 50 Hz */
+    ml_update->channel_config[Smpt_Channel_Red].number_of_points = values.number_of_points;
+    ml_update->channel_config[Smpt_Channel_Red].ramp = values.ramp;
+    ml_update->channel_config[Smpt_Channel_Red].period = values.period;
+    ml_update->channel_config[Smpt_Channel_Red].points[0].current = values.points[0].current;
+    ml_update->channel_config[Smpt_Channel_Red].points[0].time = values.points[0].time;
+    ml_update->channel_config[Smpt_Channel_Red].points[1].time = values.points[1].time;
+    ml_update->channel_config[Smpt_Channel_Red].points[2].current = values.points[2].current;
+    ml_update->channel_config[Smpt_Channel_Red].points[2].time = values.points[2].time;
 
-    /* Set the stimulation pulse */
-    /* First point, current: 20 mA, positive, pulse width: 200 �s */
-    ml_update->channel_config[Smpt_Channel_Red].points[0].current = 50;
-    ml_update->channel_config[Smpt_Channel_Red].points[0].time = 200;
-
-    /* Second point, pause 100 �s */
-    ml_update->channel_config[Smpt_Channel_Red].points[1].time = 100;
-
-    /* Third point, current: -20 mA, negative, pulse width: 200 �s */
-    ml_update->channel_config[Smpt_Channel_Red].points[2].current = -50;
-    ml_update->channel_config[Smpt_Channel_Red].points[2].time = 200;
+    // Original code
+    // ml_update->channel_config[Smpt_Channel_Red].number_of_points = 3;  /* Set the number of points */
+    // ml_update->channel_config[Smpt_Channel_Red].ramp = 3;              /* Three lower pre-pulses   */
+    // ml_update->channel_config[Smpt_Channel_Red].period = 20;           /* Frequency: 50 Hz */
+    //
+    // /* Set the stimulation pulse */
+    // /* First point, current: 20 mA, positive, pulse width: 200 �s */
+    // ml_update->channel_config[Smpt_Channel_Red].points[0].current = 50;
+    // ml_update->channel_config[Smpt_Channel_Red].points[0].time = 200;
+    //
+    // /* Second point, pause 100 �s */
+    // ml_update->channel_config[Smpt_Channel_Red].points[1].time = 100;
+    //
+    // /* Third point, current: -20 mA, negative, pulse width: 200 �s */
+    // ml_update->channel_config[Smpt_Channel_Red].points[2].current = -50;
+    // ml_update->channel_config[Smpt_Channel_Red].points[2].time = 200;
 }
 
 void fill_ml_get_current_data(Smpt_device* const device, Smpt_ml_get_current_data* const ml_get_current_data)

@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <thread>
 #include <ctime>
+#include <sstream>
 // User-defined libraries
 #include "smpt_ml_client.h"
 #include "smpt_dl_client.h"
@@ -45,42 +46,58 @@ using namespace std;
 const char* port_name_rm = "COM3";
 const char* port_name_ri = "COM4";
 int one_to_escape = 0;
+bool main_start = false;
+bool Move3_ready = false;
+bool Ingest_ready = false;
 std::vector<float> channel_2;			// Original data being stored
 std::vector<float> channel_raw;		//Raw data to be filtered while recording
 std::vector<float> channel_filter;//Filtered data
 
 // Files handler to store recorded data
-ofstream mMyfile;
-ofstream mFile2;
-ofstream mMyfile3;
+ofstream fileRAW;
+ofstream fileFILTERS;
+//ofstream file3;
 ofstream msgData;
 
 //UPD connection settings
 UDPClient ROBERT;
-UDPServer MATLAB;
+UDPClient MATLAB;
+std::ostringstream Matlab_ss; //Where the communication will be set
+//UDPServer MATLAB;
 // Example threads
-static void thread_ml_t1();
-static void thread_ml_t2();
+void thread_ml_t1();
+void thread_ml_t2();
+void thread_matlab();
+
 int task1 = 0;
 int task2 = 0;
 bool data_start = false;
 bool data_printed = false;
 string init1("file1_");
 string init2("file2_");
-string init3("file3_");
+//string init3("file3_");
 string format(".txt");
 // Threads and devices function hearders
 static void thread_ml_stimulation(const char* port_name);
 static void thread_ml_recording(const char* port_name);
 static void handle_dl_packet_global(Smpt_device* const device);
 void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack);
+//Communication between threads
+struct device_to_device{
+  bool start = false;
+  bool end = false;
+  bool treshold = false;
+} Ingest_to_Move;
+//Ingest thread should ONLY write and Move should ONLY read
 
 int main()
 {
   // Flushing input and output buffers
   cout.flush();
   fflush(stdin);
-
+  std::cout << "==================================="<< endl;
+  std::cout << "-Starting up devices and communication."<<endl;
+  std::cout << "==================================="<< endl;
   strcpy(ROBERT.SERVERc, "127.0.0.1");  //This is an address for testing
   ROBERT.display = false;               //Chosen not to show messages during messages exchange
   // Starting UPD Connection
@@ -89,20 +106,23 @@ int main()
     ROBERT.start();
   }while(ROBERT.error);
 
-// Starting UPD Connection
-//	std::cout << "Starting connection\n";
-	//MATLAB.start();
+//  std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
+    std::thread RehaIngest(thread_ml_recording, port_name_ri);
+    std::thread RehaMove3(thread_ml_t1);
+    //std::thread RehaIngest(thread_ml_t2);
 
+  //wait for both devices to be ready
+  while((!Move3_ready)||(!Ingest_ready)){
+    Sleep(1000);
+  }
   std::cout << "==================================="<< endl;
   // Using multi threading
-  std::cout << "-Using multiple threads.\nPress any key to start both devices.\nThen press any key again to finish both process\n";
+  std::cout << "-Using multiple threads.\nPress any key to start process.\nThen press any key again to finish.\n";
   _getch();
   std::cout << "==================================="<< endl;
+  main_start = true;
+//  std::thread t_Matlab(thread_ml_t2);
 
-  std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
-  std::thread RehaIngest(thread_ml_recording, port_name_ri);
-//  std::thread RehaMove3(thread_ml_t1);
-//  std::thread RehaIngest(thread_ml_t2);
 
   //Saving UDP messages
   if(ROBERT.display){
@@ -123,7 +143,6 @@ int main()
     }else if(ROBERT.display){
       msgData<<ROBERT.buf<<endl;
     }
-	//MATLAB.stream();
   Sleep(10);
   one_to_escape = _kbhit();
   }
@@ -145,6 +164,8 @@ return 0;
 //Example threads: this is only for some code testing.
 void thread_ml_t1(){
 std::cout <<"RehaMove3 doing stuff\n";
+Move3_ready = true;
+
   while (one_to_escape == 0){
     task1++;
     Sleep(5000);
@@ -153,10 +174,22 @@ std::cout <<"RehaMove3 doing stuff\n";
 }
 void thread_ml_t2(){
   std::cout <<"RehaIngest doing stuff\n";
+  Ingest_ready = true;
   while (one_to_escape == 0){
     task2++;
     Sleep(100);
   }
+}
+
+void thread_matlab(){
+  MATLAB.display = false;               // No-showing messages
+  strcpy(MATLAB.SERVERc, "127.0.0.1");  //This is an address for testing
+  MATLAB.PORTn = 30002;
+  MATLAB.start();
+  while(one_to_escape==0){
+    MATLAB.get();
+  }
+  MATLAB.end();
 }
 //================================================
 void thread_ml_recording(const char* port_name)
@@ -168,7 +201,8 @@ void thread_ml_recording(const char* port_name)
   //Process variables
   bool smpt_port = false, smpt_check = false, smpt_stop = false, smpt_next = false;
   bool smpt_end = false;
-	int limit_samples = 1000;
+	int limit_samples = 10000;
+  bool Matlab_active = true;
 	// Filters:
 	bandStopType* bandStop = bandStop_create();
 	std::vector<float> BandStop_result;
@@ -227,13 +261,30 @@ void thread_ml_recording(const char* port_name)
     {
         handle_dl_packet_global(&device_ri);
     }
-    Sleep(2000);
-		//------------------------------------------ // Every step is needed for ini.
-        /* Fourth step*/
-    std::cout << thread_msg << "Device ready. Process will start\n";
+    Sleep(10);
+    // Every step is needed for ini.
+		//---------------------------------------------
+    // Waiting here for start from main:
     /* send measurement start cmd*/
     packet_number = smpt_packet_number_generator_next(&device_ri);
     smpt_send_dl_start(&device_ri, packet_number);
+
+    if(Matlab_active){
+      std::cout << thread_msg << "Opening data live-streaming connection to MATLAB.\n";
+      MATLAB.display = false;               // No-showing messages
+      strcpy(MATLAB.SERVERc, "127.0.0.1");  //This is an address for testing
+      MATLAB.PORTn = 30002;
+      MATLAB.start();
+    }
+
+    std::cout << thread_msg << "Device ready.\n";
+    Ingest_ready = true;
+    while(!main_start){
+      Sleep(500);
+    }
+    //---------------------------------------------
+        /* Fourth step*/
+
     int iterator = 0;
 		// Starting files:
 		char date[15];
@@ -242,11 +293,10 @@ void thread_ml_recording(const char* port_name)
 		init1.append(format);
 		init2.append(date);
 		init2.append(format);
-		init3.append(date);
-		init3.append(format);
 
     //Data loop
-    std::cout << thread_msg << "Preparing.\n";
+    //std::cout << thread_msg << "Preparing.\n";
+    std::cout << thread_msg << "RehaMove3 start will be released at iteration number 3000.\n";
     while (one_to_escape == 0)
 		//while (iterator < 10)
     {
@@ -254,16 +304,17 @@ void thread_ml_recording(const char* port_name)
         {
             handle_dl_packet_global(&device_ri);
 						if(data_start && !data_printed){
-              std::cout<<thread_msg<<"Data avaliable at iteration number "<<iterator<<endl;
+              std::cout<<thread_msg<<"Data available at iteration number "<<iterator<<endl;
 							std::cout << thread_msg << "Recording data.\n";
 							data_printed = true;
-              mMyfile.open(init1);
-              mFile2.open(init2);
+              fileRAW.open(init1);
+              fileFILTERS.open(init2);
               task2=1;
 						}
         }
         iterator++;
-        task2++;
+        task2=channel_raw.size();
+        //std::cout << thread_msg <<"Data size: "<<channel_raw.size()<<endl;
 				//Live filtering here
 				if(task2 >= limit_samples && data_start){
 					for (int i = 0; i < channel_raw.size(); ++i)                           // Loop for the length of the array
@@ -274,11 +325,20 @@ void thread_ml_recording(const char* port_name)
 							notch50_result.push_back(bandStop_readOutput(bandStop));
 							notch100_writeInput(notch100, notch50_result[i]);
 							notch100_result.push_back(bandStop_readOutput(bandStop));
-					}
+
+              // Streaming to MATLAB
+              if(Matlab_active){
+                Matlab_ss << BandStop_result[i] << ", " << notch50_result[i] << "," << notch100_result[i] << "\n";
+                std::string content(Matlab_ss.str());
+                strcpy(MATLAB.message, content.c_str());
+                MATLAB.stream();
+              }
+  				}
+
           // Saving filtered data from filters
-          std::cout << thread_msg <<"Data size: "<<BandStop_result.size()<<", "<<notch50_result.size()<<", "<<notch100_result.size()<<endl;
+        //  std::cout << thread_msg <<"Data size: "<<BandStop_result.size()<<", "<<notch50_result.size()<<", "<<notch100_result.size()<<endl;
           for(int i = 0; i < BandStop_result.size(); ++i){
-              mFile2 <<BandStop_result[i]<<","<<notch50_result[i]<< ","<<notch100_result[i]<<"\n";
+              fileFILTERS <<BandStop_result[i]<<","<<notch50_result[i]<< ","<<notch100_result[i]<<"\n";
           }
 					//Preparing for next sample set
 					task2 = 0;
@@ -288,7 +348,11 @@ void thread_ml_recording(const char* port_name)
 					notch50_result.clear();
 					notch100_result.clear();
 				}
-
+        // Communication with RehaMove3 thread
+        if((iterator>=3000) && !Ingest_to_Move.start){
+          Ingest_to_Move.start = true;
+          std::cout << thread_msg << "stimulation release sent.\n";
+        }
         Sleep(1);
     }
   }/*2nd-3rd-4th steps*/
@@ -299,15 +363,17 @@ void thread_ml_recording(const char* port_name)
   smpt_port = smpt_close_serial_port(&device_ri);
   smpt_check = smpt_check_serial_port(port_name_ri);
 
-  mMyfile.close();
-  mFile2.close();
-  mMyfile3.close();
+  fileRAW.close();
+  fileFILTERS.close();
 
 	// End filters:
 	bandStop_destroy(bandStop);
 	notch50_destroy(notch50);
 	notch100_destroy(notch100);
 
+  if(Matlab_active){
+    MATLAB.end();
+  }
 } //void thread_ml_recording
 //================================================
 void thread_ml_stimulation(const char* port_name)
@@ -321,7 +387,17 @@ void thread_ml_stimulation(const char* port_name)
   bool smpt_end = false, smpt_get = false;
   uint8_t packet;
   int turn_on = 0; //Time if the device gets turned on in the middle of the process
-
+  // Stimulation values
+  Smpt_ml_channel_config stim;
+  stim.number_of_points = 3;  /* Set the number of points */
+  stim.ramp = 3;              /* Three lower pre-pulses   */
+  stim.period = 20;           /* Frequency: 50 Hz */
+  /* Set the stimulation pulse */
+  stim.points[0].current = 50;
+  stim.points[0].time = 200;
+  stim.points[1].time = 100;
+  stim.points[2].current = -50;
+  stim.points[2].time = 200;
   // Start Process
   std::cout << "Reha Move3 message: Initializing device...\n";
   while(!smpt_next){
@@ -333,12 +409,12 @@ void thread_ml_stimulation(const char* port_name)
 
     fill_ml_init(&device, &ml_init);
     smpt_send_ml_init(&device, &ml_init);
-    fill_ml_update(&device, &ml_update);
+    fill_ml_update(&device, &ml_update, stim);
     smpt_send_ml_update(&device, &ml_update);
     fill_ml_get_current_data(&device, &ml_get_current_data);
     // This last command check if it's received all the data requested
     smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
-    std::cout << "Before while: get="<<smpt_get << endl;
+    //std::cout << "Before while: get="<<smpt_get << endl;
 
     // smpt_next = go to next step -> Process running
     smpt_next = smpt_check && smpt_port && smpt_get;
@@ -367,12 +443,25 @@ void thread_ml_stimulation(const char* port_name)
     fill_ml_init(&device, &ml_init);
     smpt_send_ml_init(&device, &ml_init);
 
-    std::cout << "Reha Move3 message: Device ready. Process will start.\n";
-  	std::cout << "Reha Move3 message: Process active.\n";
+  	//std::cout << "Reha Move3 message: Process active.\n";
+    //---------------------------------------------
+    // Waiting here for start from main:
+    std::cout << "Reha Move3 message: Device ready.\n";
+    Move3_ready = true;
+    while(!main_start){
+      Sleep(500);
+    }
+    //---------------------------------------------
+    //Wait for run
+    std::cout << "Reha Move3 message: Waiting for start.\n";
+    while(!Ingest_to_Move.start){
+      Sleep(100);
+    }
 
+    std::cout << "Reha Move3 message: Stimulating.\n";
   	while ((one_to_escape == 0)&&(!smpt_end))
   	{
-  		fill_ml_update(&device, &ml_update);
+  		fill_ml_update(&device, &ml_update, stim);
   		smpt_send_ml_update(&device, &ml_update);
   		while (i <= 600)
   		{
@@ -397,7 +486,7 @@ void thread_ml_stimulation(const char* port_name)
     smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
     if(!smpt_port){
       smpt_port = smpt_close_serial_port(&device);
-      smpt_check = smpt_check_serial_port(port_name); // it must be avaliable after closing
+      smpt_check = smpt_check_serial_port(port_name); // it must be available after closing
     }
     if(smpt_check){std::cout << "Reha Move3 message: Process successfully finished.\n";}
 
@@ -471,14 +560,14 @@ void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack)
     //uint32_t timeDiff = live_data.time_offset - m_lastTimeOffset;
     values[4] = (float)live_data.time_offset;
 
-    if (mMyfile.is_open())
+    if (fileRAW.is_open())
     {
         //value[0] : channel 1, bioimpedance measurement
         //value[1] : channel 2, emg 1 measurement
         //value[2] : channel 3, emg 2
         //value[3] : channel 4, analog signal.
         //value[4] : time_ofset between last sample and actual sample
-        mMyfile << values[0] << ", " << values[1] << ", " << values[2] << ", " << values[3] << ", " << values[4] << "\n";
+        fileRAW << values[0] << ", " << values[1] << ", " << values[2] << ", " << values[3] << ", " << values[4] << "\n";
     }
 
 }

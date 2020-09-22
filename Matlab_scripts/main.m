@@ -55,19 +55,19 @@ for i = 1:length(t)
 end
 figure('Name','Filtered data');
 SubPlotData(file2',t,[f2_1_n; f2_2_n; f2_3_n]);
-%% Live session EMG data
-% This section is on pause until new stuff 
-%Create socket
-%PORT = 30002;
-%SERVER = '172.31.1.147';
-%SAS = udp(SERVER,PORT);
-% set(SAS,'TimeOut',2);
-% fopen(SAS);
-% %while(true)
-% for i=1:10
-% %Send a message:
-%     msg = 'Hellou :D';
-%     fwrite(SAS,msg);
-%     %Read a message
-%     data = char(fread(SAS))';
-% end
+%% From Dirk's example application
+data2_path = genpath('sciencemode_stim_trigger');
+addpath(data2_path);
+directory = pwd;
+raw_data=load([directory '\sciencemode_stim_trigger\sciencemode_stim_trigger\example.txt']);
+filter_data=load([directory '\sciencemode_stim_trigger\sciencemode_stim_trigger\data.txt']);
+[amount types] = size(filter_data);
+%Calculating time values:
+t = zeros(1,amount);
+for i = 1:length(t)
+ t(i) = i;
+end
+figure('Name','Dirks data');
+hold on
+grid on
+plot(t,filter_data(:,1)',t,filter_data(:,2)')

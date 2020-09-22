@@ -1,43 +1,39 @@
+===================================
+-Starting up devices and communication.
+===================================
 Starting connection
 UPD Connection - starting...
 Client running on IP 127.0.0.1, port 30007
-===================================
--Using multiple threads.
-Press any key to start both devices.
-Then press any key again to finish both process
-===================================
 Reha Move3 message: Initializing device...
 Reha Ingest message: Setting communication...
 Reha Ingest message: Enabling and initializing device...
-Before while: get=1
-Reha Move3 message: Device ready. Process will start.
-Reha Move3 message: Process active.
-Reha Ingest message: Device ready. Process will start
-Reha Ingest message: Preparing.
-Reha Ingest message: Data avaliable at iteration number 2248
+Reha Ingest message: Device ready.
+Reha Move3 message: Device ready.
+===================================
+-Using multiple threads.
+Press any key to start process.
+Then press any key again to finish.
+===================================
+Reha Move3 message: Waiting for start.
+Reha Ingest message: RehaMove3 start will be released at iteration number 3000.
+Reha Ingest message: Data available at iteration number 826
 Reha Ingest message: Recording data.
-Reha Ingest message: Data size: 10529, 10529, 10529
-Reha Ingest message: Data size: 10161, 10161, 10161
-Reha Ingest message: Data size: 5105, 5105, 5105
-Reha Ingest message: Data size: 4300, 4300, 4300
-Reha Ingest message: Data size: 9303, 9303, 9303
-Reha Ingest message: Data size: 5561, 5561, 5561
-Reha Ingest message: Data size: 7976, 7976, 7976
-Reha Ingest message: Data size: 6215, 6215, 6215
-Reha Ingest message: Data size: 7445, 7445, 7445
-Reha Ingest message: Data size: 5363, 5363, 5363
+Reha Ingest message: Data size: 10002, 10002, 10002
+Reha Ingest message: stimulation release sent.
+Reha Move3 message: Stimulating.
+Reha Ingest message: Data size: 10027, 10027, 10027
+Reha Ingest message: Data size: 10006, 10006, 10006
+Reha Ingest message: Data size: 10017, 10017, 10017
+Reha Ingest message: Data size: 10007, 10007, 10007
+Reha Ingest message: Data size: 10001, 10001, 10001
 Reha Ingest message: Ending process.
 Reha Move3 message: Ending process.
 Reha Move3 message: Process successfully finished.
 ===================================
 -Number of iterations:
-Thread RehaMove3 = 333
-Thread RehaIngest = 627
+Thread RehaMove3 = 141
+Thread RehaIngest = 3521
 
 --------------------------
 Hej Hej!
 --------------------------
-
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.exe (process 18964) exited with code 0.
-To automatically close the console when debugging stops, enable Tools->Options->Debugging->Automatically close the console when debugging stops.
-Press any key to close this window . . .
