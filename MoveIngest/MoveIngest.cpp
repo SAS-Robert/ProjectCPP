@@ -13,12 +13,12 @@
  * Serial connection and handeling the RehaIngest device.
  *
 */
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
+// Standard windows libraries
+/*#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <winsock2.h>
-#include <windows.h>
-#include "smpt_ml_client.h"
-#include "smpt_dl_client.h"
-#include "smpt_definitions.h"
+#include <windows.h>*/
+// Standard C++ and C libraries
 #include <iostream>
 #include <fstream>
 #include <conio.h>
@@ -26,21 +26,24 @@
 #include <cstdlib>
 #include <iomanip>
 #include <complex>
-#include <vector>
-#include <complex>
-#include "bandStop.h"
-#include "notch100.h"
-#include "notch50.h"
 #include <stdio.h>
 #include <thread>
 #include <ctime>
+// User-defined libraries
+#include "smpt_ml_client.h"
+#include "smpt_dl_client.h"
+#include "smpt_definitions.h"
+#include "BiQuad.h"
+#include "bandStop.h"
+#include "notch100.h"
+#include "notch50.h"
+#include "SAS.h"
 
 using namespace std;
 
 /* EDIT: Change to the virtual com port of your device */
-const char* port_name_rm = "COM6";
-const char* port_name_ri = "COM7";
-bool gl_ack=false;
+const char* port_name_rm = "COM3";
+const char* port_name_ri = "COM4";
 int one_to_escape = 0;
 std::vector<float> channel_2;			// Original data being stored
 std::vector<float> channel_raw;		//Raw data to be filtered while recording
@@ -48,93 +51,16 @@ std::vector<float> channel_filter;//Filtered data
 
 // Files handler to store recorded data
 ofstream mMyfile;
-ofstream mMyfile2;
+ofstream mFile2;
 ofstream mMyfile3;
 ofstream msgData;
 
 //UPD connection settings
-#pragma comment(lib,"ws2_32.lib") //Winsock Library
-#define SERVER "172.31.1.147" //Robert IP address
-#define BUFLEN 256//512	//Max length of buffer
-#define PORT 30007 //30008 //Robert's port on which to listen for incoming data
-struct UDPClient{
-	struct sockaddr_in si_other;
-	int s, slen = sizeof(si_other);
-	char buf[BUFLEN];
-	char message[BUFLEN];
-	WSADATA wsa;
-	fd_set fds ;
-	int n ;
-	struct timeval tv ;
-	// New Variables
-	bool error = false;
-	uint8_t PORTn = PORT;
-	char SERVERc[15] = "172.31.1.147";
-	//Functions
-	void start(){
-		//Initialise winsock
-		printf("UPD Connection - starting...\n");
-		if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
-		{
-			printf("Failed. Error Code : %d", WSAGetLastError());
-			error = true;
-		}
-		//create socket
-		if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == SOCKET_ERROR)
-		{
-			printf("socket() failed with error code : %d", WSAGetLastError());
-			error = true;
-		}
-		//setup address structure
-		memset((char*)& si_other, 0, sizeof(si_other));
-		si_other.sin_family = AF_INET;
-		//si_other.sin_port = htons(PORT);
-		//si_other.sin_addr.S_un.S_addr = inet_addr(SERVER);
-		si_other.sin_port = htons(PORTn);
-		si_other.sin_addr.S_un.S_addr = inet_addr(SERVERc);
-		// Set up the struct timeval for the timeout.
-		tv.tv_sec = 3 ;
-		tv.tv_usec = 0 ;
-		FD_ZERO(&fds) ;
-		FD_SET(s, &fds) ;
-
-		//send a "hello!" so the server can start sending stuff
-		strcpy(message, "hello!");
-		if (sendto(s, message, strlen(message), 0, (struct sockaddr*) & si_other, slen) == SOCKET_ERROR)
-		{
-			error = true;
-		}
-	}
-	void get(){
-		memset(buf, '\0', BUFLEN);
-		printf("UPD: Requesting status...\n");
-		strcpy(message, "RobotStateInformer;Ping;1");
-		if (sendto(s, message, strlen(message), 0, (struct sockaddr*) & si_other, slen) == SOCKET_ERROR)
-		{
-			printf("sendto() failed with error code : %d", WSAGetLastError());
-			error = true;
-		}
-		// Wait until timeout or data received.
-		n = select ( s, &fds, NULL, NULL, &tv ) ;
-		// Re-editar esto para que no muestre el mensaje
-		if ((n == 0)||(n==-1))
-		{
-			error = true;
-			Sleep(1000);
-		}
-		if(!error){
-			int length = sizeof(inet_addr(SERVER));
-			recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*) & si_other, &slen);
-			puts(buf);
-		}
-	}
-	void end(){
-		closesocket(s);
-		WSACleanup();
-	}
-} ROBERT;
-// Robert is now a global variable of type "UDP"
-
+UDPClient ROBERT;
+UDPServer MATLAB;
+// Example threads
+static void thread_ml_t1();
+static void thread_ml_t2();
 int task1 = 0;
 int task2 = 0;
 bool data_start = false;
@@ -146,20 +72,8 @@ string format(".txt");
 // Threads and devices function hearders
 static void thread_ml_stimulation(const char* port_name);
 static void thread_ml_recording(const char* port_name);
-static void generate_date(char* outStr);
-// From original HASOMED examples
-static void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init);
-static void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update);
-static void fill_ml_get_current_data(Smpt_device* const device, Smpt_ml_get_current_data* const ml_get_current_data);
-static void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init);
-static void fill_dl_power_module(Smpt_device* const device, Smpt_dl_power_module* const dl_power_module);
 static void handle_dl_packet_global(Smpt_device* const device);
-static void handleInitAckReceived(Smpt_device* const device, const Smpt_ack& ack);
-static void handlePowerModuleAckReceived(Smpt_device* const device, const Smpt_ack& ack);
-static void handleStopAckReceived(Smpt_device* const device, const Smpt_ack& ack);
-static void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack);
-static void handleGetAckReceived(Smpt_device* const device, const Smpt_ack& ack);
-
+void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack);
 
 int main()
 {
@@ -167,12 +81,17 @@ int main()
   cout.flush();
   fflush(stdin);
 
+  strcpy(ROBERT.SERVERc, "127.0.0.1");  //This is an address for testing
+  ROBERT.display = false;               //Chosen not to show messages during messages exchange
   // Starting UPD Connection
   std::cout << "Starting connection\n";
   do{
     ROBERT.start();
   }while(ROBERT.error);
 
+// Starting UPD Connection
+//	std::cout << "Starting connection\n";
+	//MATLAB.start();
 
   std::cout << "==================================="<< endl;
   // Using multi threading
@@ -182,22 +101,28 @@ int main()
 
   std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
   std::thread RehaIngest(thread_ml_recording, port_name_ri);
+//  std::thread RehaMove3(thread_ml_t1);
+//  std::thread RehaIngest(thread_ml_t2);
 
   //Saving UDP messages
-  char date[15];
-  generate_date(date); //get current date/time in format YYMMDD_hhmm
-  string init1("UDP_");
-  init1.append(date);
-  init1.append(".txt");
-  msgData.open(init1);
+  if(ROBERT.display){
+    char date[15];
+    generate_date(date); //get current date/time in format YYMMDD_hhmm
+    string init1("UDP_");
+    init1.append(date);
+    init1.append(".txt");
+    msgData.open(init1);
+  }
 
   while (one_to_escape == 0){
-  ROBERT.get();
+	   ROBERT.get();
   // If any errors were internally given, the program will re-strart the communication
-  if(ROBERT.error){
-    ROBERT.end();
-    ROBERT.start();
-  }
+    if(ROBERT.error){
+      ROBERT.end();
+      ROBERT.start();
+    }else if(ROBERT.display){
+      msgData<<ROBERT.buf<<endl;
+    }
 	//MATLAB.stream();
   Sleep(10);
   one_to_escape = _kbhit();
@@ -215,7 +140,24 @@ int main()
   cout.flush();
   fflush(stdin);
 return 0;
-}   // end of main
+}   // Uncomment to enable original code.
+//================================================
+//Example threads: this is only for some code testing.
+void thread_ml_t1(){
+std::cout <<"RehaMove3 doing stuff\n";
+  while (one_to_escape == 0){
+    task1++;
+    Sleep(5000);
+  }
+
+}
+void thread_ml_t2(){
+  std::cout <<"RehaIngest doing stuff\n";
+  while (one_to_escape == 0){
+    task2++;
+    Sleep(100);
+  }
+}
 //================================================
 void thread_ml_recording(const char* port_name)
 {
@@ -312,9 +254,12 @@ void thread_ml_recording(const char* port_name)
         {
             handle_dl_packet_global(&device_ri);
 						if(data_start && !data_printed){
+              std::cout<<thread_msg<<"Data avaliable at iteration number "<<iterator<<endl;
 							std::cout << thread_msg << "Recording data.\n";
-						//	std::cout<<thread_msg<<"Data avaliable at "<<iterator<<endl;
 							data_printed = true;
+              mMyfile.open(init1);
+              mFile2.open(init2);
+              task2=1;
 						}
         }
         iterator++;
@@ -330,6 +275,11 @@ void thread_ml_recording(const char* port_name)
 							notch100_writeInput(notch100, notch50_result[i]);
 							notch100_result.push_back(bandStop_readOutput(bandStop));
 					}
+          // Saving filtered data from filters
+          std::cout << thread_msg <<"Data size: "<<BandStop_result.size()<<", "<<notch50_result.size()<<", "<<notch100_result.size()<<endl;
+          for(int i = 0; i < BandStop_result.size(); ++i){
+              mFile2 <<BandStop_result[i]<<","<<notch50_result[i]<< ","<<notch100_result[i]<<"\n";
+          }
 					//Preparing for next sample set
 					task2 = 0;
 					channel_raw.clear();
@@ -348,6 +298,10 @@ void thread_ml_recording(const char* port_name)
   smpt_port = smpt_send_dl_stop(&device_ri, packet_number);
   smpt_port = smpt_close_serial_port(&device_ri);
   smpt_check = smpt_check_serial_port(port_name_ri);
+
+  mMyfile.close();
+  mFile2.close();
+  mMyfile3.close();
 
 	// End filters:
 	bandStop_destroy(bandStop);
@@ -384,6 +338,7 @@ void thread_ml_stimulation(const char* port_name)
     fill_ml_get_current_data(&device, &ml_get_current_data);
     // This last command check if it's received all the data requested
     smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+    std::cout << "Before while: get="<<smpt_get << endl;
 
     // smpt_next = go to next step -> Process running
     smpt_next = smpt_check && smpt_port && smpt_get;
@@ -448,82 +403,6 @@ void thread_ml_stimulation(const char* port_name)
 
 } //void thread_ml_stimulation
 //================================================
-//New functions
-void generate_date(char* outStr){
-//void do not return values and a char array is a message
-//So the function gets a pointer to a global char array to write the date
-  time_t rawtime;
-  struct tm * timeinfo;
-  char buffer[15];
-  //char output;
-  time (&rawtime);
-  timeinfo = localtime (&rawtime);
-  strftime(buffer, sizeof(buffer),"%Y%m%d_%H%M", timeinfo);
-  for(int i=0; i < 15; ++i){
-    outStr[i] = buffer[i];
-  }
-}
-//================================================
-void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init)
-{
-    /* Clear ml_init struct and set the data */
-    smpt_clear_ml_init(ml_init);
-    ml_init->packet_number = smpt_packet_number_generator_next(device);
-}
-
-void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update)
-{
-    /* Clear ml_update and set the data */
-    smpt_clear_ml_update(ml_update);
-    ml_update->enable_channel[Smpt_Channel_Red] = true;  /* Enable channel red */
-    ml_update->packet_number = smpt_packet_number_generator_next(device);
-
-    ml_update->channel_config[Smpt_Channel_Red].number_of_points = 3;  /* Set the number of points */
-    ml_update->channel_config[Smpt_Channel_Red].ramp = 3;              /* Three lower pre-pulses   */
-    ml_update->channel_config[Smpt_Channel_Red].period = 20;           /* Frequency: 50 Hz */
-
-    /* Set the stimulation pulse */
-    /* First point, current: 20 mA, positive, pulse width: 200 �s */
-    ml_update->channel_config[Smpt_Channel_Red].points[0].current = 50;
-    ml_update->channel_config[Smpt_Channel_Red].points[0].time = 200;
-
-    /* Second point, pause 100 �s */
-    ml_update->channel_config[Smpt_Channel_Red].points[1].time = 100;
-
-    /* Third point, current: -20 mA, negative, pulse width: 200 �s */
-    ml_update->channel_config[Smpt_Channel_Red].points[2].current = -50;
-    ml_update->channel_config[Smpt_Channel_Red].points[2].time = 200;
-}
-
-void fill_ml_get_current_data(Smpt_device* const device, Smpt_ml_get_current_data* const ml_get_current_data)
-{
-    ml_get_current_data->packet_number = smpt_packet_number_generator_next(device);
-    ml_get_current_data->data_selection[Smpt_Ml_Data_Stimulation] = true; /* get stimulation data */
-}
-
-void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init)
-{
-    dl_init->ads129x.ch1set = 16;
-    dl_init->ads129x.ch2set = 0;
-    dl_init->ads129x.ch3set = 0;
-    dl_init->ads129x.ch4set = 0;
-    dl_init->ads129x.config1 = 131;
-    dl_init->ads129x.config2 = 0;
-    dl_init->ads129x.config3 = 252;
-    dl_init->ads129x.rld_sensn = 2;
-    dl_init->ads129x.rld_sensp = 2;
-
-    dl_init->gain_ch1 = Smpt_Dl_Init_Gain_Ch1_20x;
-    dl_init->live_data_mode_flag = true;
-}
-
-void fill_dl_power_module(Smpt_device* const device, Smpt_dl_power_module* const dl_power_module)
-{
-    dl_power_module->hardware_module = Smpt_Dl_Hardware_Module_Measurement;
-    dl_power_module->switch_on_off = true;
-
-}
-
 static void handle_dl_packet_global(Smpt_device* const device)
 {
     Smpt_ack ack;
@@ -567,74 +446,13 @@ static void handle_dl_packet_global(Smpt_device* const device)
     }
     }
 }
-void handleInitAckReceived(Smpt_device* const device, const Smpt_ack& ack)
-{
-    Smpt_dl_init_ack init_ack;
-    smpt_get_dl_init_ack(device, &init_ack);
-}
-void handleGetAckReceived(Smpt_device* const device, const Smpt_ack& ack)
-{
-    Smpt_dl_get get_ack;
-    smpt_send_dl_get(device, &get_ack);
-}
-void handlePowerModuleAckReceived(Smpt_device* const device, const Smpt_ack& ack)
-{
-    Smpt_dl_power_module_ack power_module_ack;
-    smpt_get_dl_power_module_ack(device, &power_module_ack);
-}
 
-void handleStopAckReceived(Smpt_device* const device, const Smpt_ack& ack)
-{
-    Smpt_dl_power_module_ack power_module_ack;
-    smpt_get_dl_power_module_ack(device, &power_module_ack);
-}
-
-void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack)
-{
-	// First time recording data
-	if(!data_start){
-		mMyfile.open(init1);
-		mMyfile2.open(init2);
-		mMyfile3.open(init3);
-	}
-    Smpt_dl_send_live_data live_data;
-    float values[5] = { 0 };
-    smpt_get_dl_send_live_data(device, &live_data);
-    //Data samples
-    for (int i = 0; i < live_data.n_channels; i++)
-    {
-        //std::cout << i << "\n";
-        values[i] = live_data.electrode_samples[i].value;
-        //std::cout << live_data.electrode_samples[i].value << "\n";
-        //std::cout << values[1] << "\n";
-        if (i == 1) {
-            channel_2.push_back(values[1]);
-        }
-        //Sleep(10);
-    }
-    //uint32_t timeDiff = live_data.time_offset - m_lastTimeOffset;
-    values[4] = (float)live_data.time_offset;
-    if (mMyfile.is_open())
-    {
-			data_start = true;
-        //value[0] : channel 1, bioimpedance measurement
-        //value[1] : channel 2, emg 1 measurement
-        //value[2] : channel 3, emg 2
-        //value[3] : channel 4, analog signal.
-        //value[4] : time_ofset between last sample and actual sample
-        mMyfile << values[0] << ", " << values[1] << ", " << values[2] << ", " << values[3] << ", " << values[4] << "\n";
-    }
-		if (mMyfile2.is_open()){
-          mMyfile2 << values[1] << "\n";
-    }
-}
-/*
 void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack)
 {
     Smpt_dl_send_live_data live_data;
     float values[5] = { 0 };
     smpt_get_dl_send_live_data(device, &live_data);
-
+    if(!data_start){ data_start=true;}
     //Data samples
     for (int i = 0; i < live_data.n_channels; i++)
     {
@@ -663,4 +481,4 @@ void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack)
         mMyfile << values[0] << ", " << values[1] << ", " << values[2] << ", " << values[3] << ", " << values[4] << "\n";
     }
 
-}*/
+}

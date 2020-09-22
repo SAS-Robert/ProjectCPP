@@ -1,0 +1,43 @@
+Starting connection
+UPD Connection - starting...
+Client running on IP 127.0.0.1, port 30007
+===================================
+-Using multiple threads.
+Press any key to start both devices.
+Then press any key again to finish both process
+===================================
+Reha Move3 message: Initializing device...
+Reha Ingest message: Setting communication...
+Reha Ingest message: Enabling and initializing device...
+Before while: get=1
+Reha Move3 message: Device ready. Process will start.
+Reha Move3 message: Process active.
+Reha Ingest message: Device ready. Process will start
+Reha Ingest message: Preparing.
+Reha Ingest message: Data avaliable at iteration number 2248
+Reha Ingest message: Recording data.
+Reha Ingest message: Data size: 10529, 10529, 10529
+Reha Ingest message: Data size: 10161, 10161, 10161
+Reha Ingest message: Data size: 5105, 5105, 5105
+Reha Ingest message: Data size: 4300, 4300, 4300
+Reha Ingest message: Data size: 9303, 9303, 9303
+Reha Ingest message: Data size: 5561, 5561, 5561
+Reha Ingest message: Data size: 7976, 7976, 7976
+Reha Ingest message: Data size: 6215, 6215, 6215
+Reha Ingest message: Data size: 7445, 7445, 7445
+Reha Ingest message: Data size: 5363, 5363, 5363
+Reha Ingest message: Ending process.
+Reha Move3 message: Ending process.
+Reha Move3 message: Process successfully finished.
+===================================
+-Number of iterations:
+Thread RehaMove3 = 333
+Thread RehaIngest = 627
+
+--------------------------
+Hej Hej!
+--------------------------
+
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.exe (process 18964) exited with code 0.
+To automatically close the console when debugging stops, enable Tools->Options->Debugging->Automatically close the console when debugging stops.
+Press any key to close this window . . .

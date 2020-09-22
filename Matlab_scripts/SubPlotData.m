@@ -12,7 +12,7 @@ function SubPlotData(dataY,dataX,name)
 [sizeplot sizedata] = size(dataY);
 sizesub = round(sizeplot/2);
 % Plot stuff
-figure
+%figure
     for i = 1:sizeplot
        subplot(sizesub, sizesub, i)
        grid on

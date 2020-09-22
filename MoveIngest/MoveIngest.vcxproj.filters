@@ -27,6 +27,9 @@
     <ClCompile Include="notch100.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="SAS.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bandStop.h">
@@ -36,6 +39,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="notch100.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SAS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

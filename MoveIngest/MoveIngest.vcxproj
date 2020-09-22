@@ -109,12 +109,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\include\dyscom-level;C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\include\general;C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\include\low-level;C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\include\mid-level;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\biquad-master;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\dyscom-level;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\general;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\low-level;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\mid-level;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>5208;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\include\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libsmpt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -161,11 +162,13 @@
     <ClCompile Include="MoveIngest.cpp" />
     <ClCompile Include="notch100.cpp" />
     <ClCompile Include="notch50.cpp" />
+    <ClCompile Include="SAS.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bandStop.h" />
     <ClInclude Include="notch100.h" />
     <ClInclude Include="notch50.h" />
+    <ClInclude Include="SAS.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

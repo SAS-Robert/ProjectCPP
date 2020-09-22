@@ -9,7 +9,8 @@ addpath(fcn_path);
 files1=dir('MoveIngest/file1_*.txt');
 % -> select somewhere here what files are going to be processed?
 % Load containing data into matlab variables/files
-file1_full_name = [files1(1).folder '\' files1(1).name];
+[amount, dummy ] = size(files1);
+file1_full_name = [files1(amount).folder '\' files1(amount).name];
 file1 = load(file1_full_name);
 file1_bio = file1(:,1)';     %value[0] : channel 1, bioimpedance measurement
 file1_emg1 = file1(:,2)';    %value[1] : channel 2, emg 1 measurement
@@ -21,7 +22,10 @@ files2=dir('MoveIngest/file2_*.txt');
 [amount, dummy ] = size(files2);
 file2_full_name = [files2(amount).folder '\' files2(amount).name]; %Just take the last one
 file2 = load(file2_full_name);
-file2_data = file2(:,1)';
+file2_data = file2';
+file2_bandstop = file2(:,1)';
+file2_notch50 = file2(:,2)';
+file2_notch100 = file2(:,3)';
 
 %% Plotting data
 % Raw data
@@ -37,36 +41,33 @@ t(1) = file1_t(1);
 for i = 2:length(t)
  t(i) = t(i-1)+file1_t(i);
 end
+figure('Name','Raw data');
 SubPlotData(file1(:,1:4)',t,[f1_bio_n; f1_emg1_n; f1_emg2_n; f1_alg_n]);
-%%SubPlotData(dataY,dataX,name) % content
-% dataY = file1(:,1:4)';
-% dataX = t;
-% name = [f1_bio_n; f1_emg1_n; f1_emg2_n; f1_alg_n];
-% [sizeplot sizedata] = size(dataY);
-% sizesub = round(sizeplot/2);
-% % Plot stuff
-% figure
-%     for i = 1:sizeplot
-%        subplot(sizesub, sizesub, i)
-%        grid on
-%        plot(dataX,dataY(i,:));
-%        title(name(i,1));
-%        ylabel(name(i,2));
-%        xlabel('time[absolute]');
-%     end
 
-%% Live session EMG data
-%Create socket
-PORT = 30002;
-SERVER = '172.31.1.147';
-SAS = udp(SERVER,PORT);
-set(SAS,'TimeOut',2);
-fopen(SAS);
-%while(true)
-for i=1:10
-%Send a message:
-    msg = 'Hellou :D';
-    fwrite(SAS,msg);
-    %Read a message
-    data = char(fread(SAS))';
+f2_1_n = {'Bandstop filter', 'Data [unit]'};
+f2_2_n = {'Notch50 filter', 'Data [unit]'};
+f2_3_n = {'Notch100 filter', 'Data [unit]'};
+f2_t = {'Iteration', 'Data [unit]'};
+%Calculating time values:
+t = zeros(size(file2_bandstop));
+for i = 1:length(t)
+ t(i) = i;
 end
+figure('Name','Filtered data');
+SubPlotData(file2',t,[f2_1_n; f2_2_n; f2_3_n]);
+%% Live session EMG data
+% This section is on pause until new stuff 
+%Create socket
+%PORT = 30002;
+%SERVER = '172.31.1.147';
+%SAS = udp(SERVER,PORT);
+% set(SAS,'TimeOut',2);
+% fopen(SAS);
+% %while(true)
+% for i=1:10
+% %Send a message:
+%     msg = 'Hellou :D';
+%     fwrite(SAS,msg);
+%     %Read a message
+%     data = char(fread(SAS))';
+% end
