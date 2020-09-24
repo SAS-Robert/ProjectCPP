@@ -13,36 +13,69 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Hasomed">
+      <UniqueIdentifier>{1bca02a7-36a0-4b37-a874-5ff94304df40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MicroModeler">
+      <UniqueIdentifier>{38ae64d4-4fa0-412e-947b-a89a0a50768c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MoveIngest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bandStop.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="notch50.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="notch100.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="SAS.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="bandStop.cpp">
+      <Filter>Header Files\MicroModeler</Filter>
+    </ClCompile>
+    <ClCompile Include="notch50.cpp">
+      <Filter>Header Files\MicroModeler</Filter>
+    </ClCompile>
+    <ClCompile Include="notch100.cpp">
+      <Filter>Header Files\MicroModeler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Biquad.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Butterworth.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Cascade.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevI.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevII.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Custom.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\PoleFilter.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\RBJ.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\State.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bandStop.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="notch50.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="notch100.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SAS.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bandStop.h">
+      <Filter>Header Files\MicroModeler</Filter>
+    </ClInclude>
+    <ClInclude Include="notch50.h">
+      <Filter>Header Files\MicroModeler</Filter>
+    </ClInclude>
+    <ClInclude Include="notch100.h">
+      <Filter>Header Files\MicroModeler</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

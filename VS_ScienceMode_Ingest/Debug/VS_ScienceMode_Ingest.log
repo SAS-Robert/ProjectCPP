@@ -1,0 +1,2 @@
+﻿  VS_ScienceMode_Ingest.cpp
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\VS_ScienceMode_Ingest\VS_ScienceMode_Ingest\VS_ScienceMode_Ingest.cpp(6,10): fatal error C1083: Cannot open include file: 'smpt_dl_client.h': No such file or directory
