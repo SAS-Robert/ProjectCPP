@@ -14,6 +14,15 @@
 
 using namespace std;
 
+typedef enum /* Smpt_Dl_Signal_Type */
+{
+    Move3_none      	= 0,    /**< this channel is used */
+    Move3_incr     		= 1,    /**< at this time, this channel isn't defined */
+    Move3_decr      	= 2,    /**< bio imendance in milli ohm */
+    Move3_ramp_more   = 3,    /**< EMG1 in milli volt */
+    Move3_ramp_less		= 4,    /**< operation voltage in volt */
+}RehaMove3_Req_Type;
+
 typedef struct{
 	struct sockaddr_in si_other;
 	int s, slen = sizeof(si_other);

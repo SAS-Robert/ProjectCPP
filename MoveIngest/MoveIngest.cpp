@@ -30,6 +30,7 @@
 #include <thread>
 #include <ctime>
 #include <sstream>
+#include <ctype.h>
 // User-defined libraries
 #include "smpt_ml_client.h"
 #include "smpt_dl_client.h"
@@ -50,6 +51,7 @@ int one_to_escape = 0;
 //bool main_start = false;
 bool Move3_ready = false;
 bool Ingest_ready = false;
+RehaMove3_Req_Type Move3_key = Move3_none;
 std::vector<float> channel_2;			// Original data being stored
 std::vector<float> channel_raw;		//Raw data to be filtered while recording
 std::vector<float> channel_filter;//Filtered data
@@ -80,6 +82,10 @@ static void thread_ml_recording(const char* port_name);
 static void handle_dl_packet_global(Smpt_device* const device);
 void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack);
 //Communication between threads
+void keyboard();
+void stimulation_user(RehaMove3_Req_Type code, Smpt_ml_channel_config* current_val, Smpt_ml_channel_config next_val);
+Smpt_ml_channel_config stim;
+
 struct device_to_device{
   bool start = false;
   bool end = false;
@@ -104,10 +110,10 @@ int main()
     ROBERT.start();
   }while(ROBERT.error);
 
-//  std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
-    std::thread RehaIngest(thread_ml_recording, port_name_ri);
-    std::thread RehaMove3(thread_ml_t1);
-    //std::thread RehaIngest(thread_ml_t2);
+    std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
+//  std::thread RehaIngest(thread_ml_recording, port_name_ri);
+//  std::thread RehaMove3(thread_ml_t1);
+    std::thread RehaIngest(thread_ml_t2);
 
   //wait for both devices to be ready
   while((!Move3_ready)||(!Ingest_ready)){
@@ -115,9 +121,13 @@ int main()
   }
   std::cout << "==================================="<< endl;
   // Using multi threading
-  std::cout << "-Using multiple threads.\nPress any key to start process.\nThen press any key again to finish.\n";
+  std::cout << "-Using multiple threads.\nPress any key to start process.\nThen press 0 to finish.\n";
   _getch();
   std::cout << "==================================="<< endl;
+
+  std::cout << "RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
+
+
   MAIN_to_all.start = true;
 
   //Saving UDP messages
@@ -129,8 +139,9 @@ int main()
     init1.append(".txt");
     msgData.open(init1);
   }
-  one_to_escape = 0;
+
   while (!MAIN_to_all.end){
+     //while(true){
 	   ROBERT.get();
   // If any errors were internally given, the program will re-strart the communication
     if(ROBERT.error){
@@ -141,7 +152,9 @@ int main()
     }
     Sleep(10);
     one_to_escape = _kbhit();
-    MAIN_to_all.end = (one_to_escape != 0);
+      if (one_to_escape != 0){
+        keyboard();
+      }
   }
   // Waiting for threads to finish
   RehaMove3.join();
@@ -155,9 +168,98 @@ int main()
   // Flushing input and output buffers
   cout.flush();
   fflush(stdin);
+
 return 0;
+
 }   // Uncomment to enable original code.
 //================================================
+void keyboard(){
+      int ch;
+      ch = _getch();
+      ch = toupper( ch );
+      switch(ch){
+        case 'A':
+          Move3_key = Move3_ramp_less;
+          break;
+        case 'W':
+          Move3_key = Move3_incr;
+          break;
+        case 'S':
+          Move3_key = Move3_decr;
+          break;
+        case 'D':
+          Move3_key = Move3_ramp_more;
+          break;
+        case '0':
+          MAIN_to_all.end = true;
+        break;
+      }
+      printf("---> Key pressed: %c <---\n",ch);
+}
+//Original code:
+/*
+int ch;
+
+_cputs( "Type 'Y' when finished typing keys: " );
+do
+{
+   ch = _getch();
+   ch = toupper( ch );
+} while( ch != 'Y' );
+
+_putch( ch );
+_putch( '\r' );    // Carriage return
+_putch( '\n' );    // Line feed
+*/
+
+//void stimulation_user(RehaMove3_Req_Type code, Smpt_ml_channel_config* current_val, Smpt_ml_channel_config next_val);{
+void stimulation_user(RehaMove3_Req_Type code){
+   Smpt_ml_channel_config next_val;
+   next_val = stim;
+// current_Val = real values on the stimulator
+// next_val = values that are going to be assigned
+// code = from the keyboard
+
+   switch(code){
+     case Move3_ramp_more:
+       next_val.number_of_points++;
+       next_val.ramp++;
+       break;
+     case Move3_ramp_less:
+       next_val.number_of_points--;
+       next_val.ramp--;
+       break;
+     case Move3_decr:
+       next_val.points[0].current = next_val.points[0].current-1;
+       break;
+     case Move3_incr:
+       next_val.points[0].current = next_val.points[0].current+1;
+       break;
+   }
+   // Checking max and min possible values:
+   if(next_val.number_of_points>5){
+     next_val.number_of_points = 5;
+   }else if(next_val.number_of_points<2){
+     next_val.number_of_points = 2;
+   }
+
+   if(next_val.ramp>5){
+     next_val.ramp = 5;
+   }else if(next_val.ramp<2){
+     next_val.ramp = 2;
+   }
+
+   if(next_val.points[0].current>60){
+     next_val.points[0].current = 60;
+   }else if (next_val.points[0].current<10){
+     next_val.points[0].current = 10;
+   }
+
+   stim = next_val;
+   printf("RehaMove3 message: Stimulation update -> current = %2.1f, ramp points = %d, ramp value = %d\n",stim.points[0].current,stim.number_of_points,stim.ramp);
+   //%2.1f is the format to show a float number, 2.1 means 2 units and 1 decimal
+   Move3_key = Move3_none;
+}
 //Example threads: this is only for some code testing.
 void thread_ml_t1(){
 std::cout <<"RehaMove3 doing stuff\n";
@@ -165,7 +267,11 @@ Move3_ready = true;
 
   while (!MAIN_to_all.end){
     task1++;
-    Sleep(5000);
+    Sleep(1000);
+    if(task1>=10){
+      std::cout<<"RehaMove3 task 1\n";
+      task1 = 0;
+    }
   }
 
 }
@@ -174,7 +280,12 @@ void thread_ml_t2(){
   Ingest_ready = true;
   while (!MAIN_to_all.end){
     task2++;
-    Sleep(100);
+    Sleep(1000);
+    if(task2>=10){
+      //std::cout<<"RehaIngest task 2\n";
+      task2 = 0;
+      Ingest_to_Move.start = true;
+    }
   }
 }
 
@@ -360,7 +471,7 @@ void thread_ml_stimulation(const char* port_name)
   int turn_on = 0; //Time if the device gets turned on in the middle of the process
   //-------------------------------------------------------------------------------------
   // Stimulation values
-  Smpt_ml_channel_config stim;
+  printf("RehaMove3 message: Stimulation initial values -> current = %2.2f, ramp points = %d, ramp value = %d\n",stim.points[0].current,stim.number_of_points,stim.ramp);
   stim.number_of_points = 3;  /* Set the number of points */
   stim.ramp = 3;              /* Three lower pre-pulses   */
   stim.period = 20;           /* Frequency: 50 Hz */
@@ -434,6 +545,10 @@ void thread_ml_stimulation(const char* port_name)
     std::cout << "Reha Move3 message: Stimulating.\n";
   	while ((!MAIN_to_all.end)&&(!smpt_end))
   	{
+      // New part: setting up values:
+      if(Move3_key != Move3_none){
+        stimulation_user(Move3_key);
+      }
   		fill_ml_update(&device, &ml_update, stim);
   		smpt_send_ml_update(&device, &ml_update);
   		while (i <= 600)

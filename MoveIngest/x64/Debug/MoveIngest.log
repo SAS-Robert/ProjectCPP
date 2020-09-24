@@ -1,8 +1,8 @@
 ﻿  MoveIngest.cpp
 C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
 C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(43,18): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(64,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(52,18): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
 C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(73,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(98,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(82,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(107,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
   MoveIngest.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.exe
