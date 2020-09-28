@@ -109,7 +109,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\sciencemode_stim_trigger\sciencemode_stim_trigger\filter;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\biquad-master;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\dyscom-level;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\general;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\low-level;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\mid-level;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir;C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\biquad-master;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\dyscom-level;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\general;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\low-level;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\include\mid-level;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>5208;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -158,15 +158,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Biquad.cpp" />
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Butterworth.cpp" />
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Cascade.cpp" />
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevI.cpp" />
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevII.cpp" />
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Custom.cpp" />
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\PoleFilter.cpp" />
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\RBJ.cpp" />
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\State.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Biquad.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Butterworth.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Cascade.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevI.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevII.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Custom.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\PoleFilter.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\RBJ.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\State.cpp" />
     <ClCompile Include="bandStop.cpp" />
     <ClCompile Include="MoveIngest.cpp" />
     <ClCompile Include="notch100.cpp" />

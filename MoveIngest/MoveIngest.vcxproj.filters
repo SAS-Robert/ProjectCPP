@@ -36,31 +36,31 @@
     <ClCompile Include="notch100.cpp">
       <Filter>Header Files\MicroModeler</Filter>
     </ClCompile>
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Biquad.cpp">
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Biquad.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Butterworth.cpp">
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Butterworth.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Cascade.cpp">
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Cascade.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevI.cpp">
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevI.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevII.cpp">
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevII.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Custom.cpp">
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Custom.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\PoleFilter.cpp">
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\PoleFilter.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\RBJ.cpp">
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\RBJ.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
-    <ClCompile Include="..\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\State.cpp">
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\State.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
   </ItemGroup>

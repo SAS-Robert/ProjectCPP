@@ -62,6 +62,10 @@ ofstream fileFILTERS;
 //ofstream file3;
 ofstream msgData;
 
+//Tic-toc time
+time_t tstart, tend;
+double toc_lim = 3;
+
 //UPD connection settings
 UDPClient ROBERT;
 // Example threads
@@ -76,11 +80,14 @@ string init1("file1_");
 string init2("file2_");
 //string init3("file3_");
 string format(".txt");
+
 // Threads and devices function hearders
 static void thread_ml_stimulation(const char* port_name);
 static void thread_ml_recording(const char* port_name);
 static void handle_dl_packet_global(Smpt_device* const device);
 void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack);
+void tic();
+bool toc();
 //Communication between threads
 void keyboard();
 void stimulation_user(RehaMove3_Req_Type code, Smpt_ml_channel_config* current_val, Smpt_ml_channel_config next_val);
@@ -110,9 +117,9 @@ int main()
     ROBERT.start();
   }while(ROBERT.error);
 
-    std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
-//  std::thread RehaIngest(thread_ml_recording, port_name_ri);
-//  std::thread RehaMove3(thread_ml_t1);
+//  std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
+    // std::thread RehaIngest(thread_ml_recording, port_name_ri);
+    std::thread RehaMove3(thread_ml_t1);
     std::thread RehaIngest(thread_ml_t2);
 
   //wait for both devices to be ready
@@ -196,21 +203,6 @@ void keyboard(){
       }
       printf("---> Key pressed: %c <---\n",ch);
 }
-//Original code:
-/*
-int ch;
-
-_cputs( "Type 'Y' when finished typing keys: " );
-do
-{
-   ch = _getch();
-   ch = toupper( ch );
-} while( ch != 'Y' );
-
-_putch( ch );
-_putch( '\r' );    // Carriage return
-_putch( '\n' );    // Line feed
-*/
 
 //void stimulation_user(RehaMove3_Req_Type code, Smpt_ml_channel_config* current_val, Smpt_ml_channel_config next_val);{
 void stimulation_user(RehaMove3_Req_Type code){
@@ -219,6 +211,14 @@ void stimulation_user(RehaMove3_Req_Type code){
 // current_Val = real values on the stimulator
 // next_val = values that are going to be assigned
 // code = from the keyboard
+
+/* Set the stimulation pulse */
+// stim.points[0].current = 50;
+// stim.points[0].time = 200;
+// stim.points[1].time = 100;
+// stim.points[2].current = -50;
+// stim.points[2].time = 200;
+
 
    switch(code){
      case Move3_ramp_more:
@@ -231,9 +231,11 @@ void stimulation_user(RehaMove3_Req_Type code){
        break;
      case Move3_decr:
        next_val.points[0].current = next_val.points[0].current-1;
+       next_val.points[2].current = next_val.points[2].current+1;
        break;
      case Move3_incr:
        next_val.points[0].current = next_val.points[0].current+1;
+       next_val.points[2].current = next_val.points[2].current-1;
        break;
    }
    // Checking max and min possible values:
@@ -251,8 +253,10 @@ void stimulation_user(RehaMove3_Req_Type code){
 
    if(next_val.points[0].current>60){
      next_val.points[0].current = 60;
+     next_val.points[2].current = -60;
    }else if (next_val.points[0].current<10){
      next_val.points[0].current = 10;
+     next_val.points[2].current = -10;
    }
 
    stim = next_val;
@@ -275,9 +279,66 @@ Move3_ready = true;
   }
 
 }
+
+void tic(){
+  tstart = time(0);
+  /*
+  time_t rawtime;
+  struct tm * timeinfo;
+  char buffer[10];
+  time (&rawtime);
+  // Get current time
+  timeinfo = localtime (&rawtime);
+  strftime(buffer, sizeof(buffer),"%H:%M:%S", timeinfo);
+  std::cout<<"Hours="<<buffer[0]<<"-"<<buffer[1]<<", min="<<buffer[3]<<"-"<<buffer[4]<<", sec="<<buffer[6]<<"-"<<buffer[7]<<endl;
+  // Convert and save time in numerical values
+  int hour = (buffer[0]-'0')*10+buffer[1]-'0';
+  int min = (buffer[3]-'0')*10+buffer[4]-'0';
+  int sec = (buffer[6]-'0')*10+buffer[7]-'0';
+  tic_toc.hr = hour;
+  tic_toc.min = min;
+  tic_toc.sec = sec;
+  tic_toc.en = true;
+  std::cout<<"Tic: sec = "<<tic_toc.sec<<", min = "<<tic_toc.min<<", hr = "<<tic_toc.hr<<endl;
+  */
+}
+
+bool toc(){
+  tend = time(0);
+  double diff = difftime(tend, tstart);
+  bool done = (diff>=toc_lim);
+  return done;
+  /*
+  time_t rawtime;
+  struct tm * timeinfo;
+  char buffer[10];
+  time (&rawtime);
+  // Get current time
+  timeinfo = localtime (&rawtime);
+  strftime(buffer, sizeof(buffer),"%H:%M:%S", timeinfo);
+  std::cout<<"Hours="<<buffer[0]<<"-"<<buffer[1]<<", min="<<buffer[3]<<"-"<<buffer[4]<<", sec="<<buffer[6]<<"-"<<buffer[7]<<endl;
+  // Convert and save time in numerical values
+  int hour = (buffer[0]-'0')*10+buffer[1]-'0';
+  int min = (buffer[3]-'0')*10+buffer[4]-'0';
+  int sec = (buffer[6]-'0')*10+buffer[7]-'0';
+  // Compare if time has passed:
+//  bool hr_done = (tic_toc.hr_lim > )
+*/
+}
+
 void thread_ml_t2(){
-  std::cout <<"RehaIngest doing stuff\n";
   Ingest_ready = true;
+
+  std::cout<<"Sample thread 2 for thesting."<<endl;
+  int i = 0;
+  tic();
+  do{
+    i++;
+    std::cout<<"toc "<<toc()<<endl;
+    Sleep(1000);
+  }while(i<=10);
+
+
   while (!MAIN_to_all.end){
     task2++;
     Sleep(1000);
@@ -287,8 +348,31 @@ void thread_ml_t2(){
       Ingest_to_Move.start = true;
     }
   }
-}
 
+  /*
+  time_t rawtime;
+  struct tm * timeinfo;
+  char buffer1[5];
+  char buffer2[100];
+  //char output;
+  time (&rawtime);
+  timeinfo = localtime (&rawtime);
+  strftime(buffer1, sizeof(buffer1),"%S", timeinfo);
+  strftime(buffer2, sizeof(buffer2),"%H:%M:%S", timeinfo);
+  std::cout << "Complete time: " << buffer2 << "\nSeconds: " << buffer1 << endl;
+  std::cout<<"Hours="<<buffer2[0]<<"-"<<buffer2[1]<<", min="<<buffer2[3]<<"-"<<buffer2[4]<<", sec="<<buffer2[6]<<"-"<<buffer2[7]<<endl;
+  //printf("Complete time 2: %s\nSeconds 2: %s", buffer2, buffer1);
+  // Conversion to int
+//  int hour = ((int)buffer2[]
+  int hour = (buffer2[0]-'0')*10+buffer2[1]-'0';
+  int min = (buffer2[3]-'0')*10+buffer2[4]-'0';
+  int sec = (buffer2[6]-'0')*10+buffer2[7]-'0';
+  std::cout<<"Sec int = "<<sec<<", min int = "<<min<<", hr int = "<<hour<<endl;
+  */
+  /*for(int i=0; i < 15; ++i){
+    outStr[i] = buffer[i];
+  }*/
+}
 //================================================
 void thread_ml_recording(const char* port_name)
 {
@@ -526,8 +610,6 @@ void thread_ml_stimulation(const char* port_name)
     smpt_port = false;
     fill_ml_init(&device, &ml_init);
     smpt_send_ml_init(&device, &ml_init);
-
-  	//std::cout << "Reha Move3 message: Process active.\n";
     //---------------------------------------------
     // Waiting here for start from main:
     std::cout << "Reha Move3 message: Device ready.\n";
@@ -536,7 +618,7 @@ void thread_ml_stimulation(const char* port_name)
       Sleep(500);
     }
     //---------------------------------------------
-    //Wait for run
+    //Wait for run from RehaIngest
     std::cout << "Reha Move3 message: Waiting for start.\n";
     while(!Ingest_to_Move.start){
       Sleep(100);
