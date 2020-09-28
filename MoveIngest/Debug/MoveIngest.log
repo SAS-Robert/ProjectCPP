@@ -1,35 +1,42 @@
-﻿  bandStop.cpp
+﻿  Biquad.cpp
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Biquad.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
+  Butterworth.cpp
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Butterworth.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
+  Cascade.cpp
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Cascade.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
+  ChebyshevI.cpp
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevI.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
+  ChebyshevII.cpp
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevII.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
+  Custom.cpp
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Custom.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
+  PoleFilter.cpp
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\PoleFilter.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
+  RBJ.cpp
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\RBJ.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
+  State.cpp
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\State.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
+  bandStop.cpp
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\bandStop.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
   MoveIngest.cpp
-C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\MoveIngest\bandStop.cpp(27,1): warning C4305:  'initializing': truncation from 'double' to 'float'
-C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(58,22): warning C4305:  'initializing': truncation from 'int' to 'uint8_t'
-C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(58,18): warning C4309:  'initializing': truncation of constant value
-C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(447,24): warning C4018:  '<': signed/unsigned mismatch
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(474,29): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(519,41): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(522,40): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   notch100.cpp
-C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(477,21): warning C4018:  '<': signed/unsigned mismatch
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\notch100.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
   notch50.cpp
-C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\MoveIngest\notch100.cpp(27,1): warning C4305:  'initializing': truncation from 'double' to 'float'
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\notch50.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+  SAS.cpp
   Generating Code...
-C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\MoveIngest\notch50.cpp(27,1): warning C4305:  'initializing': truncation from 'double' to 'float'
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_clear_ml_init referenced in function "void __cdecl fill_ml_init(struct Smpt_device * const,struct Smpt_ml_init * const)" (?fill_ml_init@@YAXQAUSmpt_device@@QAUSmpt_ml_init@@@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_clear_ml_update referenced in function "void __cdecl fill_ml_update(struct Smpt_device * const,struct Smpt_ml_update * const)" (?fill_ml_update@@YAXQAUSmpt_device@@QAUSmpt_ml_update@@@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_packet_number_generator_next referenced in function "void __cdecl fill_ml_get_current_data(struct Smpt_device * const,struct Smpt_ml_get_current_data * const)" (?fill_ml_get_current_data@@YAXQAUSmpt_device@@QAUSmpt_ml_get_current_data@@@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_open_serial_port referenced in function "void __cdecl thread_ml_recording(char const *)" (?thread_ml_recording@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_close_serial_port referenced in function "void __cdecl thread_ml_recording(char const *)" (?thread_ml_recording@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_check_serial_port referenced in function "void __cdecl thread_ml_recording(char const *)" (?thread_ml_recording@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_new_packet_received referenced in function "void __cdecl thread_ml_recording(char const *)" (?thread_ml_recording@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_last_ack referenced in function "void __cdecl handle_dl_packet_global(struct Smpt_device * const)" (?handle_dl_packet_global@@YAXQAUSmpt_device@@@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_send_get_device_id referenced in function "void __cdecl thread_ml_stimulation(char const *)" (?thread_ml_stimulation@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_send_ml_init referenced in function "void __cdecl thread_ml_stimulation(char const *)" (?thread_ml_stimulation@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_send_ml_update referenced in function "void __cdecl thread_ml_stimulation(char const *)" (?thread_ml_stimulation@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_send_ml_get_current_data referenced in function "void __cdecl thread_ml_stimulation(char const *)" (?thread_ml_stimulation@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_send_ml_stop referenced in function "void __cdecl thread_ml_stimulation(char const *)" (?thread_ml_stimulation@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_send_dl_init referenced in function "void __cdecl thread_ml_recording(char const *)" (?thread_ml_recording@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_send_dl_start referenced in function "void __cdecl thread_ml_recording(char const *)" (?thread_ml_recording@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_send_dl_stop referenced in function "void __cdecl thread_ml_recording(char const *)" (?thread_ml_recording@@YAXPBD@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_send_dl_get referenced in function "void __cdecl handleGetAckReceived(struct Smpt_device * const,struct Smpt_ack const &)" (?handleGetAckReceived@@YAXQAUSmpt_device@@ABUSmpt_ack@@@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_get_dl_init_ack referenced in function "void __cdecl handleInitAckReceived(struct Smpt_device * const,struct Smpt_ack const &)" (?handleInitAckReceived@@YAXQAUSmpt_device@@ABUSmpt_ack@@@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_get_dl_power_module_ack referenced in function "void __cdecl handlePowerModuleAckReceived(struct Smpt_device * const,struct Smpt_ack const &)" (?handlePowerModuleAckReceived@@YAXQAUSmpt_device@@ABUSmpt_ack@@@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_get_dl_send_live_data referenced in function "void __cdecl handleSendLiveDataReceived(struct Smpt_device * const,struct Smpt_ack const &)" (?handleSendLiveDataReceived@@YAXQAUSmpt_device@@ABUSmpt_ack@@@Z)
-MoveIngest.obj : error LNK2019: unresolved external symbol _smpt_send_dl_power_module referenced in function "void __cdecl thread_ml_recording(char const *)" (?thread_ml_recording@@YAXPBD@Z)
-C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\include\lib\libsmpt.lib : warning LNK4272: library machine type 'x64' conflicts with target machine type 'x86'
-C:\Users\cagom\Desktop\Aalborg Universitet\3rd Semester\Internship\Software\ProjectCPP\MoveIngest\Debug\MoveIngest.exe : fatal error LNK1120: 21 unresolved externals
+     Creating library C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\Debug\MoveIngest.lib and object C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\Debug\MoveIngest.exp
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  MoveIngest.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\Debug\MoveIngest.exe
