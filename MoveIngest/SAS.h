@@ -14,14 +14,30 @@
 
 using namespace std;
 
-typedef enum /* Smpt_Dl_Signal_Type */
+typedef enum
 {
-    Move3_none      	= 0,    /**< this channel is used */
-    Move3_incr     		= 1,    /**< at this time, this channel isn't defined */
-    Move3_decr      	= 2,    /**< bio imendance in milli ohm */
-    Move3_ramp_more   = 3,    /**< EMG1 in milli volt */
-    Move3_ramp_less		= 4,    /**< operation voltage in volt */
+    Move3_none      	= 0,    // Nothing to do
+    Move3_incr     		= 1,    // Increment current
+    Move3_decr      	= 2,    // Reduce current
+    Move3_ramp_more   = 3,    // Increase ramp
+    Move3_ramp_less		= 4,    // Reduce ramp
 }RehaMove3_Req_Type;
+
+typedef enum
+{
+    Inge_none      	  = 0,    // Nothing to do
+    Inge_incr     		= 1,    // Increase threshold gain
+    Inge_decr       	= 2,    // Decrease threshold gain
+}RehaIngest_Req_Type;
+
+typedef enum
+{
+    st_none      	    = 0,    // Nothing to do
+    st_wait     		  = 1,    // Waiting for RMS_EMG>threshold
+    st_running       	= 2,    // Stimulating
+    st_stop           = 3,    // Done 1 seq, waiting for next
+}state_Type;
+
 
 typedef struct{
 	struct sockaddr_in si_other;
@@ -38,7 +54,7 @@ typedef struct{
 	char SERVERc[15] = "172.31.1.147";
 	// Robot variables
 	bool isMoving = false;
-	bool Stop = false;
+	bool Reached = false;
 	//Functions
 	void start(){
 		//Initialise winsock
@@ -117,100 +133,6 @@ typedef struct{
 	};
 }UDPClient;
 
-//Avoid using Server, because it has a blocking call
-/*
-typedef struct{
-	SOCKET s;
-	struct sockaddr_in server, si_other;
-	int slen, recv_len;
-	char buf[BUFLEN];
-	WSADATA wsa;
-	uint32_t PORTn = 30002;
-	char SERVERc[15] = "127.0.0.1"; //Local IP address
-	fd_set fds ;
-	int n ;
-	struct timeval tv ;
-	bool error = false;
-	bool display = true;
-	//functions
-	void start(){
-		slen = sizeof(si_other);
-		//Initialise winsock
-		printf("Initialising Server...");
-		if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
-		{
-			printf("Failed. Error Code : %d", WSAGetLastError());
-			exit(EXIT_FAILURE);
-		}
-		printf("Initialised.\n");
-
-		//Create a socket
-		if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET)
-		{
-			printf("Could not create socket : %d", WSAGetLastError());
-		}
-		//Prepare the sockaddr_in structure
-		server.sin_family = AF_INET;
-		server.sin_addr.s_addr = INADDR_ANY;
-		server.sin_addr.S_un.S_addr = inet_addr(SERVERc);
-		server.sin_port = htons(PORTn);
-		// Set up the struct timeval for the timeout.
-		tv.tv_sec = 3 ;
-		tv.tv_usec = 0 ;
-		FD_ZERO(&fds) ;
-		FD_SET(s, &fds) ;
-		char *ip = inet_ntoa(server.sin_addr);
-		std::cout<<"Running server on IP "<<ip<<", port "<<PORTn<<endl;
-		//Bind
-		if (bind(s, (struct sockaddr*) & server, sizeof(server)) == SOCKET_ERROR)
-		{
-			printf("Bind failed with error code : %d", WSAGetLastError());
-			exit(EXIT_FAILURE);
-		}
-		fflush(stdout);
-		printf("Waiting for a client connection...");
-		fflush(stdout);
-		//clear the buffer by filling null, it might have previously received data
-		memset(buf, '\0', BUFLEN);
-
-		printf("\n========== sending data==========\n");
-	};
-	void stream(){
-		if(display){printf("Waiting for request...");}
-		fflush(stdout);
-		//clear the buffer by filling null, it might have previously received data
-		memset(buf, '\0', BUFLEN);
-
-		//try to receive some data, this is a blocking call
-		if ((recv_len = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*) & si_other, &slen)) == SOCKET_ERROR)
-		{
-			printf("recvfrom() failed with error code : %d", WSAGetLastError());
-		}
-
-		//print details of the client/peer and the data received
-		if(display){
-			printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-			printf("Data: %s\n", buf);
-		}
-		//-------------------------------------------------
-		memset(buf, '\0', BUFLEN);
-		strcpy(buf, "IsMoving = 1, Stop =  0");
-		if(display){printf("Sending: %s\n", buf);}
-		//-------------------------------------------------
-		//now reply the client with the same data
-		//if (sendto(s, buf, recv_len, 0, (struct sockaddr*) & si_other, slen) == SOCKET_ERROR)
-		if (sendto(s, buf, BUFLEN, 0, (struct sockaddr*) & si_other, slen) == SOCKET_ERROR)
-		{
-			printf("sendto() failed with error code : %d", WSAGetLastError());
-		}
-		Sleep(500);
-	};
-	void end(){
-		closesocket(s);
-		WSACleanup();
-	};
-}UDPServer;
-*/
 // Others
 void generate_date(char* outStr);
 

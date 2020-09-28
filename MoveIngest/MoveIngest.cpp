@@ -44,14 +44,20 @@
 
 using namespace std;
 
-/* EDIT: Change to the virtual com port of your device */
+// COM on this windows computer
+// const char* port_name_rm = "COM6";
+// const char* port_name_ri = "COM4";
+// COM on KUKA controller
 const char* port_name_rm = "COM3";
-const char* port_name_ri = "COM4";
+const char* port_name_ri = "COM2";
 int one_to_escape = 0;
 //bool main_start = false;
 bool Move3_ready = false;
 bool Ingest_ready = false;
 RehaMove3_Req_Type Move3_key = Move3_none;
+RehaIngest_Req_Type Inge_key = Inge_none;
+state_Type state = st_none;
+
 std::vector<float> channel_2;			// Original data being stored
 std::vector<float> channel_raw;		//Raw data to be filtered while recording
 std::vector<float> channel_filter;//Filtered data
@@ -110,32 +116,12 @@ int main()
   std::cout << "-Starting up devices and communication."<<endl;
   std::cout << "==================================="<< endl;
   strcpy(ROBERT.SERVERc, "127.0.0.1");  //This is an address for testing
-  ROBERT.display = false;               //Chosen not to show messages during messages exchange
+//  ROBERT.display = false;               //Chosen not to show messages during messages exchange
   // Starting UPD Connection
   std::cout << "Starting connection\n";
   do{
     ROBERT.start();
   }while(ROBERT.error);
-
-//  std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
-    // std::thread RehaIngest(thread_ml_recording, port_name_ri);
-    std::thread RehaMove3(thread_ml_t1);
-    std::thread RehaIngest(thread_ml_t2);
-
-  //wait for both devices to be ready
-  while((!Move3_ready)||(!Ingest_ready)){
-    Sleep(1000);
-  }
-  std::cout << "==================================="<< endl;
-  // Using multi threading
-  std::cout << "-Using multiple threads.\nPress any key to start process.\nThen press 0 to finish.\n";
-  _getch();
-  std::cout << "==================================="<< endl;
-
-  std::cout << "RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
-
-
-  MAIN_to_all.start = true;
 
   //Saving UDP messages
   if(ROBERT.display){
@@ -147,17 +133,37 @@ int main()
     msgData.open(init1);
   }
 
+    std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
+    std::thread RehaIngest(thread_ml_recording, port_name_ri);
+    // std::thread RehaMove3(thread_ml_t1);
+//  std::thread RehaIngest(thread_ml_t2);
+
+  //wait for both devices to be ready
+  while((!Move3_ready)||(!Ingest_ready)){
+    Sleep(1000);
+  }
+  std::cout << "==================================="<< endl;
+  // Using multi threading
+  std::cout << "-Using multiple threads.\nPress any key to start process.\nThen press 0 to finish.\n";
+  _getch();
+  std::cout << "==================================="<< endl;
+
+  std::cout << "--->RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
+  std::cout << "\n--->RehaIngest controllers:\n-P = Increase threshold gain.\n-M = Decrease threshold gain.\n\n\n\r";
+
+  MAIN_to_all.start = true;
+
+
   while (!MAIN_to_all.end){
-     //while(true){
-	   ROBERT.get();
+	  // ROBERT.get();
   // If any errors were internally given, the program will re-strart the communication
-    if(ROBERT.error){
-      ROBERT.end();
-      ROBERT.start();
-    }else if(ROBERT.display){
-      msgData<<ROBERT.buf<<endl;
-    }
-    Sleep(10);
+    // if(ROBERT.error){
+    //   ROBERT.end();
+    //   ROBERT.start();
+    // }else if(ROBERT.display){
+    //   msgData<<ROBERT.buf<<endl;
+    // }
+    Sleep(200);
     one_to_escape = _kbhit();
       if (one_to_escape != 0){
         keyboard();
@@ -196,6 +202,14 @@ void keyboard(){
           break;
         case 'D':
           Move3_key = Move3_ramp_more;
+          break;
+        case 'P':
+          // Modify threshold
+          Inge_key = Inge_incr;
+          break;
+        case 'M':
+          // Modify threshold
+          Inge_key = Inge_decr;
           break;
         case '0':
           MAIN_to_all.end = true;
@@ -282,25 +296,6 @@ Move3_ready = true;
 
 void tic(){
   tstart = time(0);
-  /*
-  time_t rawtime;
-  struct tm * timeinfo;
-  char buffer[10];
-  time (&rawtime);
-  // Get current time
-  timeinfo = localtime (&rawtime);
-  strftime(buffer, sizeof(buffer),"%H:%M:%S", timeinfo);
-  std::cout<<"Hours="<<buffer[0]<<"-"<<buffer[1]<<", min="<<buffer[3]<<"-"<<buffer[4]<<", sec="<<buffer[6]<<"-"<<buffer[7]<<endl;
-  // Convert and save time in numerical values
-  int hour = (buffer[0]-'0')*10+buffer[1]-'0';
-  int min = (buffer[3]-'0')*10+buffer[4]-'0';
-  int sec = (buffer[6]-'0')*10+buffer[7]-'0';
-  tic_toc.hr = hour;
-  tic_toc.min = min;
-  tic_toc.sec = sec;
-  tic_toc.en = true;
-  std::cout<<"Tic: sec = "<<tic_toc.sec<<", min = "<<tic_toc.min<<", hr = "<<tic_toc.hr<<endl;
-  */
 }
 
 bool toc(){
@@ -308,22 +303,6 @@ bool toc(){
   double diff = difftime(tend, tstart);
   bool done = (diff>=toc_lim);
   return done;
-  /*
-  time_t rawtime;
-  struct tm * timeinfo;
-  char buffer[10];
-  time (&rawtime);
-  // Get current time
-  timeinfo = localtime (&rawtime);
-  strftime(buffer, sizeof(buffer),"%H:%M:%S", timeinfo);
-  std::cout<<"Hours="<<buffer[0]<<"-"<<buffer[1]<<", min="<<buffer[3]<<"-"<<buffer[4]<<", sec="<<buffer[6]<<"-"<<buffer[7]<<endl;
-  // Convert and save time in numerical values
-  int hour = (buffer[0]-'0')*10+buffer[1]-'0';
-  int min = (buffer[3]-'0')*10+buffer[4]-'0';
-  int sec = (buffer[6]-'0')*10+buffer[7]-'0';
-  // Compare if time has passed:
-//  bool hr_done = (tic_toc.hr_lim > )
-*/
 }
 
 void thread_ml_t2(){
@@ -348,30 +327,6 @@ void thread_ml_t2(){
       Ingest_to_Move.start = true;
     }
   }
-
-  /*
-  time_t rawtime;
-  struct tm * timeinfo;
-  char buffer1[5];
-  char buffer2[100];
-  //char output;
-  time (&rawtime);
-  timeinfo = localtime (&rawtime);
-  strftime(buffer1, sizeof(buffer1),"%S", timeinfo);
-  strftime(buffer2, sizeof(buffer2),"%H:%M:%S", timeinfo);
-  std::cout << "Complete time: " << buffer2 << "\nSeconds: " << buffer1 << endl;
-  std::cout<<"Hours="<<buffer2[0]<<"-"<<buffer2[1]<<", min="<<buffer2[3]<<"-"<<buffer2[4]<<", sec="<<buffer2[6]<<"-"<<buffer2[7]<<endl;
-  //printf("Complete time 2: %s\nSeconds 2: %s", buffer2, buffer1);
-  // Conversion to int
-//  int hour = ((int)buffer2[]
-  int hour = (buffer2[0]-'0')*10+buffer2[1]-'0';
-  int min = (buffer2[3]-'0')*10+buffer2[4]-'0';
-  int sec = (buffer2[6]-'0')*10+buffer2[7]-'0';
-  std::cout<<"Sec int = "<<sec<<", min int = "<<min<<", hr int = "<<hour<<endl;
-  */
-  /*for(int i=0; i < 15; ++i){
-    outStr[i] = buffer[i];
-  }*/
 }
 //================================================
 void thread_ml_recording(const char* port_name)
@@ -466,13 +421,18 @@ void thread_ml_recording(const char* port_name)
 		init1.append(format);
 		init2.append(date);
 		init2.append(format);
-
+    bool dummy = false;
+    bool set_th = false, modify_th = false;
+    bool set_value = false;
+    float acc = 0;
+    float threshold, mean_th, gain_th = 2.5;
+    float mean = 0, temp;
     //Data loop
     //std::cout << thread_msg << "Preparing.\n";
-    std::cout << thread_msg << "RehaMove3 start will be released at iteration number 3000.\n";
+    //std::cout << thread_msg << "RehaMove3 start will be released at iteration number 3000.\n";
     while (!MAIN_to_all.end)
-		//while (iterator < 10)
     {
+
         while (smpt_new_packet_received(&device_ri))
         {
             handle_dl_packet_global(&device_ri);
@@ -482,47 +442,151 @@ void thread_ml_recording(const char* port_name)
 							data_printed = true;
               fileRAW.open(init1);
               fileFILTERS.open(init2);
-              task2=1;
+              tic();
 						}
         }
         iterator++;
-        // Live filtering currently inactive until the issue is fixed
-        /*
         task2=channel_raw.size();
         //std::cout << thread_msg <<"Data size: "<<channel_raw.size()<<endl;
-				//Live filtering here
-				if(task2 >= limit_samples && data_start){
-					for (int i = 0; i < channel_raw.size(); ++i)                           // Loop for the length of the array
-					{
-							bandStop_writeInput(bandStop, channel_raw[i]);              // Write one sample into the filter
-							BandStop_result.push_back(bandStop_readOutput(bandStop));        // Read one sample from the filter and store it in the array.
-							notch50_writeInput(notch50, BandStop_result[i]);
-							notch50_result.push_back(bandStop_readOutput(bandStop));
-							notch100_writeInput(notch100, notch50_result[i]);
-							notch100_result.push_back(bandStop_readOutput(bandStop));
-  				}
+        set_th = (toc() && data_start && (state == st_none));
+        modify_th = ((state == st_wait)&& (Inge_key!=Inge_none) && (!Ingest_to_Move.start));
+        set_value = (task2 >= limit_samples && data_start && (state != st_none) && (!Ingest_to_Move.start));
 
-          // Saving filtered data from filters
-        //  std::cout << thread_msg <<"Data size: "<<BandStop_result.size()<<", "<<notch50_result.size()<<", "<<notch100_result.size()<<endl;
-          for(int i = 0; i < BandStop_result.size(); ++i){
-              fileFILTERS <<BandStop_result[i]<<","<<notch50_result[i]<< ","<<notch100_result[i]<<"\n";
+        // Update Robert Variables
+        if(set_th || set_value){
+          ROBERT.get();
+
+          if(ROBERT.error){
+            ROBERT.end();
+            ROBERT.start();
+          }else if(ROBERT.display){
+            msgData<<ROBERT.buf<<endl;
           }
-					//Preparing for next sample set
-					task2 = 0;
-					channel_raw.clear();
-					channel_filter.clear();
-					BandStop_result.clear();
-					notch50_result.clear();
-					notch100_result.clear();
+      }
 
-				}
-        // Communication with RehaMove3 thread
-        if((iterator>=3000) && !Ingest_to_Move.start){
-          Ingest_to_Move.start = true;
-          std::cout << thread_msg << "stimulation release sent.\n";
+        if((set_th || set_value)){   // && !ROBERT.error){
+          //printf("Filtering data.\n");
+          acc = 0;
+          int N_len;
+          N_len = channel_raw.size();
+          for (int i = 0; i < channel_raw.size(); ++i)                           // Loop for the length of the array
+          {
+              // Filter data
+              bandStop_writeInput(bandStop, channel_raw[i]);              // Write one sample into the filter
+              BandStop_result.push_back(bandStop_readOutput(bandStop));        // Read one sample from the filter and store it in the array.
+              notch50_writeInput(notch50, BandStop_result[i]);
+              notch50_result.push_back(bandStop_readOutput(bandStop));
+              notch100_writeInput(notch100, notch50_result[i]);
+              notch100_result.push_back(bandStop_readOutput(bandStop));
+              // Saving data
+              fileFILTERS <<BandStop_result[i]<<","<<notch50_result[i]<< ","<<notch100_result[i]<<"\n";
+              // Calculating mean of retified EMG
+              if(notch100_result[i]>0){
+                temp=notch100_result[i];
+              }else{
+                temp=-notch100_result[i];
+              }
+              mean = mean + (temp/N_len);
+          }
+          //Preparing for next sample set
+          task2 = 0;
+          channel_raw.clear();
+          channel_filter.clear();
+          BandStop_result.clear();
+          notch50_result.clear();
+          notch100_result.clear();
         }
-        Sleep(1);
+
+      //  if((set_th || set_value || modify_th) && !ROBERT.error){
+        // State machine process
+        switch(state){
+          case st_none:
+                if(set_th){
+                  mean_th = mean;
+                  threshold = mean_th*gain_th;
+                  std::cout<< thread_msg <<"state=init. Threshold settings: resting mean = "<<mean_th<<", gain = "<<gain_th<<", th value = "<<threshold<<endl;
+                  state = st_wait;
+                }
+          break;
+
+          case st_wait:
+              // Modifying threshold value before starting
+              if(modify_th){
+                switch(Inge_key){
+                  case Inge_decr:
+                      gain_th = gain_th + 0.1;
+                      break;
+                  case Inge_incr:
+                      gain_th = gain_th-0.1;
+                      break;
+                }
+                Inge_key = Inge_none;
+                threshold = mean_th*gain_th;
+                std::cout<< thread_msg <<"state=wait. Threshold modified to gain = "<<gain_th<<", th value = "<<threshold<<endl;
+              }
+
+              // Communication with RehaMove3 thread
+              if(set_value){
+                Ingest_to_Move.start = (mean> threshold) && (!ROBERT.isMoving); // && (!ROBERT.error);
+                std::cout<< thread_msg <<"state=wait. Comparing to threshold: "<<mean<<", result: "<<(mean> threshold)<<", ROBERT is moving? "<<ROBERT.isMoving<<endl;
+                if(Ingest_to_Move.start){
+                  state = st_running;
+                  printf("Release sent. state will change to running.\n");
+                }
+              }
+          break;
+
+          case st_running:
+              // Wait here for finish?
+          break;
+
+        }
+      //}
+      // Others
+      if ((Inge_key!=Inge_none) && Ingest_to_Move.start){
+        std::cout<<thread_msg<<"You cannot change the threshold after starting to stimulate."<<endl;
+        Inge_key=Inge_none;
+      }
+
+      /*
+        //---------------- Setting/Modifying threshold ----------------
+        if(set_th){
+          mean_th = mean;       // The mean of the resting EMG mut be saved
+          dummy = true;
+        }
+        if(modify_th){
+            switch(Inge_key){
+              case Inge_decr:
+                  gain_th = gain_th + 0.1;
+                  break;
+              case Inge_incr:
+                  gain_th = gain_th-0.1;
+                  break;
+            }
+            Inge_key = Inge_none;
+        }
+
+        if(set_th||modify_th){
+          threshold = mean_th*gain_th;
+          std::cout<< thread_msg <<"Threshold settings: resting mean = "<<mean_th<<", gain = "<<gain_th<<", th value = "<<threshold<<endl;
+        }
+
+        // Others
+        if ((Inge_key!=Inge_none) && Ingest_to_Move.start){
+          std::cout<<thread_msg<<"You cannot change the threshold after starting to stimulate."<<endl;
+          Inge_key=Inge_none;
+        }
+
+        // Communication with RehaMove3 thread
+        if(set_value){
+          Ingest_to_Move.start = (mean> threshold);
+          std::cout<< thread_msg <<"Comparing to threshold: "<<mean<<", result: "<<Ingest_to_Move.start<<endl;
+          if(Ingest_to_Move.start){ printf("Release sent.\n");}
+        }
+
         */
+
+        Sleep(1);
     }
   }/*2nd-3rd-4th steps*/
   /*fifth step*/
