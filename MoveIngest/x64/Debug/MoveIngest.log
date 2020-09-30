@@ -13,43 +13,15 @@ C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_
   ChebyshevII.cpp
 C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
 C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevII.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  Custom.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Custom.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  PoleFilter.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\PoleFilter.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  RBJ.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\RBJ.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  State.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\State.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  bandStop.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\bandStop.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\bandStop.cpp(74,17): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
-  MoveIngest.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(75,18): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(96,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(108,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(444,33): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(466,37): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(512,41): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(515,40): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-  notch100.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\notch100.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\notch100.cpp(74,17): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
-  notch50.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\notch50.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\notch50.cpp(74,17): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
   SAS.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(75,18): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(96,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(108,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(80,18): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(99,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(111,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SAS.h(249,16): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
   Generating Code...
      Creating library C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.lib and object C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.exp
 LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+Custom.obj : warning LNK4204: 'C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\vc142.pdb' is missing debugging information for referencing module; linking object as if no debug info
   MoveIngest.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.exe
   MoveIngest.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.pdb (Partial -> Full PDB)
+MSPDBCMF : warning CMF1201: missing compiler generated PDB file 'C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\vc142.pdb'; proceeding as if all its referencing OBJs have no debug info

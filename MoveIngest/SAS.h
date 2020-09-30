@@ -5,12 +5,17 @@
 
 #ifndef SAS_H_ // Include guards
 #define SAS_H_
-#include <iostream>
-//UPD connection settings
+ #include <iostream>
+// #include <winsock2.h>
+// #include <Ws2tcpip.h>
+ #include <stdio.h>
+//Connection settings
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
-#define SERVER "172.31.1.147" //Robert IP address
-#define BUFLEN 256//512	//Max length of buffer
-#define PORT 30007 //30008 //Robert's port on which to listen for incoming data
+// #ifndef UNICODE
+// #define UNICODE
+// #endif
+// #define WIN32_LEAN_AND_MEAN
+#define BUFLEN 512
 
 using namespace std;
 
@@ -49,9 +54,9 @@ typedef struct{
 	int n ;
 	struct timeval tv ;
 	bool error = false;
-	uint32_t PORTn = PORT;
+	uint32_t PORTn = 30007;            // Robert's background task port
 	bool display = true;
-	char SERVERc[15] = "172.31.1.147";
+	char SERVERc[15] = "172.31.1.147"; // Robert's IP address
 	// Robot variables
 	bool isMoving = false;
 	bool Reached = false;
@@ -80,8 +85,6 @@ typedef struct{
 		//setup address structure
 		memset((char*)& si_other, 0, sizeof(si_other));
 		si_other.sin_family = AF_INET;
-		//si_other.sin_port = htons(PORT);
-		//si_other.sin_addr.S_un.S_addr = inet_addr(SERVER);
 		si_other.sin_port = htons(PORTn);
 		si_other.sin_addr.S_un.S_addr = inet_addr(SERVERc);
 		// Set up the struct timeval for the timeout.
@@ -90,7 +93,7 @@ typedef struct{
 		FD_ZERO(&fds) ;
 		FD_SET(s, &fds) ;
 		char *ip = inet_ntoa(si_other.sin_addr);
-		std::cout<<"Client running on IP "<<ip<<", port "<<PORTn<<endl;
+		std::cout<<"UDP Client running on IP "<<ip<<", port "<<PORTn<<endl;
 		//send a "hello!" so the server can start sending stuff
 		strcpy(message, "RobotStateInformer;STATUS;1");
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr*) & si_other, slen) == SOCKET_ERROR)
@@ -115,11 +118,12 @@ typedef struct{
 		// Re-editar esto para que no muestre el mensaje
 		if ((n == 0)||(n==-1))
 		{
+      //if(n==0){printf("Timeout\n");}
 			error = true;
 			Sleep(3000);
 		}
 		if(!error){
-			int length = sizeof(inet_addr(SERVER));
+			int length = sizeof(SERVERc);
 			recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*) & si_other, &slen);
 			if (display) { std::cout << "UDP Received: " << buf << "  --->  ";}// endl; }// puts(buf);
       // Decode message
@@ -171,6 +175,123 @@ typedef struct{
 		if(display){ printf("UDP Connection closed\n");}
 	};
 }UDPClient;
+
+typedef struct{
+  int iResult;
+	WSADATA wsaData;
+	SOCKET ConnectSocket = INVALID_SOCKET;
+	struct sockaddr_in clientService;
+	int recvbuflen = BUFLEN;
+	char sendbuf[BUFLEN];
+	char recvbuf[BUFLEN];
+	char SERVERc[15] = "127.0.0.1";
+  int PORTn = 702; //htons(DEFAULT_PORT);
+  // Control variables
+	bool error = false, display = true;
+	fd_set fds ;
+	int n ;
+	struct timeval tv ;
+  // Functions
+  void start(){
+		printf("TCP Connection - starting...\n");
+		memset(recvbuf, '\0', BUFLEN);
+		memset(sendbuf, '\0', BUFLEN);
+		// Initialize Winsock
+		iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+		if (iResult != NO_ERROR) {
+			printf("TCP WSAStartup failed with error: %d\n", iResult);
+		}
+		// Create a SOCKET for connecting to server
+		ConnectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		if (ConnectSocket == INVALID_SOCKET) {
+			printf("TCP socket failed with error: %ld\n", WSAGetLastError());
+			WSACleanup();
+			error = true;
+		}
+		// The sockaddr_in structure specifies the address family,
+		// IP address, and port of the server to be connected to.
+		clientService.sin_family = AF_INET;
+		clientService.sin_addr.s_addr = inet_addr(SERVERc);
+		clientService.sin_port = htons(PORTn);
+		// Connect to server.
+		iResult = connect(ConnectSocket, (SOCKADDR*)&clientService, sizeof(clientService));
+		if (iResult == SOCKET_ERROR) {
+			printf("TCP connect failed with error: %d\n", WSAGetLastError());
+			closesocket(ConnectSocket);
+			error = true;
+			WSACleanup();
+		}else{
+			char *ip = inet_ntoa(clientService.sin_addr);
+			int porti = PORTn;
+			printf("TCP Client running on IP %s, port %d\n",ip,porti);
+			//Set message for sending
+			strcpy(sendbuf, "SCREEN;STATUS;1");
+		}
+		// Set up the struct timeval for the timeout.
+		tv.tv_sec = 3 ;
+		tv.tv_usec = 0 ;
+		FD_ZERO(&fds) ;
+		FD_SET(ConnectSocket, &fds) ;
+	};//void start
+
+	void get(){
+		// Send data
+		if(display){printf("TCP Requesting status...\n");}
+		iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
+		if (iResult == SOCKET_ERROR) {
+			printf("TCP send failed with error: %d\n", WSAGetLastError());
+			closesocket(ConnectSocket);
+			WSACleanup();
+			error = true;
+	}
+		// Wait until timeout or data received.
+		if(display){printf("TCP Waiting message\n");}
+		n = select ( ConnectSocket, &fds, NULL, NULL, &tv ) ;
+		// Re-editar esto para que no muestre el mensaje
+		if ((n == 0)||(n==-1))
+		{
+			if(n==0){printf("TCP Timeout\n");}
+			error = true;
+			Sleep(3000);
+		}
+		if(!error){
+			// Receive data
+			iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+			if (iResult > 0 && display ){printf("TCP Received: %s\n",recvbuf);}
+			else if (iResult == 0 && display){ printf("TCP Connection closed\n");}
+			else if (display){
+				printf("TCP recv failed with error: %d\n", WSAGetLastError());
+				error = true;
+			}
+		}
+	}; // void get
+
+	void end(){
+		// shutdown the connection since no more data will be sent
+		iResult = shutdown(ConnectSocket, 1); // 1 = SD_SEND
+		if (iResult == SOCKET_ERROR) {
+			printf("TCP shutdown failed with error: %d\n", WSAGetLastError());
+			closesocket(ConnectSocket);
+			WSACleanup();
+		}
+		// close the socket
+		iResult = closesocket(ConnectSocket);
+		if (iResult == SOCKET_ERROR) {
+			printf("TCP close failed with error: %d\n", WSAGetLastError());
+			WSACleanup();
+		}
+		// Receive until the peer closes the connection
+		iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+		do {
+			if (iResult == 0){printf("TCP Connection closed\n");}
+			//else if (iResult > 0) {printf("Bytes received: %d\n", iResult);}
+			iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+		}while (iResult > 0);
+
+		WSACleanup();
+	}; // void end
+
+}TCPClient;
 
 // Others
 void generate_date(char* outStr);

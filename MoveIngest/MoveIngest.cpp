@@ -42,6 +42,7 @@
 
 using namespace std;
 
+// ------------------------------ Devices --------------------------------------
 // COM on this windows computer
 // const char* port_name_rm = "COM6";
 // const char* port_name_ri = "COM4";
@@ -58,6 +59,7 @@ bool Ingest_ready = false;
 RehaMove3_Req_Type Move3_key = Move3_none;
 RehaIngest_Req_Type Inge_key = Inge_none;
 state_Type state = st_init;
+Smpt_ml_channel_config stim;
 
 std::vector<float> channel_2;			// Original data being stored
 std::vector<float> channel_raw;		//Raw data to be filtered while recording
@@ -67,18 +69,15 @@ std::vector<float> channel_filter;//Filtered data
 ofstream fileRAW;
 ofstream fileFILTERS;
 //ofstream file3;
+// ------------------------------ Communications  -----------------------------
+UDPClient ROBERT;
+TCPClient SCREEN;
 ofstream msgData;
 
+// ------------------------------ Associated with functions -------------------
 //Tic-toc time
 time_t tstart, tend;
 double toc_lim = 3;
-
-//UPD connection settings
-UDPClient ROBERT;
-// Example threads
-void thread_ml_t1();
-void thread_ml_t2();
-
 int task1 = 0;
 int task2 = 0;
 bool data_start = false;
@@ -87,7 +86,10 @@ string init1("file1_");
 string init2("file2_");
 //string init3("file3_");
 string format(".txt");
-
+// ------------------------------ Functions  -----------------------------
+// Example threads
+void thread_ml_t1();
+void thread_ml_t2();
 // Threads and devices function hearders
 static void thread_ml_stimulation(const char* port_name);
 static void thread_ml_recording(const char* port_name);
@@ -98,7 +100,6 @@ bool toc();
 //Communication between threads
 void keyboard();
 void stimulation_user(RehaMove3_Req_Type code, Smpt_ml_channel_config* current_val, Smpt_ml_channel_config next_val);
-Smpt_ml_channel_config stim;
 
 struct device_to_device{
   bool start = false;
@@ -119,11 +120,13 @@ int main()
   strcpy(ROBERT.SERVERc, "127.0.0.1");  //This is an address for testing
   //ROBERT.display = false;               //Chosen not to show messages during messages exchange
   // Starting UPD Connection
-  std::cout << "Starting connection with ROBERT\n";
-  do{
-    ROBERT.start();
-  }while(ROBERT.error);
-
+  std::cout << "Starting connection with ROBERT and Touch Screen\n";
+  // do{
+  //   ROBERT.start();
+  // }while(ROBERT.error);
+    do{
+      SCREEN.start();
+    }while(SCREEN.error);
   //Saving UDP messages
   // if(ROBERT.display){
   //   char date[15];
@@ -166,7 +169,7 @@ int main()
   RehaMove3.join();
   RehaIngest.join();
 
-  ROBERT.end();
+  //ROBERT.end();
 
   std::cout << "==================================="<< endl;
   std::cout << "-Number of iterations:\nThread RehaMove3 = " << task1 <<"\nThread RehaIngest = " << task2 << endl;
@@ -309,12 +312,12 @@ Move3_ready = true;
 void thread_ml_t2(){
   Ingest_ready = true;
 
-  std::cout<<"Sample UDP testing."<<endl;
+  std::cout<<"Sample TCP testing."<<endl;
 
   while (!MAIN_to_all.end){
     task2++;
     if (MAIN_to_all.start) {
-        ROBERT.get();
+        SCREEN.get();
         Sleep(3000);
     }
     if(task2>=10){
