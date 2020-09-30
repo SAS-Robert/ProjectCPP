@@ -117,7 +117,7 @@ int main()
   std::cout << "-Starting up devices and communication."<<endl;
   std::cout << "==================================="<< endl;
   strcpy(ROBERT.SERVERc, "127.0.0.1");  //This is an address for testing
-  ROBERT.display = false;               //Chosen not to show messages during messages exchange
+  //ROBERT.display = false;               //Chosen not to show messages during messages exchange
   // Starting UPD Connection
   std::cout << "Starting connection with ROBERT\n";
   do{
@@ -125,19 +125,19 @@ int main()
   }while(ROBERT.error);
 
   //Saving UDP messages
-  if(ROBERT.display){
-    char date[15];
-    generate_date(date); //get current date/time in format YYMMDD_hhmm
-    string init1("UDP_");
-    init1.append(date);
-    init1.append(".txt");
-    msgData.open(init1);
-  }
+  // if(ROBERT.display){
+  //   char date[15];
+  //   generate_date(date); //get current date/time in format YYMMDD_hhmm
+  //   string init1("UDP_");
+  //   init1.append(date);
+  //   init1.append(".txt");
+  //   msgData.open(init1);
+  // }
 
-    std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
-    std::thread RehaIngest(thread_ml_recording, port_name_ri);
-    //std::thread RehaMove3(thread_ml_t1);
-    //std::thread RehaIngest(thread_ml_t2);
+    // std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
+    // std::thread RehaIngest(thread_ml_recording, port_name_ri);
+    std::thread RehaMove3(thread_ml_t1);
+    std::thread RehaIngest(thread_ml_t2);
 
   //wait for both devices to be ready
   while((!Move3_ready)||(!Ingest_ready)){
@@ -156,14 +156,6 @@ int main()
 
 
   while (!MAIN_to_all.end){
-	  // ROBERT.get();
-  // If any errors were internally given, the program will re-strart the communication
-    // if(ROBERT.error){
-    //   ROBERT.end();
-    //   ROBERT.start();
-    // }else if(ROBERT.display){
-    //   msgData<<ROBERT.buf<<endl;
-    // }
     Sleep(200);
     one_to_escape = _kbhit();
       if (one_to_escape != 0){
@@ -289,6 +281,17 @@ void stimulation_user(RehaMove3_Req_Type code){
    Move3_key = Move3_none;
 }
 //Example threads: this is only for some code testing.
+void tic(){
+  tstart = time(0);
+}
+
+bool toc(){
+  tend = time(0);
+  double diff = difftime(tend, tstart);
+  bool done = (diff>=toc_lim);
+  return done;
+}
+
 void thread_ml_t1(){
 //std::cout <<"RehaMove3 doing stuff\n";
 Move3_ready = true;
@@ -303,18 +306,6 @@ Move3_ready = true;
   }
 
 }
-
-void tic(){
-  tstart = time(0);
-}
-
-bool toc(){
-  tend = time(0);
-  double diff = difftime(tend, tstart);
-  bool done = (diff>=toc_lim);
-  return done;
-}
-
 void thread_ml_t2(){
   Ingest_ready = true;
 
@@ -434,7 +425,6 @@ void thread_ml_recording(const char* port_name)
     float mean = 0, temp;
     //Data loop
     //std::cout << thread_msg << "Preparing.\n";
-    //std::cout << thread_msg << "RehaMove3 start will be released at iteration number 3000.\n";
     while (!MAIN_to_all.end)
     {
 
@@ -442,7 +432,7 @@ void thread_ml_recording(const char* port_name)
         {
             handle_dl_packet_global(&device_ri);
 						if(data_start && !data_printed){
-              std::cout<<thread_msg<<"Data available at iteration number "<<iterator<<endl;
+              //std::cout<<thread_msg<<"Data available at iteration number "<<iterator<<endl;
 							std::cout << thread_msg << "Recording data.\n";
 							data_printed = true;
               fileRAW.open(init1);

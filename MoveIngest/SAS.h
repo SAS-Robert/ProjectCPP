@@ -92,16 +92,17 @@ typedef struct{
 		char *ip = inet_ntoa(si_other.sin_addr);
 		std::cout<<"Client running on IP "<<ip<<", port "<<PORTn<<endl;
 		//send a "hello!" so the server can start sending stuff
-		strcpy(message, "hello!");
+		strcpy(message, "RobotStateInformer;STATUS;1");
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr*) & si_other, slen) == SOCKET_ERROR)
 		{
 			error = true;
 		}
 		// For afterwards:
-		strcpy(message, "RobotStateInformer;Status;1");
+		//strcpy(message, "RobotStateInformer;STATUS;1");
 	};
 	void get(){
 		memset(buf, '\0', BUFLEN);
+    valid_msg = false;
 		//if(display){printf("UPD: Requesting status...\n");}
 		//strcpy(message, "RobotStateInformer;Ping;1");
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr*) & si_other, slen) == SOCKET_ERROR)
@@ -120,37 +121,41 @@ typedef struct{
 		if(!error){
 			int length = sizeof(inet_addr(SERVER));
 			recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*) & si_other, &slen);
-			if (display) { std::cout << "UDP Received: " << buf << endl; }// puts(buf);
-
-			// Decode message
-      int comp = 0;
-	  char temp_c;
-      for(int j=0; j<=18; j++){
-        if((j>=0)&&(j<=5)){
-          temp_c = start_msg[j];      // Start message
-        }else if((j==6)||(j==12)){
-          temp_c = delim_msg;         // Delimiters between fields
-        }else if((j>=7)&&(j<=10)){
-          temp_c = field1[j-7];       // isMoving field
-        }else if((j>=13)&&(j<=16)){
-          temp_c = field2[j-13];      // endPointReached field
-        }else if(j==18){
-          temp_c = end_msg;           // End message
-        }else{
-          temp_c = 0;
+			if (display) { std::cout << "UDP Received: " << buf << "  --->  ";}// endl; }// puts(buf);
+      // Decode message
+      int comp = 0, pos = 0, pos_cont = 0, j = 0;
+      bool comp_b = false, valid1 = false, valid2 = false;
+      //Looking for beginning of the message:
+      while((j<BUFLEN)&&!valid_msg){
+        // Beginning of the string found
+        if((buf[j] == 'R')&&(pos_cont<=1)){ //start_msg[0]){
+          comp_b = true;
+          pos_cont = 0;
+          comp = 0;
+          pos = j;
+        //  printf("Beginning found on pos %d.\n", pos);
         }
-
-		if ((j != 11) && (j != 17)) { // No comparing value fields
-			comp = comp + (buf[j] - temp_c);
-		}
+        // If the beginning is found, start storing the "ROBERT" identifier
+        if((comp_b)&&(pos_cont<7)){
+          comp = comp + (buf[j] - start_msg[j-pos]);
+          pos_cont++;
+        }
+        // After 6 iteractions, verify that the identifier was found
+        if((pos_cont>=6)&&(comp==0)){
+          //std::cout<<"\nMessage found. valid 1 = "<<buf[pos+7]<<", valid 2 = "<<buf[pos+9]<<endl;
+          valid1 = (buf[pos+7]=='1')||(buf[pos+7]=='0');
+          valid2 = (buf[pos+9]=='1')||(buf[pos+9]=='0');
+          valid_msg = (comp==0) && valid1 && valid2;
+          //printf("RESULT: valid1 = %d, valid2 = %d, valid_msg = %d. ", valid1, valid2, valid_msg);
+        }else if (pos_cont>=6){
+          comp_b = false; // If not found_set up back
+        }
+        j++;
       }
-      bool valid1 = (buf[11]=='1')||(buf[11]=='0');
-      bool valid2 = (buf[17]=='1')||(buf[17]=='0');
-      valid_msg = (comp==0) && valid1 && valid2;
-      //printf("RESULT: valid1 = %d, valid2 = %d, valid_msg = %d. ", valid1, valid2, valid_msg);
       // Booleans from Robert: only true if valid
-      isMoving = valid_msg && (buf[11]=='1');
-      Reached = valid_msg && (buf[17]=='1');
+      //std::cout<<"Found: "<<buf[pos+7]<<", reached "<<buf[pos+9]<<endl;
+      isMoving = valid_msg && (buf[pos+7]=='1');
+      Reached = valid_msg && (buf[pos+9]=='1');
 		  if (valid_msg && display) {
 			  printf("UDP interpretation: isMoving = %d, Reached = %d\n", isMoving, Reached);
 		  }
