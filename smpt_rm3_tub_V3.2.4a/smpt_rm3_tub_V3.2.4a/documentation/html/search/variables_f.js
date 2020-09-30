@@ -1,0 +1,19 @@
+var searchData=
+[
+  ['samples',['samples',['../struct_smpt__dm__slot.html#a1ff6704af56b7d8aeb038569b9c550ce',1,'Smpt_dm_slot']]],
+  ['sd_5fstorage_5fmode_5fflag',['sd_storage_mode_flag',['../struct_smpt__dl__init.html#a8ade084cf7533922d5efeda55ec4da82',1,'Smpt_dl_init']]],
+  ['serial_5fport_5fhandle_5f',['serial_port_handle_',['../struct_smpt__device.html#a909a088726a1b165dbe44da15e9ff8a5',1,'Smpt_device']]],
+  ['serial_5fport_5fname',['serial_port_name',['../struct_smpt__device.html#ac53ef59031bcb2ba71f716881a83815f',1,'Smpt_device']]],
+  ['slots_5fdm',['slots_dm',['../struct_smpt__dm__data.html#a0da622f608e9c15d7ae1827be589a75d',1,'Smpt_dm_data']]],
+  ['slots_5finit',['slots_init',['../struct_smpt__dm__init.html#a2dc75bb9e6ed918228c13570275266f2',1,'Smpt_dm_init']]],
+  ['smpt_5fversion',['smpt_version',['../struct_smpt__uc__version.html#afc553df967273433037c54d604405524',1,'Smpt_uc_version']]],
+  ['softstart',['softstart',['../struct_smpt__ml__update.html#a472b627a9243b93ba67b7a535b1dc6c8',1,'Smpt_ml_update']]],
+  ['start_5ftime',['start_time',['../struct_smpt__dl__mmi__.html#a550031e38a0aa7b92492299c9d53106e',1,'Smpt_dl_mmi_']]],
+  ['stim_5fstatus',['stim_status',['../struct_smpt__get__stim__status__ack.html#aa8b0dc430440864fd61f64596e797e2c',1,'Smpt_get_stim_status_ack::stim_status()'],['../struct_smpt__dm__sample.html#a2d0909c2706b9b8d75537e3437f7a05d',1,'Smpt_dm_sample::stim_status()']]],
+  ['stimulation_5fdata',['stimulation_data',['../struct_smpt__ml__get__current__data__ack.html#ae01177aa42ae5ab66ad785612b0a7bd9',1,'Smpt_ml_get_current_data_ack']]],
+  ['stimulation_5fstate',['stimulation_state',['../struct_smpt__ml__stimulation__data.html#a66d06f0ef2d41e93cb65eaf327bd6f9e',1,'Smpt_ml_stimulation_data']]],
+  ['sync_5fsignal',['sync_signal',['../struct_smpt__dl__init.html#aa02819a069d9d3f570faf61211ac71c3',1,'Smpt_dl_init']]],
+  ['sync_5fwith_5fstimulation',['sync_with_stimulation',['../struct_smpt__dm__init.html#a29c1cd14bbf757c70b432b4c39f62a02',1,'Smpt_dm_init']]],
+  ['system_5ftime',['system_time',['../struct_smpt__dl__init.html#ac77a086ad7979951ce1c057b4f86b3ca',1,'Smpt_dl_init']]],
+  ['system_5ftime_5fflag',['system_time_flag',['../struct_smpt__dl__init.html#a74d2b6c75d40401531ca2668af93382a',1,'Smpt_dl_init']]]
+];

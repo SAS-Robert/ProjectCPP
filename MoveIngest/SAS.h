@@ -32,7 +32,7 @@ typedef enum
 
 typedef enum
 {
-    st_none      	    = 0,    // Nothing to do
+    st_init      	    = 0,    // Nothing to do
     st_wait     		  = 1,    // Waiting for RMS_EMG>threshold
     st_running       	= 2,    // Stimulating
     st_stop           = 3,    // Done 1 seq, waiting for next
@@ -55,6 +55,13 @@ typedef struct{
 	// Robot variables
 	bool isMoving = false;
 	bool Reached = false;
+  // Message delimiters:
+  char start_msg[7] = "ROBERT";
+  char field1[5] = "Move";
+  char field2[5] = "Stop";
+  char delim_msg = 59;  // ASCII Semicolon ; code
+  char end_msg = 33;    // ASCII Exclamation ! code
+  bool valid_msg = false;
 	//Functions
 	void start(){
 		//Initialise winsock
@@ -90,11 +97,13 @@ typedef struct{
 		{
 			error = true;
 		}
+		// For afterwards:
+		strcpy(message, "RobotStateInformer;Status;1");
 	};
 	void get(){
 		memset(buf, '\0', BUFLEN);
-		if(display){printf("UPD: Requesting status...\n");}
-		strcpy(message, "RobotStateInformer;Ping;1");
+		//if(display){printf("UPD: Requesting status...\n");}
+		//strcpy(message, "RobotStateInformer;Ping;1");
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr*) & si_other, slen) == SOCKET_ERROR)
 		{
 			printf("sendto() failed with error code : %d", WSAGetLastError());
@@ -111,19 +120,44 @@ typedef struct{
 		if(!error){
 			int length = sizeof(inet_addr(SERVER));
 			recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*) & si_other, &slen);
-			if(display){puts(buf);}
-			// Process message here
+			if (display) { std::cout << "UDP Received: " << buf << endl; }// puts(buf);
+
+			// Decode message
+      int comp = 0;
+	  char temp_c;
+      for(int j=0; j<=18; j++){
+        if((j>=0)&&(j<=5)){
+          temp_c = start_msg[j];      // Start message
+        }else if((j==6)||(j==12)){
+          temp_c = delim_msg;         // Delimiters between fields
+        }else if((j>=7)&&(j<=10)){
+          temp_c = field1[j-7];       // isMoving field
+        }else if((j>=13)&&(j<=16)){
+          temp_c = field2[j-13];      // endPointReached field
+        }else if(j==18){
+          temp_c = end_msg;           // End message
+        }else{
+          temp_c = 0;
+        }
+
+		if ((j != 11) && (j != 17)) { // No comparing value fields
+			comp = comp + (buf[j] - temp_c);
 		}
-	};
-	void stream(){
-		// This is just sending data to Matlab
-		memset(buf, '\0', BUFLEN);
-		//if(display){printf("Sending data.\n");}
-		//strcpy(message, "RobotStateInformer;Ping;1");
-		if (sendto(s, message, strlen(message), 0, (struct sockaddr*) & si_other, slen) == SOCKET_ERROR)
-		{
-			printf("sendto() failed with error code : %d", WSAGetLastError());
-			error = true;
+      }
+      bool valid1 = (buf[11]=='1')||(buf[11]=='0');
+      bool valid2 = (buf[17]=='1')||(buf[17]=='0');
+      valid_msg = (comp==0) && valid1 && valid2;
+      //printf("RESULT: valid1 = %d, valid2 = %d, valid_msg = %d. ", valid1, valid2, valid_msg);
+      // Booleans from Robert: only true if valid
+      isMoving = valid_msg && (buf[11]=='1');
+      Reached = valid_msg && (buf[17]=='1');
+		  if (valid_msg && display) {
+			  printf("UDP interpretation: isMoving = %d, Reached = %d\n", isMoving, Reached);
+		  }
+		  else if (display) {
+			  printf("UDP message not valid\n");
+		  }
+
 		}
 	};
 	void end(){

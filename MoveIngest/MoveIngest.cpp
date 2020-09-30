@@ -14,10 +14,6 @@
  *
 */
 
-// Standard windows libraries
-/*#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include <winsock2.h>
-#include <windows.h>*/
 // Standard C++ and C libraries
 #include <iostream>
 #include <fstream>
@@ -42,23 +38,26 @@
 #include "notch100.h"
 #include "notch50.h"
 #include "SAS.h"
-//#include "iir.h"
+#include "iir.h"
 
 using namespace std;
 
 // COM on this windows computer
 // const char* port_name_rm = "COM6";
 // const char* port_name_ri = "COM4";
+// COM on the test computer
+const char* port_name_rm = "COM5";
+const char* port_name_ri = "COM6";
 // COM on KUKA controller
-const char* port_name_rm = "COM3";
-const char* port_name_ri = "COM2";
+//const char* port_name_rm = "COM3";
+//const char* port_name_ri = "COM2";
 int one_to_escape = 0;
 //bool main_start = false;
 bool Move3_ready = false;
 bool Ingest_ready = false;
 RehaMove3_Req_Type Move3_key = Move3_none;
 RehaIngest_Req_Type Inge_key = Inge_none;
-state_Type state = st_none;
+state_Type state = st_init;
 
 std::vector<float> channel_2;			// Original data being stored
 std::vector<float> channel_raw;		//Raw data to be filtered while recording
@@ -118,9 +117,9 @@ int main()
   std::cout << "-Starting up devices and communication."<<endl;
   std::cout << "==================================="<< endl;
   strcpy(ROBERT.SERVERc, "127.0.0.1");  //This is an address for testing
-//  ROBERT.display = false;               //Chosen not to show messages during messages exchange
+  ROBERT.display = false;               //Chosen not to show messages during messages exchange
   // Starting UPD Connection
-  std::cout << "Starting connection\n";
+  std::cout << "Starting connection with ROBERT\n";
   do{
     ROBERT.start();
   }while(ROBERT.error);
@@ -137,8 +136,8 @@ int main()
 
     std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
     std::thread RehaIngest(thread_ml_recording, port_name_ri);
-    // std::thread RehaMove3(thread_ml_t1);
-//  std::thread RehaIngest(thread_ml_t2);
+    //std::thread RehaMove3(thread_ml_t1);
+    //std::thread RehaIngest(thread_ml_t2);
 
   //wait for both devices to be ready
   while((!Move3_ready)||(!Ingest_ready)){
@@ -192,7 +191,17 @@ void keyboard(){
       int ch;
       ch = _getch();
       ch = toupper( ch );
+      printf("---> Key pressed: %c <---\n", ch);
       switch(ch){
+        case 'U':
+          ROBERT.display = !ROBERT.display;
+          if (ROBERT.display) {
+              printf("Showing UDP messages and status.\n");
+          }
+          else {
+              printf("Not showing UDP messages and status.\n");
+          }
+          break;
         case 'A':
           Move3_key = Move3_ramp_less;
           break;
@@ -217,7 +226,6 @@ void keyboard(){
           MAIN_to_all.end = true;
         break;
       }
-      printf("---> Key pressed: %c <---\n",ch);
 }
 
 //void stimulation_user(RehaMove3_Req_Type code, Smpt_ml_channel_config* current_val, Smpt_ml_channel_config next_val);{
@@ -282,14 +290,14 @@ void stimulation_user(RehaMove3_Req_Type code){
 }
 //Example threads: this is only for some code testing.
 void thread_ml_t1(){
-std::cout <<"RehaMove3 doing stuff\n";
+//std::cout <<"RehaMove3 doing stuff\n";
 Move3_ready = true;
 
   while (!MAIN_to_all.end){
     task1++;
     Sleep(1000);
     if(task1>=10){
-      std::cout<<"RehaMove3 task 1\n";
+      //std::cout<<"RehaMove3 task 1\n";
       task1 = 0;
     }
   }
@@ -310,19 +318,14 @@ bool toc(){
 void thread_ml_t2(){
   Ingest_ready = true;
 
-  std::cout<<"Sample thread 2 for thesting."<<endl;
-  int i = 0;
-  tic();
-  do{
-    i++;
-    std::cout<<"toc "<<toc()<<endl;
-    Sleep(1000);
-  }while(i<=10);
-
+  std::cout<<"Sample UDP testing."<<endl;
 
   while (!MAIN_to_all.end){
     task2++;
-    Sleep(1000);
+    if (MAIN_to_all.start) {
+        ROBERT.get();
+        Sleep(3000);
+    }
     if(task2>=10){
       //std::cout<<"RehaIngest task 2\n";
       task2 = 0;
@@ -350,7 +353,7 @@ void thread_ml_recording(const char* port_name)
 	std::vector<float> notch100_result;
 
   /* First step */
-  std::cout << "Reha Ingest message: Setting communication...\n";
+  std::cout << "Reha Ingest message: Setting communication on port"<<port_name_ri<<endl;
   while(!smpt_next){
     smpt_check = smpt_check_serial_port(port_name_ri);
     smpt_port = smpt_open_serial_port(&device_ri, port_name_ri);
@@ -450,9 +453,9 @@ void thread_ml_recording(const char* port_name)
         iterator++;
         task2=channel_raw.size();
         //std::cout << thread_msg <<"Data size: "<<channel_raw.size()<<endl;
-        set_th = (toc() && data_start && (state == st_none));
+        set_th = (toc() && data_start && (state == st_init));
         modify_th = ((state == st_wait)&& (Inge_key!=Inge_none) && (!Ingest_to_Move.start));
-        set_value = (task2 >= limit_samples && data_start && (state != st_none) && (!Ingest_to_Move.start));
+        set_value = (task2 >= limit_samples && data_start && (state != st_init) && (!Ingest_to_Move.start));
 
         // Update Robert Variables
         if(set_th || set_value){
@@ -502,7 +505,7 @@ void thread_ml_recording(const char* port_name)
       //  if((set_th || set_value || modify_th) && !ROBERT.error){
         // State machine process
         switch(state){
-          case st_none:
+          case st_init:
                 if(set_th){
                   mean_th = mean;
                   threshold = mean_th*gain_th;
@@ -633,7 +636,7 @@ void thread_ml_stimulation(const char* port_name)
   stim.points[2].time = 200;
   //-------------------------------------------------------------------------------------
   // Start Process
-  std::cout << "Reha Move3 message: Initializing device...\n";
+  std::cout << "Reha Move3 message: Initializing device on port "<<port_name_rm<<endl;
   while(!smpt_next){
     smpt_check = smpt_check_serial_port(port_name);
   	smpt_port = smpt_open_serial_port(&device, port_name);
