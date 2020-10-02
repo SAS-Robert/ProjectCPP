@@ -177,22 +177,24 @@ typedef struct{
 }UDPClient;
 
 typedef struct{
-  int iResult;
+	// Communication variables
+	int iResult;
 	WSADATA wsaData;
 	SOCKET ConnectSocket = INVALID_SOCKET;
 	struct sockaddr_in clientService;
 	int recvbuflen = BUFLEN;
-	char sendbuf[BUFLEN];
-	char recvbuf[BUFLEN];
+	char sendbuf[BUFLEN];// = "Client: sending data test";
+	char recvbuf[BUFLEN];// = "";
 	char SERVERc[15] = "127.0.0.1";
-  int PORTn = 702; //htons(DEFAULT_PORT);
-  // Control variables
+	//uint32_t PORTn = 702;
+	int PORTn = 702 ;
+	// Control variables
 	bool error = false, display = true;
 	fd_set fds ;
 	int n ;
 	struct timeval tv ;
-  // Functions
-  void start(){
+	// Functions
+	void start(){
 		printf("TCP Connection - starting...\n");
 		memset(recvbuf, '\0', BUFLEN);
 		memset(sendbuf, '\0', BUFLEN);
@@ -211,8 +213,8 @@ typedef struct{
 		// The sockaddr_in structure specifies the address family,
 		// IP address, and port of the server to be connected to.
 		clientService.sin_family = AF_INET;
-		clientService.sin_addr.s_addr = inet_addr(SERVERc);
-		clientService.sin_port = htons(PORTn);
+		clientService.sin_addr.s_addr = inet_addr("127.0.0.1");//inet_addr(SERVERc);
+		clientService.sin_port = htons(PORTn) ;//htons(DEFAULT_PORT);
 		// Connect to server.
 		iResult = connect(ConnectSocket, (SOCKADDR*)&clientService, sizeof(clientService));
 		if (iResult == SOCKET_ERROR) {
@@ -264,6 +266,7 @@ typedef struct{
 				error = true;
 			}
 		}
+
 	}; // void get
 
 	void end(){

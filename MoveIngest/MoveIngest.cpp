@@ -47,11 +47,11 @@ using namespace std;
 // const char* port_name_rm = "COM6";
 // const char* port_name_ri = "COM4";
 // COM on the test computer
-const char* port_name_rm = "COM5";
-const char* port_name_ri = "COM6";
+// const char* port_name_rm = "COM5";
+// const char* port_name_ri = "COM6";
 // COM on KUKA controller
-//const char* port_name_rm = "COM3";
-//const char* port_name_ri = "COM2";
+const char* port_name_rm = "COM3";
+const char* port_name_ri = "COM4";
 int one_to_escape = 0;
 //bool main_start = false;
 bool Move3_ready = false;
@@ -86,6 +86,13 @@ string init1("file1_");
 string init2("file2_");
 //string init3("file3_");
 string format(".txt");
+struct device_to_device{
+  bool start = false;
+  bool end = false;
+  bool treshold = false;
+} Ingest_to_Move, MAIN_to_all;
+//MAIN_to_all: the main function writes here and all threads read
+//Ingest_to_Move: Ingest writes on the variable, Move3 reads it
 // ------------------------------ Functions  -----------------------------
 // Example threads
 void thread_ml_t1();
@@ -101,14 +108,6 @@ bool toc();
 void keyboard();
 void stimulation_user(RehaMove3_Req_Type code, Smpt_ml_channel_config* current_val, Smpt_ml_channel_config next_val);
 
-struct device_to_device{
-  bool start = false;
-  bool end = false;
-  bool treshold = false;
-} Ingest_to_Move, MAIN_to_all;
-//MAIN_to_all: the main function writes here and all threads read
-//Ingest_to_Move: Ingest writes on the variable, Move3 reads it
-
 int main()
 {
   // Flushing input and output buffers
@@ -117,17 +116,21 @@ int main()
   std::cout << "==================================="<< endl;
   std::cout << "-Starting up devices and communication."<<endl;
   std::cout << "==================================="<< endl;
-  strcpy(ROBERT.SERVERc, "127.0.0.1");  //This is an address for testing
-  //ROBERT.display = false;               //Chosen not to show messages during messages exchange
   // Starting UPD Connection
   std::cout << "Starting connection with ROBERT and Touch Screen\n";
-  // do{
-  //   ROBERT.start();
-  // }while(ROBERT.error);
+  strcpy(ROBERT.SERVERc, "127.0.0.1");  //This is an address for testing
+  ROBERT.display = false;               //Chosen not to show messages during messages exchange
+   do{
+     ROBERT.start();
+   }while(ROBERT.error);
+
+  //strcpy(SCREEN.SERVERc, "127.0.0.1");  //This is an address for testing
+  //SCREEN.display = false;               //Chosen not to show messages during messages exchange
     do{
       SCREEN.start();
     }while(SCREEN.error);
-  //Saving UDP messages
+
+  //Saving UDP or TCP messages
   // if(ROBERT.display){
   //   char date[15];
   //   generate_date(date); //get current date/time in format YYMMDD_hhmm
@@ -137,9 +140,9 @@ int main()
   //   msgData.open(init1);
   // }
 
-    // std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
+    std::thread RehaMove3(thread_ml_stimulation, port_name_rm);
     // std::thread RehaIngest(thread_ml_recording, port_name_ri);
-    std::thread RehaMove3(thread_ml_t1);
+    // std::thread RehaMove3(thread_ml_t1);
     std::thread RehaIngest(thread_ml_t2);
 
   //wait for both devices to be ready
@@ -151,9 +154,10 @@ int main()
   std::cout << "-Using multiple threads.\nPress any key to start process.\nThen press 0 to finish.\n";
   _getch();
   std::cout << "==================================="<< endl;
-
-  std::cout << "--->RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
-  std::cout << "\n--->RehaIngest controllers:\n-P = Increase threshold gain.\n-M = Decrease threshold gain.\n\n\n\r";
+  std::cout << "---> TCP/UDP controllers:\n-T = Show/hide TCP messages.\n-U = Show/hide UDP messages.\n";
+  std::cout << "---> RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
+  std::cout << "\n---> RehaIngest controllers:\n-P = Increase threshold gain.\n-M = Decrease threshold gain.\n\n\n\r";
+  std::cout << "---> '3' Manual release for stimulation in case RehaIngest is not functional.\n";
 
   MAIN_to_all.start = true;
 
@@ -169,7 +173,8 @@ int main()
   RehaMove3.join();
   RehaIngest.join();
 
-  //ROBERT.end();
+  ROBERT.end();
+  SCREEN.end();
 
   std::cout << "==================================="<< endl;
   std::cout << "-Number of iterations:\nThread RehaMove3 = " << task1 <<"\nThread RehaIngest = " << task2 << endl;
@@ -188,35 +193,47 @@ void keyboard(){
       ch = toupper( ch );
       printf("---> Key pressed: %c <---\n", ch);
       switch(ch){
-        case 'U':
-          ROBERT.display = !ROBERT.display;
-          if (ROBERT.display) {
-              printf("Showing UDP messages and status.\n");
-          }
-          else {
-              printf("Not showing UDP messages and status.\n");
-          }
+        case 'T':
+            SCREEN.display = !SCREEN.display;
+            if (SCREEN.display) {
+                printf("Showing TCP messages and status.\n");
+            }
+            else {
+                printf("Not showing TCP messages and status.\n");
+            }
           break;
+          case 'U':
+            ROBERT.display = !ROBERT.display;
+            if (ROBERT.display) {
+                printf("Showing UDP messages and status.\n");
+            }
+            else {
+                printf("Not showing UDP messages and status.\n");
+            }
+            break;
         case 'A':
           Move3_key = Move3_ramp_less;
           break;
-        case 'W':
-          Move3_key = Move3_incr;
-          break;
-        case 'S':
-          Move3_key = Move3_decr;
-          break;
         case 'D':
-          Move3_key = Move3_ramp_more;
-          break;
+            Move3_key = Move3_ramp_more;
+        break;
+        case 'M':
+            // Modify threshold
+          Inge_key = Inge_decr;
+        break;
         case 'P':
           // Modify threshold
           Inge_key = Inge_incr;
           break;
-        case 'M':
-          // Modify threshold
-          Inge_key = Inge_decr;
-          break;
+        case 'S':
+          Move3_key = Move3_decr;
+        break;
+        case 'W':
+          Move3_key = Move3_incr;
+        break;
+        case '3':
+          Ingest_to_Move.start = true;
+          printf("RehaMove3 released manually.\n");
         case '0':
           MAIN_to_all.end = true;
         break;
@@ -310,10 +327,9 @@ Move3_ready = true;
 
 }
 void thread_ml_t2(){
+  std::cout<<"Reha Ingest: Sample thread for testing."<<endl;
+
   Ingest_ready = true;
-
-  std::cout<<"Sample TCP testing."<<endl;
-
   while (!MAIN_to_all.end){
     task2++;
     if (MAIN_to_all.start) {
@@ -457,7 +473,7 @@ void thread_ml_recording(const char* port_name)
           if(ROBERT.error){
             ROBERT.end();
             ROBERT.start();
-          }else if(ROBERT.display){
+          }else if(ROBERT.display && msgData.is_open()){
             msgData<<ROBERT.buf<<endl;
           }
       }
