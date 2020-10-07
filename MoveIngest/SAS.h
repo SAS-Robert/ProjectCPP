@@ -318,7 +318,7 @@ typedef struct{
 
 // ------------------------------ Devices -----------------------------
 typedef struct{
-  const char* port_name_rm = "COM3";
+  const char* port_name_rm = "COM1";
   Smpt_device device = { 0 };
   Smpt_ml_init ml_init = { 0 };           // Struct for ml_init command *
   Smpt_ml_update ml_update = { 0 };       // Struct for ml_update command
@@ -422,7 +422,7 @@ typedef struct{
 }RehaMove3_type;
 
 typedef struct{
-    const char* port_name_ri = "COM4";
+    const char* port_name_ri = "COM2";
     uint8_t packet_number = 0;
     Smpt_device device_ri = { 0 };
     Smpt_ml_init ml_init = { 0 };           /* Struct for ml_init command */
@@ -431,7 +431,7 @@ typedef struct{
     //Process variables
     bool smpt_port = false, smpt_check = false, smpt_stop = false, smpt_next = false;
     bool smpt_end = false;
-  	int limit_samples = 10000;
+  	int limit_samples = 1000;
     double diff;
     bool abort = false, ready = false;
     bool data_received = false, data_start = false, data_printed = false;

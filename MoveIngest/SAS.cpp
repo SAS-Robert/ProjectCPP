@@ -97,8 +97,8 @@ void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init)
     dl_init->gain_ch1 = Smpt_Dl_Init_Gain_Ch1_20x;
     dl_init->live_data_mode_flag = true;
     // Issue here: it does not matter the value, it does not respond
-     //dl_init->filter = Smpt_Dl_Dsp_Filter_off;    /* = 0 no filter is activated*/
-    // dl_init->filter = Smpt_Dl_Dsp_Filter_001;    /* = 1 predefined Filter casade or block for this notation*/
+     dl_init->filter = Smpt_Dl_Dsp_Filter_off;    /* = 0 no filter is activated*/
+    //dl_init->filter = Smpt_Dl_Dsp_Filter_001;    /* = 1 predefined Filter casade or block for this notation*/
     // dl_init->filter = Smpt_Dl_Dsp_Filter_002;    /* = 2 predefined Filter casade or block for this notation*/
     // dl_init->filter = Smpt_Dl_Dsp_Filter_003;    /* = 3 predefined Filter casade or block for this notation*/
     // dl_init->filter = Smpt_Dl_Dsp_Filter_Last;   /* = 3
@@ -130,7 +130,7 @@ float handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack,
     //value[2] : channel 3, emg 2
     //value[3] : channel 4, analog signal.
     //value[4] : time_ofset between last sample and actual sample
-    sprintf(outStr, "%2.7f, %2.7f, %2.7f, %2.7f, %2.7f", values[0], values[1], values[2], values[3], values[4]);
+    sprintf(outStr, "%2.7f, %2.7f, %2.7f, %2.7f, %3.1f", values[0], values[1], values[2], values[3], values[4]);
     output = values[1]; // raw data value
     return output;
 }

@@ -30,6 +30,7 @@
 #include <vector>
 #include <complex>
 #include <math.h>
+#include <chrono>           // For very precise time measurement
 // User-defined libraries
 #include "smpt_ml_client.h"
 #include "smpt_dl_client.h"
@@ -43,18 +44,15 @@
 
 using namespace std;
 
-// ------------------------------ Devices --------------------------------------
+// ------------------------- Devices handling --------------------------------
 int one_to_escape = 0;
 //bool main_start = false;
 bool Move3_ready = false;
 bool Ingest_ready = false;
 RehaMove3_Req_Type Move3_key = Move3_none;
 RehaIngest_Req_Type Inge_key = Inge_none;
+
 state_Type state = st_init;
-
-
-std::vector<float> channel_2;			// Original data being stored
-//std::vector<float> channel_raw;		//Raw data to be filtered while recording
 std::vector<float> channel_filter;//Filtered data
 
 // Files handler to store recorded data
@@ -70,7 +68,7 @@ RehaIngest_type recorder_device;
 
 // ------------------------------ Associated with functions -------------------
 //Tic-toc time
-time_t tstart, tend, tstart_ing, tend_ing;
+time_t tstart, tend, tstart_ing, tend_ing, tstart_move, tend_move;
 double toc_lim = 3;
 int task1 = 0;
 int task2 = 0;
@@ -133,8 +131,8 @@ int main()
   //   msgData.open(init1);
   // }
 
-    std::thread stimulator(thread_stimulation);
-     std::thread recorder(thread_recording);
+    std::thread stimulation(thread_stimulation);
+     std::thread recording(thread_recording);
     // std::thread RehaMove3(thread_ml_t1);
     //std::thread RehaIngest(thread_ml_t2);
 
@@ -147,10 +145,10 @@ int main()
   std::cout << "-Using multiple threads.\nPress any key to start process.\nThen press 0 to finish.\n";
   _getch();
   std::cout << "==================================="<< endl;
-  std::cout << "---> TCP/UDP controllers:\n-T = Show/hide TCP messages.\n-U = Show/hide UDP messages.\n";
-  std::cout << "---> RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
-  std::cout << "\n---> RehaIngest controllers:\n-P = Increase threshold gain.\n-M = Decrease threshold gain.\n\n\n\r";
-  std::cout << "---> '3' Manual release for stimulation in case RehaIngest is not functional.\n";
+  std::cout << "---> TCP/UDP controllers:\n-T = Show/hide TCP messages.\n-U = Show/hide UDP messages.\n\n";
+  std::cout << "---> RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n\n";
+  std::cout << "---> RehaIngest controllers:\n-P = Increase threshold gain.\n-M = Decrease threshold gain.\n\n\n\r";
+  //std::cout << "---> '3' Manual release for stimulation in case RehaIngest is not functional.\n";
 
   MAIN_to_all.start = true;
 
@@ -163,11 +161,11 @@ int main()
       }
   }
   // Waiting for threads to finish
-  stimulator.join();
-  recorder.join();
+  stimulation.join();
+  recording.join();
 
   ROBERT.end();
-  SCREEN.end();
+  //SCREEN.end();
 
   //std::cout << "==================================="<< endl;
   //std::cout << "-Number of iterations:\nThread RehaMove3 = " << task1 <<"\nThread RehaIngest = " << task2 << endl;
@@ -224,9 +222,10 @@ void keyboard(){
         case 'W':
           Move3_key = Move3_incr;
         break;
-        case '3':
-          Ingest_to_Move.start = true;
-          printf("RehaMove3 released manually.\n");
+        // case '3':
+        //   Ingest_to_Move.start = true;
+        //   printf("RehaMove3 released manually.\n");
+        // break;
         case '0':
           MAIN_to_all.end = true;
         break;
@@ -348,12 +347,24 @@ void thread_recording()
 	notch100Type* notch100 = notch100_create();
 	std::vector<float> notch100_result;
 
+  // Dummy Variables
+  std::chrono::duration<double> elapsed_seconds;
+  int chrono_loop = 0;
+  float taverage = 0, trecord = 0;
+  auto auto_start = std::chrono::steady_clock::now();
+
+  recorder_device.port_name_ri = "COM4";
   recorder_device.init();
-    recorder_device.start();
-    Ingest_ready = recorder_device.ready;
-    while(!MAIN_to_all.start){
-      Sleep(500);
-    }
+  recorder_device.start();
+
+  auto auto_end = std::chrono::steady_clock::now();
+  elapsed_seconds = auto_end-auto_start;
+  std::cout << "Reha Ingest start-up time = " << elapsed_seconds.count() << " s\n";
+
+  Ingest_ready = recorder_device.ready;
+  while(!MAIN_to_all.start){
+    Sleep(500);
+  }
 
     int iterator = 0;
 		// Starting files:
@@ -373,13 +384,18 @@ void thread_recording()
 
     while (!MAIN_to_all.end)
     {
+      auto_start = std::chrono::steady_clock::now();
+
       // Collect data
       recorder_device.record();
+      auto auto_record = std::chrono::steady_clock::now();
+
       if (recorder_device.data_received && recorder_device.data_start && !files_opened) {
         fileRAW.open(init1);
         fileFILTERS.open(init2);
         files_opened = true;
-        std::cout << "Files opened"<< endl;
+        //std::cout << "Files opened"<< endl;
+        tic();
       }
       if (recorder_device.data_received && recorder_device.data_start) {
         fileRAW << recorder_device.data << "\n";
@@ -491,11 +507,29 @@ void thread_recording()
         Inge_key=Inge_none;
       }
 
-        Sleep(1);
+      if (recorder_device.data_received && recorder_device.data_start) {
+        auto_end = std::chrono::steady_clock::now();
+        elapsed_seconds = auto_record - auto_start;
+        trecord = trecord + ((float)elapsed_seconds.count());
+        elapsed_seconds = auto_end - auto_start;
+        taverage = taverage + ((float)elapsed_seconds.count());
+        chrono_loop++;
+      }
+
+      Sleep(1);
     }
+  trecord = trecord/((float)chrono_loop);
+  taverage = taverage/((float)chrono_loop);
+  std::cout << "Reha Ingest average: collect data time = "<<trecord<<", total run time = " << taverage << " s\n";
 
   // Finish everything:
+  auto_start = std::chrono::steady_clock::now();
+
   recorder_device.end();
+
+  auto_end = std::chrono::steady_clock::now();
+  elapsed_seconds = auto_end - auto_start;
+  std::cout << "Reha Ingest finish time = " << elapsed_seconds.count() << " s\n";
 
   fileRAW.close();
   fileFILTERS.close();
@@ -508,28 +542,56 @@ void thread_recording()
 //================================================
 void thread_stimulation()
 {
+    // Dummy Variables
+    std::chrono::duration<double> elapsed_seconds;
+    int chrono_loop = 0;
+    float taverage = 0;
+    auto auto_start = std::chrono::steady_clock::now();
+
+    stimulator_device.port_name_rm = "COM3";
     stimulator_device.abort = (one_to_escape!=0);
     stimulator_device.init();
     Move3_ready = stimulator_device.ready;
+
+    auto auto_end = std::chrono::steady_clock::now();
+    elapsed_seconds = auto_end-auto_start;
+    std::cout << "Reha Move3 init time = " << elapsed_seconds.count() << " s\n";
+
     while(!MAIN_to_all.start){
       Sleep(500);
     }
     //Wait for run from RehaIngest
     std::cout << "Reha Move3 message: Waiting for start.\n";
-    while(!Ingest_to_Move.start){
+    while(!Ingest_to_Move.start&&!MAIN_to_all.end){
       Sleep(100);
     }
-    std::cout << "Reha Move3 message: Stimulating.\n";
+    if(!MAIN_to_all.end){std::cout << "Reha Move3 message: Stimulating.\n";}
+
   	while ((!MAIN_to_all.end)&&(!stimulator_device.smpt_end))
   	{
+      auto_start = std::chrono::steady_clock::now();
+
       // New part: setting up values:
       if(Move3_key != Move3_none){
         stimulation_user(Move3_key);
       }
       stimulator_device.update();
 
+      auto_end = std::chrono::steady_clock::now();
+      elapsed_seconds = auto_end - auto_start;
+      chrono_loop++;
+      taverage = taverage + ((float)elapsed_seconds.count());
       Sleep(100);
   	}
+  taverage = taverage/((float)chrono_loop);
+  std::cout << "Reha Move3 average run time = " << taverage << " s\n";
+
+  auto_start = std::chrono::steady_clock::now();
+
   stimulator_device.end();
+
+  auto_end = std::chrono::steady_clock::now();
+  elapsed_seconds = auto_end - auto_start;
+  std::cout << "Reha Move3 finish time = " << elapsed_seconds.count() << " s\n";
 
 } //void thread_ml_stimulation
