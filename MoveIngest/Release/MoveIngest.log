@@ -1,46 +1,14 @@
-﻿  Biquad.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Biquad.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  Butterworth.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Butterworth.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  Cascade.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Cascade.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  ChebyshevI.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevI.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  ChebyshevII.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevII.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  Custom.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Custom.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  PoleFilter.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\PoleFilter.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  RBJ.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\RBJ.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  State.cpp
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
-C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\State.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-  bandStop.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\bandStop.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-  MoveIngest.cpp
+﻿  MoveIngest.cpp
 C:\Users\Carolina\Desktop\Internship\Software\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Common.h(50,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
 C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp : message : see previous definition of '_CRT_SECURE_NO_WARNINGS'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(486,29): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(531,41): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(534,40): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-  notch100.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\notch100.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-  notch50.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\notch50.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(460,41): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(463,40): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   SAS.cpp
      Creating library C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\Release\MoveIngest.lib and object C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\Release\MoveIngest.exp
   Generating code
   Previous IPDB not found, fall back to full compilation.
-  All 720 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  All 774 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   MoveIngest.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\Release\MoveIngest.exe
+  MoveIngest.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\Release\MoveIngest.pdb (Partial -> Full PDB)
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\Release\MoveIngest.pdb : fatal error CMF1107: input PDB file is not generated by /DEBUG:fastlink

@@ -6,7 +6,7 @@ fcn_path = genpath('Matlab_scripts');
 addpath(data_path);
 addpath(fcn_path);
 % Find and filter files
-files1=dir('MoveIngest/file1_*.txt');
+files1=dir('MoveIngest/file_raw_*.txt');
 % -> select somewhere here what files are going to be processed?
 % Load containing data into matlab variables/files
 [amount, dummy ] = size(files1);
@@ -18,7 +18,7 @@ file1_emg2 = file1(:,3)';    %value[2] : channel 3, emg 2
 file1_alg = file1(:,4)';     %value[3] : channel 4, analog signal.
 file1_t = file1(:,5)';       %value[4] : time_ofset between last sample and actual sample
 % -> necessary to add files 2 and 3
-files2=dir('MoveIngest/file2_*.txt');
+files2=dir('MoveIngest/file_filtered_*.txt');
 [amount, dummy ] = size(files2);
 file2_full_name = [files2(amount).folder '\' files2(amount).name]; %Just take the last one
 file2 = load(file2_full_name);
@@ -44,9 +44,10 @@ end
 figure('Name','Raw data');
 SubPlotData(file1(:,1:4)',t,[f1_bio_n; f1_emg1_n; f1_emg2_n; f1_alg_n]);
 
-f2_1_n = {'Bandstop filter', 'Data [unit]'};
-f2_2_n = {'Notch50 filter', 'Data [unit]'};
-f2_3_n = {'Notch100 filter', 'Data [unit]'};
+f2_1_n = {'Raw data', 'Voltage [V]'};
+f2_2_n = {'Bandstop filter', 'Voltage [V]'};
+f2_3_n = {'Notch50 filter', 'Voltage [V]'};
+f2_4_n = {'Notch100 filter', 'Voltage [V]'};
 f2_t = {'Iteration', 'Data [unit]'};
 %Calculating time values:
 t = zeros(size(file2_bandstop));
