@@ -1,0 +1,2 @@
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.exe
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.pdb

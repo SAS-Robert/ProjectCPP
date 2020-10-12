@@ -16,6 +16,9 @@
     <Filter Include="Header Files\MicroModeler">
       <UniqueIdentifier>{308759c5-71ae-4ca1-8fb1-e0bff0e3ba47}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Hasomed">
+      <UniqueIdentifier>{b8bf412a-a97b-42aa-9af5-36c807d61e42}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MoveIngest.cpp">
@@ -32,6 +35,33 @@
     </ClCompile>
     <ClCompile Include="SASLIB.cpp">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\State.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\RBJ.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\PoleFilter.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Custom.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevII.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevI.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Cascade.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Butterworth.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Biquad.cpp">
+      <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

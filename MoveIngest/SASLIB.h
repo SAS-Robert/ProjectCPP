@@ -72,6 +72,13 @@ typedef enum
 
 typedef enum
 {
+    pause       = 'P',    // 'P' = pause by user-request
+    rep      	  = 'R',    // 'R' = repetition active
+    start       = 'S',    // 'S' = start of repetition
+}ROB_Type;
+
+typedef enum
+{
     st_init      	    = 0,    // Nothing to do
     st_wait     		  = 1,    // Waiting for RMS_EMG>threshold
     st_running       	= 2,    // Stimulating
@@ -320,7 +327,7 @@ typedef struct {
 	//Functions
 	void start() {
 		//Initialise winsock
-		printf("UPD Connection - starting...\n");
+		if(display){printf("UPD Connection - starting...\n");}
 		if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 		{
 			printf("Failed. Error Code : %d", WSAGetLastError());
@@ -329,7 +336,7 @@ typedef struct {
 		//create socket
 		if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == SOCKET_ERROR)
 		{
-			printf("socket() failed with error code : %d", WSAGetLastError());
+			if(display){printf("socket() failed with error code : %d", WSAGetLastError());}
 			error = true;
 		}
 		//setup address structure
@@ -360,7 +367,7 @@ typedef struct {
 		//strcpy(message, "RobotStateInformer;Ping;1");
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR)
 		{
-			printf("sendto() failed with error code : %d", WSAGetLastError());
+			if(display){printf("sendto() failed with error code : %d", WSAGetLastError());}
 			error = true;
 		}
 		// Wait until timeout or data received.
@@ -499,7 +506,7 @@ typedef struct {
 			error = true;
 		}
 		// Wait until timeout or data received.
-		if (display) { printf("TCP Waiting message\n"); }
+		if (display) { printf("TCP Waiting repsonse\n"); }
 		n = select(ConnectSocket, &fds, NULL, NULL, &tv);
 		// Re-editar esto para que no muestre el mensaje
 		if ((n == 0) || (n == -1))
@@ -553,29 +560,29 @@ typedef struct {
 	int iResult;
 	SOCKET ListenSocket = INVALID_SOCKET;
 	SOCKET ClientSocket = INVALID_SOCKET;
-
 	struct addrinfo* result = NULL;
 	struct addrinfo hints;
-
 	int iSendResult;
 	char recvbuf[BUFLEN];
 	int recvbuflen = BUFLEN;
 	char senbuf[BUFLEN];
 	int senbuflen = BUFLEN;
-
 	// New
 	char PORTc[15] = "30002";
-	bool error = false;
+	bool error = false, new_message = false, finish = false;
   bool display = false;
-
+  fd_set fds;
+	int n;
+	struct timeval tv;
+  // Functions
 	void start() {
 		// Initialize Winsock
 		iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 		if (iResult != 0) {
-			printf("WSAStartup failed with error: %d\n", iResult);
+			if(display){printf("WSAStartup failed with error: %d\n", iResult);}
 			error = true;
 		}
-		else {
+		else if (display) {
 			printf("TCP Winsock initialised.\n");
 		}
 
@@ -588,7 +595,7 @@ typedef struct {
 		// Resolve the server address and port
 		iResult = getaddrinfo(NULL, PORTc, &hints, &result);
 		if (iResult != 0) {
-			printf("TCP getaddrinfo failed with error: %d\n", iResult);
+			if(display){printf("TCP getaddrinfo failed with error: %d\n", iResult);}
 			WSACleanup();
 			error = true;
 		}
@@ -596,25 +603,25 @@ typedef struct {
 		// Create a SOCKET for connecting to server
 		ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 		if (ListenSocket == INVALID_SOCKET) {
-			printf("TCP socket failed with error: %ld\n", WSAGetLastError());
+			if(display){printf("TCP socket failed with error: %ld\n", WSAGetLastError());}
 			freeaddrinfo(result);
 			WSACleanup();
 			error = true;
 		}
-		else {
+		else if (display) {
 			printf("TCP Socket created.\n");
 		}
 
 		// Setup the TCP listening socket
 		iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
 		if (iResult == SOCKET_ERROR) {
-			printf("TCP bind failed with error: %d\n", WSAGetLastError());
+			if(display){printf("TCP bind failed with error: %d\n", WSAGetLastError()); }
 			freeaddrinfo(result);
 			closesocket(ListenSocket);
 			WSACleanup();
 			error = true;
 		}
-		else if (!error) {
+		else if (!error && display) {
 			printf("TCP Start-up finished.\n");
 		}
 		fflush(stdout);
@@ -628,59 +635,82 @@ typedef struct {
 		freeaddrinfo(result);
 		iResult = listen(ListenSocket, SOMAXCONN);
 		if (iResult == SOCKET_ERROR) {
-			printf("listen failed with error: %d\n", WSAGetLastError());
+			if(display){printf("listen failed with error: %d\n", WSAGetLastError());}
 			closesocket(ListenSocket);
 			WSACleanup();
 			error = true;
 		}
-		else {
+		else if (display) {
 			printf("TCP Listening started on port %s. Waiting for a client.\n", PORTc);
 		}
 		// Accept a client socket
 		ClientSocket = accept(ListenSocket, NULL, NULL);
 		if (ClientSocket == INVALID_SOCKET) {
-			printf("TCP client accept failed with error: %d\n", WSAGetLastError());
+			if(display){printf("TCP client accept failed with error: %d\n", WSAGetLastError());}
 			closesocket(ListenSocket);
 			WSACleanup();
 			error = true;
 		}
-		else if (!error) {
+		else if (!error && display) {
 			printf("A TCP client has been accepted.\n");
 		}
 		// No longer need server socket
 		closesocket(ListenSocket);
+    // Set up the struct timeval for the timeout.
+    tv.tv_sec = 3;
+    tv.tv_usec = 0;
+    FD_ZERO(&fds);
+    FD_SET(ClientSocket, &fds);
 	} // void waiting
 
-	void stream() {
+  void check() {
+    new_message = false;
+    error = false;
+    FD_ZERO(&fds);
+    FD_SET(ClientSocket, &fds);
+    // Necessary to restart here the timer
+    n = select(ClientSocket, &fds, NULL, NULL, &tv);
+    // Re-editar esto para que no muestre el mensaje
+    if ((n == 0) || (n == -1))
+    {
+      error = true;
+      if (n == 0 && display) { printf("TCP Timeout\n"); }
+      //Sleep(3000);
+    }
+    if (!error) {
 		iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-		if (iResult > 0) {
-			//printf("TCP Bytes received: %d\n", iResult);
-			printf("TCP Data received: %s\n", recvbuf);
-			// Echo the buffer back to the sender
+  		if (iResult > 0) {
+  			if(display){printf("TCP Data received: %s\n", recvbuf);}
+        new_message = true;
+  		}
+  		else if (iResult == 0 && display)
+  			printf("TCP timeout\n");
+  		else if(display) {
+  			printf("TCPrecv failed with error: %d\n", WSAGetLastError());
+			  error = true;
+  		}
+    }
+    //Decode after this
+	} // void check
+
+	void stream() {
 			iSendResult = 0;
-			//if(i_loop > 2){
-			strcpy(senbuf, "SAS;10.4;3;2.5;"); // New format
-			printf("TCP sending: %s\n", senbuf);
-			// Screen: Variable 1 = 0, variable 2 = 1, variable 3 = 3
+			//strcpy(senbuf, "SAS;10.4;3;2.5;"); // New format
+			if(display){ printf("TCP sending: %s\n", senbuf); }
 			iSendResult = send(ClientSocket, senbuf, iResult, 0);
-			if (iSendResult == SOCKET_ERROR) {
+			if (iSendResult == SOCKET_ERROR && display) {
 				printf("TCP send failed with error: %d\n", WSAGetLastError());
+				//finish = true;
 			}
-		}
-		else if (iResult == 0)
-			printf("TCP Connection closing...\n");
-		else {
-			printf("TCPrecv failed with error: %d\n", WSAGetLastError());
-		}
 	} // void stream
 
 	void end() {
 		// shutdown the connection since we're done
 		iResult = shutdown(ClientSocket, SD_SEND);
-		if (iResult == SOCKET_ERROR) {
+		if (iResult == SOCKET_ERROR && display) {
 			printf("TCP shutdown failed with error: %d\n", WSAGetLastError());
 		}
-		else {
+		else if (display) {
 			printf("TCP Connection closed.\n");
 		}
 		// cleanup

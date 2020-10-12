@@ -1,39 +1,8 @@
-===================================
--Starting up devices and communication.
-===================================
-Starting connection
-UPD Connection - starting...
-Client running on IP 127.0.0.1, port 30007
-Reha Move3 message: Initializing device...
-Reha Ingest message: Setting communication...
-Reha Ingest message: Enabling and initializing device...
-Reha Ingest message: Device ready.
-Reha Move3 message: Device ready.
-===================================
--Using multiple threads.
-Press any key to start process.
-Then press any key again to finish.
-===================================
-Reha Move3 message: Waiting for start.
-Reha Ingest message: RehaMove3 start will be released at iteration number 3000.
-Reha Ingest message: Data available at iteration number 826
-Reha Ingest message: Recording data.
-Reha Ingest message: Data size: 10002, 10002, 10002
-Reha Ingest message: stimulation release sent.
-Reha Move3 message: Stimulating.
-Reha Ingest message: Data size: 10027, 10027, 10027
-Reha Ingest message: Data size: 10006, 10006, 10006
-Reha Ingest message: Data size: 10017, 10017, 10017
-Reha Ingest message: Data size: 10007, 10007, 10007
-Reha Ingest message: Data size: 10001, 10001, 10001
-Reha Ingest message: Ending process.
-Reha Move3 message: Ending process.
-Reha Move3 message: Process successfully finished.
-===================================
--Number of iterations:
-Thread RehaMove3 = 141
-Thread RehaIngest = 3521
-
---------------------------
-Hej Hej!
---------------------------
+TCP Data received: SCREEN;0;0;R1;
+TCP received: move_key = 0, ingest_key = 0, satus = R, rep_nr = 1
+ RehaMove3 message: Stimulation update -> current = 10.0, ramp points = 2, ramp value = 2
+TCP sending: SAS;10.0;;0.0;
+ -- checking... --
+TCP Data received: ENDTCP;0;0;R1;
+TCP received message not valid.
+ -- checking... --

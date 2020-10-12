@@ -168,6 +168,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Biquad.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Butterworth.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Cascade.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevI.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\ChebyshevII.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\Custom.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\PoleFilter.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\RBJ.cpp" />
+    <ClCompile Include="..\..\Hasomed_examples\sciencemode_stim_trigger\sciencemode_stim_trigger\filter\iir\State.cpp" />
     <ClCompile Include="bandStop.cpp" />
     <ClCompile Include="MoveIngest.cpp" />
     <ClCompile Include="notch100.cpp" />
