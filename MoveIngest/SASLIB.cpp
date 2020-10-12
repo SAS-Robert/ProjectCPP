@@ -1,6 +1,13 @@
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include <winsock2.h>
-#include <windows.h>
+//#define _WINSOCK_DEPRECATED_NO_WARNINGS
+//#define WIN32_LEAN_AND_MEAN
+
+//#undef UNICODE
+
+//#include <winsock2.h>
+//#include <windows.h>
+//include <ws2tcpip.h>
+#include <iostream>
+#include <fstream>
 // Standard C++ and C libraries
 #include <conio.h>
 #include <stdlib.h>
@@ -9,13 +16,11 @@
 #include <complex>
 #include <stdio.h>
 #include <ctime>
-// User-defined libraries
+#include "SASLIB.h"
+// Hasomed
 #include "smpt_ml_client.h"
 #include "smpt_dl_client.h"
 #include "smpt_definitions.h"
-#include "SAS.h"
-
-//=========================== UDP Connection ===============================
 
 //========================== Millesaceous ==================================
 //New functions
@@ -34,7 +39,6 @@ void generate_date(char* outStr){
   }
 }
 //=========================== Hasomed fcn ===============================
-
 void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init)
 {
     /* Clear ml_init struct and set the data */

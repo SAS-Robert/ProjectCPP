@@ -6,15 +6,14 @@
  * my own computer. Other users should change these propierties, so it can
  * compile the project.
  *
- * This application runs the following process:
+ * This application runs the following processes:
  *
- * UPD Connection with ROBERT
  * Serial connection and handeling the RehaMove3 device.
  * Serial connection and handeling the RehaIngest device.
+ * UPD Connection with ROBERT
+ * TCP Connection with the Touch Panel
  *
 */
-
-// Standard C++ and C libraries
 #include <iostream>
 #include <fstream>
 #include <conio.h>
@@ -30,17 +29,11 @@
 #include <vector>
 #include <complex>
 #include <math.h>
-#include <chrono>           // For very precise time measurement
-// User-defined libraries
-#include "smpt_ml_client.h"
-#include "smpt_dl_client.h"
-#include "smpt_definitions.h"
-//#include "BiQuad.h"
+// User - defined libraries
+#include "SASLIB.h"
 #include "bandStop.h"
-#include "notch100.h"
 #include "notch50.h"
-#include "SAS.h"
-#include "iir.h"
+#include "notch100.h"
 
 using namespace std;
 
@@ -61,7 +54,7 @@ ofstream fileFILTERS;
 //ofstream file3;
 // ------------------------- Connection and devices  ------------------------
 UDPClient ROBERT;
-TCPClient SCREEN;
+TCPServer SCREEN;
 ofstream msgData;
 RehaMove3_type stimulator_device;
 RehaIngest_type recorder_device;
@@ -85,10 +78,8 @@ struct device_to_device{
 } Ingest_to_Move, MAIN_to_all;
 //MAIN_to_all: the main function writes here and all threads read
 //Ingest_to_Move: Ingest writes on the variable, Move3 reads it
-// ------------------------------ Functions  -----------------------------
-// Example threads
-void thread_ml_t1();
-void thread_ml_t2();
+
+// ---------------------------- Functions declaration  -----------------------------
 // Threads and devices function hearders
 static void thread_stimulation();
 static void thread_recording();
@@ -99,8 +90,13 @@ bool toc();
 void keyboard();
 void stimulation_user(RehaMove3_Req_Type code, Smpt_ml_channel_config* current_val, Smpt_ml_channel_config next_val);
 
-int main()
-{
+// Example threads
+void thread_t1();
+void thread_t2();
+
+// ------------------------------ Main  -----------------------------
+
+int main() {
   // Flushing input and output buffers
   cout.flush();
   fflush(stdin);
@@ -115,26 +111,15 @@ int main()
      ROBERT.start();
    }while(ROBERT.error);
 
-  //strcpy(SCREEN.SERVERc, "127.0.0.1");  //This is an address for testing
-  //SCREEN.display = false;               //Chosen not to show messages during messages exchange
- //   do{
- //     SCREEN.start();
- //   }while(SCREEN.error);
+	SCREEN.start();
 
-  //Saving UDP or TCP messages
-  // if(ROBERT.display){
-  //   char date[15];
-  //   generate_date(date); //get current date/time in format YYMMDD_hhmm
-  //   string init1("UDP_");
-  //   init1.append(date);
-  //   init1.append(".txt");
-  //   msgData.open(init1);
-  // }
 
-    std::thread stimulation(thread_stimulation);
-     std::thread recording(thread_recording);
-    // std::thread RehaMove3(thread_ml_t1);
-    //std::thread RehaIngest(thread_ml_t2);
+	SCREEN.end();
+
+  std::thread stimulation(thread_stimulation);
+  std::thread recording(thread_recording);
+  // std::thread stimulation(thread_t1);
+  // std::thread recording(thread_t2);
 
   //wait for both devices to be ready
   while((!Move3_ready)||(!Ingest_ready)){
@@ -165,34 +150,40 @@ int main()
   recording.join();
 
   ROBERT.end();
-  //SCREEN.end();
-
-  //std::cout << "==================================="<< endl;
-  //std::cout << "-Number of iterations:\nThread RehaMove3 = " << task1 <<"\nThread RehaIngest = " << task2 << endl;
   std::cout << "\n--------------------------\nHej Hej!\n--------------------------\n";
   // Flushing input and output buffers
   cout.flush();
   fflush(stdin);
+	return 0;
+}
 
-return 0;
+// ---------------------------- Functions definition  --------------------------
+void tic(){
+  tstart = time(0);
+}
 
-}   // Uncomment to enable original code.
-//================================================
+bool toc(){
+  tend = time(0);
+  double diff = difftime(tend, tstart);
+  bool done = (diff>=toc_lim);
+  return done;
+}
+
 void keyboard(){
       int ch;
       ch = _getch();
       ch = toupper( ch );
       printf("---> Key pressed: %c <---\n", ch);
       switch(ch){
-        case 'T':
-            SCREEN.display = !SCREEN.display;
-            if (SCREEN.display) {
-                printf("Showing TCP messages and status.\n");
-            }
-            else {
-                printf("Not showing TCP messages and status.\n");
-            }
-          break;
+           case 'T':
+             SCREEN.display = !SCREEN.display;
+             if (SCREEN.display) {
+                 printf("Showing TCP messages and status.\n");
+             }
+             else {
+                 printf("Not showing TCP messages and status.\n");
+             }
+           break;
           case 'U':
             ROBERT.display = !ROBERT.display;
             if (ROBERT.display) {
@@ -292,19 +283,9 @@ void stimulation_user(RehaMove3_Req_Type code){
    //%2.1f is the format to show a float number, 2.1 means 2 units and 1 decimal
    Move3_key = Move3_none;
 }
+
 //Example threads: this is only for some code testing.
-void tic(){
-  tstart = time(0);
-}
-
-bool toc(){
-  tend = time(0);
-  double diff = difftime(tend, tstart);
-  bool done = (diff>=toc_lim);
-  return done;
-}
-
-void thread_ml_t1(){
+void thread_t1(){
 //std::cout <<"RehaMove3 doing stuff\n";
 Move3_ready = true;
 
@@ -318,16 +299,11 @@ Move3_ready = true;
   }
 
 }
-void thread_ml_t2(){
+void thread_t2(){
   std::cout<<"Reha Ingest: Sample thread for testing."<<endl;
-
   Ingest_ready = true;
   while (!MAIN_to_all.end){
     task2++;
-    if (MAIN_to_all.start) {
-        SCREEN.get();
-        Sleep(3000);
-    }
     if(task2>=10){
       //std::cout<<"RehaIngest task 2\n";
       task2 = 0;
@@ -335,6 +311,62 @@ void thread_ml_t2(){
     }
   }
 }
+//================================================
+void thread_stimulation()
+{
+    // Dummy Variables
+    std::chrono::duration<double> elapsed_seconds;
+    int chrono_loop = 0;
+    float taverage = 0;
+    auto auto_start = std::chrono::steady_clock::now();
+
+    stimulator_device.port_name_rm = "COM3";
+    stimulator_device.abort = (one_to_escape!=0);
+    stimulator_device.init();
+    Move3_ready = stimulator_device.ready;
+
+    auto auto_end = std::chrono::steady_clock::now();
+    elapsed_seconds = auto_end-auto_start;
+    std::cout << "Reha Move3 init time = " << elapsed_seconds.count() << " s\n";
+
+    while(!MAIN_to_all.start){
+      Sleep(500);
+    }
+    //Wait for run from RehaIngest
+    std::cout << "Reha Move3 message: Waiting for start.\n";
+    while(!Ingest_to_Move.start&&!MAIN_to_all.end){
+      Sleep(100);
+    }
+    if(!MAIN_to_all.end){std::cout << "Reha Move3 message: Stimulating.\n";}
+
+  	while ((!MAIN_to_all.end)&&(!stimulator_device.smpt_end))
+  	{
+      auto_start = std::chrono::steady_clock::now();
+
+      // New part: setting up values:
+      if(Move3_key != Move3_none){
+        stimulation_user(Move3_key);
+      }
+      stimulator_device.update();
+
+      auto_end = std::chrono::steady_clock::now();
+      elapsed_seconds = auto_end - auto_start;
+      chrono_loop++;
+      taverage = taverage + ((float)elapsed_seconds.count());
+      Sleep(100);
+  	}
+  taverage = taverage/((float)chrono_loop);
+  std::cout << "Reha Move3 average run time = " << taverage << " s\n";
+
+  auto_start = std::chrono::steady_clock::now();
+
+  stimulator_device.end();
+
+  auto_end = std::chrono::steady_clock::now();
+  elapsed_seconds = auto_end - auto_start;
+  std::cout << "Reha Move3 finish time = " << elapsed_seconds.count() << " s\n";
+
+} //void thread_ml_stimulation
 //================================================
 void thread_recording()
 {
@@ -539,59 +571,3 @@ void thread_recording()
 	notch100_destroy(notch100);
 
 } //void thread_ml_recording
-//================================================
-void thread_stimulation()
-{
-    // Dummy Variables
-    std::chrono::duration<double> elapsed_seconds;
-    int chrono_loop = 0;
-    float taverage = 0;
-    auto auto_start = std::chrono::steady_clock::now();
-
-    stimulator_device.port_name_rm = "COM3";
-    stimulator_device.abort = (one_to_escape!=0);
-    stimulator_device.init();
-    Move3_ready = stimulator_device.ready;
-
-    auto auto_end = std::chrono::steady_clock::now();
-    elapsed_seconds = auto_end-auto_start;
-    std::cout << "Reha Move3 init time = " << elapsed_seconds.count() << " s\n";
-
-    while(!MAIN_to_all.start){
-      Sleep(500);
-    }
-    //Wait for run from RehaIngest
-    std::cout << "Reha Move3 message: Waiting for start.\n";
-    while(!Ingest_to_Move.start&&!MAIN_to_all.end){
-      Sleep(100);
-    }
-    if(!MAIN_to_all.end){std::cout << "Reha Move3 message: Stimulating.\n";}
-
-  	while ((!MAIN_to_all.end)&&(!stimulator_device.smpt_end))
-  	{
-      auto_start = std::chrono::steady_clock::now();
-
-      // New part: setting up values:
-      if(Move3_key != Move3_none){
-        stimulation_user(Move3_key);
-      }
-      stimulator_device.update();
-
-      auto_end = std::chrono::steady_clock::now();
-      elapsed_seconds = auto_end - auto_start;
-      chrono_loop++;
-      taverage = taverage + ((float)elapsed_seconds.count());
-      Sleep(100);
-  	}
-  taverage = taverage/((float)chrono_loop);
-  std::cout << "Reha Move3 average run time = " << taverage << " s\n";
-
-  auto_start = std::chrono::steady_clock::now();
-
-  stimulator_device.end();
-
-  auto_end = std::chrono::steady_clock::now();
-  elapsed_seconds = auto_end - auto_start;
-  std::cout << "Reha Move3 finish time = " << elapsed_seconds.count() << " s\n";
-
-} //void thread_ml_stimulation
