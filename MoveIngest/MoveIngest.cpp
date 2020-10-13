@@ -45,7 +45,8 @@ bool Ingest_ready = false;
 RehaMove3_Req_Type Move3_key = Move3_none;
 RehaIngest_Req_Type Inge_key = Inge_none;
 
-state_Type state = st_init;
+state_Type state_rec = st_init;
+state_Type state_stim = st_init;
 std::vector<float> channel_filter;//Filtered data
 
 // Files handler to store recorded data
@@ -59,6 +60,8 @@ ofstream msgData;
 RehaMove3_type stimulator_device;
 RehaIngest_type recorder_device;
 ROB_Type screen_status;
+float gain_th = 2.5;
+int ROB_rep = 0;
 // ------------------------------ Associated with functions -------------------
 //Tic-toc time
 time_t tstart, tend, tstart_ing, tend_ing, tstart_move, tend_move;
@@ -67,9 +70,33 @@ int task1 = 0;
 int task2 = 0;
 bool data_start = false;
 bool data_printed = false;
+// Measuring time:
+//-time 1 = from when threshold has been passed until the stimulator starts (FES_cnt)
+//-time 2 = filtering perfomance (EMG_tic)
+//-time 3 = recorder perfomance: collect samples + process them + filter them + get Robert status
+string time1_s("time1_");
+string time2_s("time2_");
+string time3_s("time3_");
+ofstream time1_f;
+ofstream time2_f;
+ofstream time3_f;
+std::vector<double> time1_v;
+std::vector<double> time2_v;
+std::vector<double> time3_v;
+std::chrono::duration<double> time1_diff;
+std::chrono::duration<double> time2_diff;
+std::chrono::duration<double> time3_diff;
+auto time1_start = std::chrono::steady_clock::now();
+auto time1_end = std::chrono::steady_clock::now();
+auto time2_start = std::chrono::steady_clock::now();
+auto time2_end = std::chrono::steady_clock::now();
+auto time3_start = std::chrono::steady_clock::now();
+auto time3_end = std::chrono::steady_clock::now();
+// files
+string file_dir;
 string init1("file_raw_");
 string init2("file_filtered_");
-//string init3("file3_");
+
 string format(".txt");
 struct device_to_device{
   bool start = false;
@@ -95,12 +122,18 @@ void stimulation_user(RehaMove3_Req_Type code);
 // Example threads
 void thread_t1();
 void thread_t2();
+void create_file();
 bool dummy_udp = false, dummy_tcp = false;
 bool dummy_valid = false;;
 // ------------------------------ Main  -----------------------------
 
-int main() {
-  // Other dummy stuff:
+int main(int argc, char *argv[]) {
+
+  // initialize files names
+  get_dir(argc, argv, file_dir);
+  init1.insert(0,file_dir);
+  init2.insert(0,file_dir);
+  // other dummy stuff
   dummy_valid = false;
   printf("Do you wanna use the UDP connection to Robert's controller? [Y/N]: ");
   int ch;
@@ -140,54 +173,20 @@ int main() {
        ROBERT.start();
      }while(ROBERT.error);
   }else{
-    printf("UDP Connection skipped\n");
+    printf("UDP Connection skipped\n\n");
   }
+
+  ROB_Type wololo;
+  int repetitiooooons = 0;
+  bool decode_successful;
+  // Receive until the peer shuts down the connection
+  //int i_loop = 0;
 
   if(dummy_tcp){
     SCREEN.start();
     SCREEN.waiting();
-    ROB_Type wololo;
-    int repetitiooooons = 0;
-    bool decode_successful;
-    SCREEN.display = true;
-    // Receive until the peer shuts down the connection
-    int i_loop = 0;
-    float gain_th = 2.5;
-    do {
-      printf(" -- checking... -- \n");
-      SCREEN.check();
-      if(SCREEN.new_message){
-        decode_successful = TCP_decode(SCREEN.recvbuf, Move3_key, Inge_key,wololo,repetitiooooons);
-        if(decode_successful){
-          // Only update if necessary
-          if(!SCREEN.finish){
-            printf("TCP received: move_key = %d, ingest_key = %d, satus = %c, rep_nr = %d \n ", Move3_key, Inge_key, wololo, repetitiooooons);
-            stimulation_user(Move3_key);
-            // Dummy for the gain
-            switch(Inge_key){
-              case Inge_decr:
-                  gain_th = gain_th + 0.1;
-                  break;
-              case Inge_incr:
-                  gain_th = gain_th-0.1;
-                  break;
-            }
-          }
-          //-------------------------
-          memset(SCREEN.senbuf, '\0', 512);
-          sprintf(SCREEN.senbuf, "SAS;%2.1f;%1.1;%1.1f;", stimulator_device.stim.points[0].current, stimulator_device.stim.ramp, gain_th);
-
-          //strcpy(SCREEN.senbuf, "SAS;10.4;3;2.5;"); // New format
-          SCREEN.stream();
-        }else if (!decode_successful){
-          printf("TCP received message not valid.\n");
-        }
-      }
-      i_loop++;
-      Sleep(1000);
-    } while(!SCREEN.finish);//(i_loop<100);
   }else{
-    printf("TCP Connection skipped\n");
+    printf("TCP Connection skipped. Using keyboard instead.\n\n");
   }
 
   // std::thread stimulation(thread_stimulation);
@@ -204,9 +203,16 @@ int main() {
   std::cout << "-Using multiple threads.\nPress any key to start process.\nThen press 0 to finish.\n";
   _getch();
   std::cout << "==================================="<< endl;
-  std::cout << "---> TCP/UDP controllers:\n-T = Show/hide TCP messages.\n-U = Show/hide UDP messages.\n\n";
-  std::cout << "---> RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n\n";
-  std::cout << "---> RehaIngest controllers:\n-P = Increase threshold gain.\n-M = Decrease threshold gain.\n\n\n\r";
+  if(dummy_udp && dummy_tcp){
+    std::cout << "---> TCP/UDP controllers:\n-T = Show/hide TCP messages.\n-U = Show/hide UDP messages.\n\n";
+  }else if (dummy_udp){
+    std::cout << "---> UDP controllers:\n-U = Show/hide UDP messages.\n\n";
+  }else if (dummy_tcp){
+    std::cout << "---> TCP controllers:\n-T = Show/hide TCP messages.\n\n";
+  }else if (!dummy_tcp){
+    std::cout << "---> RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n\n";
+    std::cout << "---> RehaIngest controllers:\n-P = Increase threshold gain.\n-M = Decrease threshold gain.\n\n\n\r";
+  }
   //std::cout << "---> '3' Manual release for stimulation in case RehaIngest is not functional.\n";
 
   MAIN_to_all.start = true;
@@ -215,9 +221,43 @@ int main() {
   while (!MAIN_to_all.end){
     Sleep(200);
     one_to_escape = _kbhit();
-      if (one_to_escape != 0){
+      if (one_to_escape != 0 ){
         keyboard();
       }
+
+      // TCP Stuff
+      if (!SCREEN.finish){
+        //printf(" -- checking... -- \n");
+        SCREEN.check();
+        // Receive
+        if(SCREEN.new_message){
+          decode_successful = TCP_decode(SCREEN.recvbuf, Move3_key, Inge_key,wololo,repetitiooooons);
+          if(decode_successful){
+            // Only update values  if the message was not "ENDTCP"
+            if(!SCREEN.finish){
+              stimulation_user(Move3_key);
+              // Dummy for the gain
+              switch(Inge_key){
+                case Inge_decr:
+                    gain_th = gain_th + 0.1;
+                    break;
+                case Inge_incr:
+                    gain_th = gain_th-0.1;
+                    break;
+              }
+              if(SCREEN.display){ printf("TCP received: move_key = %d, ingest_key = %d, satus = %c, rep_nr = %d \n ", Move3_key, Inge_key, wololo, repetitiooooons);}
+            }
+            // Send
+            memset(SCREEN.senbuf, '\0', 512);
+            sprintf(SCREEN.senbuf, "SAS;%2.1f;%1.1f;%1.1f;", stimulator_device.stim.points[0].current, stimulator_device.stim.ramp, gain_th);
+            SCREEN.stream();
+          }else if (!decode_successful && SCREEN.display){
+            printf("TCP received message not valid.\n");
+          }
+        }
+      }
+      // TCP Stuff
+
   }
   // Waiting for threads to finish
   stimulation.join();
@@ -352,41 +392,41 @@ void keyboard(){
       switch(ch){
            case 'T':
              SCREEN.display = !SCREEN.display;
-             if (SCREEN.display) {
+             if (SCREEN.display && dummy_tcp) {
                  printf("Showing TCP messages and status.\n");
              }
-             else {
+             else if (dummy_tcp){
                  printf("Not showing TCP messages and status.\n");
              }
            break;
           case 'U':
             ROBERT.display = !ROBERT.display;
-            if (ROBERT.display) {
+            if (ROBERT.display && dummy_udp) {
                 printf("Showing UDP messages and status.\n");
             }
-            else {
+            else if (dummy_udp) {
                 printf("Not showing UDP messages and status.\n");
             }
             break;
         case 'A':
-          Move3_key = Move3_ramp_less;
+          if (!dummy_tcp){Move3_key = Move3_ramp_less;}
           break;
         case 'D':
-            Move3_key = Move3_ramp_more;
+            if (!dummy_tcp){Move3_key = Move3_ramp_more;}
         break;
         case 'M':
             // Modify threshold
-          Inge_key = Inge_decr;
+          if (!dummy_tcp){Inge_key = Inge_decr;}
         break;
         case 'P':
           // Modify threshold
-          Inge_key = Inge_incr;
+          if (!dummy_tcp){Inge_key = Inge_incr;}
           break;
         case 'S':
-          Move3_key = Move3_decr;
+          if (!dummy_tcp){Move3_key = Move3_decr;}
         break;
         case 'W':
-          Move3_key = Move3_incr;
+          if (!dummy_tcp){Move3_key = Move3_incr;}
         break;
         // case '3':
         //   Ingest_to_Move.start = true;
@@ -424,12 +464,12 @@ void stimulation_user(RehaMove3_Req_Type code){
        next_val.ramp--;
        break;
      case Move3_decr:
-       next_val.points[0].current = next_val.points[0].current-1;
-       next_val.points[2].current = next_val.points[2].current+1;
+       next_val.points[0].current = next_val.points[0].current-0.1;
+       next_val.points[2].current = next_val.points[2].current+0.1;
        break;
      case Move3_incr:
-       next_val.points[0].current = next_val.points[0].current+1;
-       next_val.points[2].current = next_val.points[2].current-1;
+       next_val.points[0].current = next_val.points[0].current+0.1;
+       next_val.points[2].current = next_val.points[2].current-0.1;
        break;
    }
    // Checking max and min possible values:
@@ -445,12 +485,12 @@ void stimulation_user(RehaMove3_Req_Type code){
      next_val.ramp = 2;
    }
 
-   if(next_val.points[0].current>60){
-     next_val.points[0].current = 60;
-     next_val.points[2].current = -60;
-   }else if (next_val.points[0].current<10){
+   if(next_val.points[0].current>=10){
      next_val.points[0].current = 10;
      next_val.points[2].current = -10;
+   }else if (next_val.points[0].current<1){
+     next_val.points[0].current = 1;
+     next_val.points[2].current = -1;
    }
 
    stimulator_device.stim = next_val;
@@ -488,6 +528,7 @@ void thread_t2(){
     }
   }
 }
+
 //================================================
 void thread_stimulation()
 {
@@ -497,7 +538,7 @@ void thread_stimulation()
     float taverage = 0;
     auto auto_start = std::chrono::steady_clock::now();
 
-    stimulator_device.port_name_rm = "COM3";
+    stimulator_device.port_name_rm = "COM6";
     stimulator_device.abort = (one_to_escape!=0);
     stimulator_device.init();
     Move3_ready = stimulator_device.ready;
@@ -510,9 +551,10 @@ void thread_stimulation()
       Sleep(500);
     }
     //Wait for run from RehaIngest
+    bool time1_count = false;
     std::cout << "Reha Move3 message: Waiting for start.\n";
     while(!Ingest_to_Move.start&&!MAIN_to_all.end){
-      Sleep(100);
+      Sleep(1);
     }
     if(!MAIN_to_all.end){std::cout << "Reha Move3 message: Stimulating.\n";}
 
@@ -524,7 +566,15 @@ void thread_stimulation()
       if(Move3_key != Move3_none){
         stimulation_user(Move3_key);
       }
+
       stimulator_device.update();
+      //First time stimulating
+      if(!time1_count){
+        time1_end = std::chrono::steady_clock::now();
+        time1_count = true;
+        time1_diff = auto_record - auto_start;
+        time1_v.push_back(time1_diff);
+      }
 
       auto_end = std::chrono::steady_clock::now();
       elapsed_seconds = auto_end - auto_start;
@@ -560,13 +610,11 @@ void thread_recording()
   std::chrono::duration<double> elapsed_seconds;
   int chrono_loop = 0;
   float taverage = 0, trecord = 0;
-  auto auto_start = std::chrono::steady_clock::now();
 
   recorder_device.port_name_ri = "COM4";
   recorder_device.init();
   recorder_device.start();
 
-  auto auto_end = std::chrono::steady_clock::now();
   elapsed_seconds = auto_end-auto_start;
   std::cout << "Reha Ingest start-up time = " << elapsed_seconds.count() << " s\n";
 
@@ -587,14 +635,12 @@ void thread_recording()
     bool set_th = false, modify_th = false;
     bool set_value = false, tstart = false;
     float acc = 0;
-    float threshold, mean_th, gain_th = 2.5;
+    float threshold, mean_th;
     float mean = 0, temp;
     bool files_opened = false;
 
     while (!MAIN_to_all.end)
     {
-      auto_start = std::chrono::steady_clock::now();
-
       // Collect data
       recorder_device.record();
       auto auto_record = std::chrono::steady_clock::now();
@@ -615,9 +661,9 @@ void thread_recording()
         //if (recorder_device.data_start && recorder_device.data_received) { std::cout << "RegaIngest -> Data size: " << recorder_device.channel_raw.size() << endl; }
 
         // State machine conditions
-        set_th = (toc() && recorder_device.data_start && (state == st_init));
-        modify_th = ((state == st_wait)&& (Inge_key!=Inge_none) && (!Ingest_to_Move.start));
-        set_value = (task2 >= recorder_device.limit_samples && recorder_device.data_start && (state != st_init) && (!Ingest_to_Move.start));
+        set_th = (toc() && recorder_device.data_start && (state_rec == st_init));
+        modify_th = ((state_rec == st_wait)&& (Inge_key!=Inge_none) && (!Ingest_to_Move.start));
+        set_value = (task2 >= recorder_device.limit_samples && recorder_device.data_start && (state_rec != st_init) && (!Ingest_to_Move.start));
 
         // Update Robert Variables
         if(set_th || set_value){
@@ -669,13 +715,13 @@ void thread_recording()
 
       //  if((set_th || set_value || modify_th) && !ROBERT.error){
         // State machine process
-        switch(state){
+        switch(state_rec){
           case st_init:
                 if(set_th){
                   mean_th = mean;
                   threshold = mean_th*gain_th;
                   std::cout<<"Reha Ingest message: state=init. Threshold settings: resting mean = "<<mean_th<<", gain = "<<gain_th<<", th value = "<<threshold<<endl;
-                  state = st_wait;
+                  state_rec = st_wait;
                   //iterator = 1;
                 }
           break;
@@ -701,7 +747,8 @@ void thread_recording()
                 Ingest_to_Move.start = (mean> threshold) && (!ROBERT.isMoving); // && (!ROBERT.error);
                 std::cout<< "Reha Ingest message: state=wait. Comparing to threshold: "<<mean<<", result: "<<(mean> threshold)<<", ROBERT is moving? "<<ROBERT.isMoving<<endl;
                 if(Ingest_to_Move.start){
-                  state = st_running;
+                  time1_start = std::chrono::steady_clock::now();
+                  state_rec = st_running;
                   printf("Release sent. state will change to running.\n");
                 }
               }
@@ -720,7 +767,7 @@ void thread_recording()
       }
 
       if (recorder_device.data_received && recorder_device.data_start) {
-        auto_end = std::chrono::steady_clock::now();
+        //auto_end = std::chrono::steady_clock::now();
         elapsed_seconds = auto_record - auto_start;
         trecord = trecord + ((float)elapsed_seconds.count());
         elapsed_seconds = auto_end - auto_start;
@@ -735,11 +782,11 @@ void thread_recording()
   std::cout << "Reha Ingest average: collect data time = "<<trecord<<", total run time = " << taverage << " s\n";
 
   // Finish everything:
-  auto_start = std::chrono::steady_clock::now();
+  //auto_start = std::chrono::steady_clock::now();
 
   recorder_device.end();
 
-  auto_end = std::chrono::steady_clock::now();
+  //auto_end = std::chrono::steady_clock::now();
   elapsed_seconds = auto_end - auto_start;
   std::cout << "Reha Ingest finish time = " << elapsed_seconds.count() << " s\n";
 

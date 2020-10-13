@@ -40,6 +40,7 @@ using namespace std;
 
 // ------------------------------ Function hearders -----------------------------
 void generate_date(char* outStr);
+void get_dir(int argc, char *argv[], string& Outdir);
 
 void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init);
 void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_ml_channel_config values);
@@ -80,9 +81,11 @@ typedef enum
 typedef enum
 {
     st_init      	    = 0,    // Nothing to do
-    st_wait     		  = 1,    // Waiting for RMS_EMG>threshold
+    st_wait     		  = 1,    // Waiting for something
     st_running       	= 2,    // Stimulating
     st_stop           = 3,    // Done 1 seq, waiting for next
+    st_stim           = 4,    // Stimulating
+    st_rec            = 5,    // Recording
 }state_Type;
 
 // ------------------------------ Devices -----------------------------
@@ -108,10 +111,10 @@ typedef struct{
 	  stim.ramp = 3;              //* Three lower pre-pulses
 	  stim.period = 20;           //* Frequency: 50 Hz
 	  // Set the stimulation pulse
-	  stim.points[0].current = 50;
+	  stim.points[0].current = 5;
 	  stim.points[0].time = 200;
 	  stim.points[1].time = 100;
-	  stim.points[2].current = -50;
+	  stim.points[2].current = -5;
 	  stim.points[2].time = 200;
 	printf("RehaMove3 message: Stimulation initial values -> current = %2.2f, ramp points = %d, ramp value = %d\n",stim.points[0].current,stim.number_of_points,stim.ramp);
 	// Start Process
@@ -200,7 +203,7 @@ typedef struct{
 	//Process variables
 	bool smpt_port = false, smpt_check = false, smpt_stop = false, smpt_next = false;
 	bool smpt_end = false;
-	int limit_samples = 1000;
+	int limit_samples = 400;
 	double diff;
 	bool abort = false, ready = false;
 	bool data_received = false, data_start = false, data_printed = false;
@@ -640,7 +643,7 @@ typedef struct {
 			WSACleanup();
 			error = true;
 		}
-		else if (display) {
+		else { //if (display)
 			printf("TCP Listening started on port %s. Waiting for a client.\n", PORTc);
 		}
 		// Accept a client socket
@@ -664,6 +667,8 @@ typedef struct {
 	} // void waiting
 
   void check() {
+    memset(recvbuf, '\0', BUFLEN);
+    memset(senbuf, '\0', BUFLEN);
     new_message = false;
     error = false;
     FD_ZERO(&fds);
@@ -700,7 +705,7 @@ typedef struct {
 			iSendResult = send(ClientSocket, senbuf, iResult, 0);
 			if (iSendResult == SOCKET_ERROR && display) {
 				printf("TCP send failed with error: %d\n", WSAGetLastError());
-				//finish = true;
+				finish = true;
 			}
 	} // void stream
 

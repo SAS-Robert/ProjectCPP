@@ -38,6 +38,41 @@ void generate_date(char* outStr){
     outStr[i] = buffer[i];
   }
 }
+
+void get_dir(int argc, char *argv[], string& Outdir){
+  //Gets the current directory of the programme 
+  std::stringstream sst(argv[0]);
+  //char delimeter='/'; //for Linux
+  char delimeter='\\'; //for Windows
+  std::string part, full="", part_prev="";
+  while (std::getline(sst, part, delimeter))
+  {
+      full+=part_prev;
+      part_prev=part+delimeter;
+  }
+
+  // Cleaning unnecessary parts
+  std::string t = full;
+  std::string s = "\\Release";
+  std::string::size_type i = t.find(s);
+  if (i != std::string::npos)
+   t.erase(i, s.length());
+
+  s = "\\Debug";
+  std::string::size_type j = t.find(s);
+  if (j != std::string::npos)
+   t.erase(j, s.length());
+
+  s = "\\x64";
+  std::string::size_type k = t.find(s);
+  if (k != std::string::npos)
+   t.erase(k, s.length());
+
+  // Output
+  full = t;
+  full+="files\\";
+  Outdir = full;
+}
 //=========================== Hasomed fcn ===============================
 void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init)
 {
