@@ -40,7 +40,7 @@ void generate_date(char* outStr){
 }
 
 void get_dir(int argc, char *argv[], string& Outdir){
-  //Gets the current directory of the programme 
+  //Gets the current directory of the programme, but for files 
   std::stringstream sst(argv[0]);
   //char delimeter='/'; //for Linux
   char delimeter='\\'; //for Windows

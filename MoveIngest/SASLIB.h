@@ -62,6 +62,8 @@ typedef enum
     Move3_decr      	= 2,    // Reduce current
     Move3_ramp_more   = 3,    // Increase ramp
     Move3_ramp_less		= 4,    // Reduce ramp
+    Move3_stop        = 5,    // Stop Stimulating
+    Move3_start       = 6,    // Stimulate with initial values
 }RehaMove3_Req_Type;
 
 typedef enum
@@ -81,11 +83,12 @@ typedef enum
 typedef enum
 {
     st_init      	    = 0,    // Nothing to do
-    st_wait     		  = 1,    // Waiting for something
-    st_running       	= 2,    // Stimulating
-    st_stop           = 3,    // Done 1 seq, waiting for next
-    st_stim           = 4,    // Stimulating
-    st_rec            = 5,    // Recording
+    st_th       		  = 1,    // set threshold
+    st_wait           = 2,    // Waiting to overcome threshold
+    st_running       	= 3,    // Stimulating
+    st_stop           = 4,    // Done 1 seq, waiting for next
+    st_end            = 5,    // Setting threshold
+    st_test           = 6,    // Run stimulation test
 }state_Type;
 
 // ------------------------------ Devices -----------------------------
@@ -348,7 +351,7 @@ typedef struct {
 		si_other.sin_port = htons(PORTn);
 		si_other.sin_addr.S_un.S_addr = inet_addr(SERVERc);
 		// Set up the struct timeval for the timeout.
-		tv.tv_sec = 3;
+		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 		FD_ZERO(&fds);
 		FD_SET(s, &fds);
@@ -364,8 +367,11 @@ typedef struct {
 		//strcpy(message, "RobotStateInformer;STATUS;1");
 	};
 	void get() {
+    error = false;
 		memset(buf, '\0', BUFLEN);
 		valid_msg = false;
+    FD_ZERO(&fds);
+    FD_SET(s, &fds);
 		//if(display){printf("UPD: Requesting status...\n");}
 		//strcpy(message, "RobotStateInformer;Ping;1");
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR)
@@ -380,7 +386,7 @@ typedef struct {
 		{
 			//if(n==0){printf("Timeout\n");}
 			error = true;
-			Sleep(3000);
+			//Sleep(10);
 		}
 		if (!error) {
 			int length = sizeof(SERVERc);
@@ -492,7 +498,7 @@ typedef struct {
 			strcpy(sendbuf, "SCREEN;STATUS;1");
 		}
 		// Set up the struct timeval for the timeout.
-		tv.tv_sec = 3;
+		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 		FD_ZERO(&fds);
 		FD_SET(ConnectSocket, &fds);
@@ -660,8 +666,8 @@ typedef struct {
 		// No longer need server socket
 		closesocket(ListenSocket);
     // Set up the struct timeval for the timeout.
-    tv.tv_sec = 3;
-    tv.tv_usec = 0;
+    tv.tv_sec = 2;
+    tv.tv_usec = 500;
     FD_ZERO(&fds);
     FD_SET(ClientSocket, &fds);
 	} // void waiting
