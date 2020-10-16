@@ -370,8 +370,6 @@ typedef struct {
     error = false;
 		memset(buf, '\0', BUFLEN);
 		valid_msg = false;
-    FD_ZERO(&fds);
-    FD_SET(s, &fds);
 		//if(display){printf("UPD: Requesting status...\n");}
 		//strcpy(message, "RobotStateInformer;Ping;1");
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR)
@@ -380,6 +378,8 @@ typedef struct {
 			error = true;
 		}
 		// Wait until timeout or data received.
+    FD_ZERO(&fds);
+    FD_SET(s, &fds);
 		n = select(s, &fds, NULL, NULL, &tv);
 		// Re-editar esto para que no muestre el mensaje
 		if ((n == 0) || (n == -1))
