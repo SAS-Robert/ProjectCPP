@@ -40,7 +40,7 @@ void generate_date(char* outStr){
 }
 
 void get_dir(int argc, char *argv[], string& Outdir){
-  //Gets the current directory of the programme, but for files 
+  //Gets the current directory of the programme, but for files
   std::stringstream sst(argv[0]);
   //char delimeter='/'; //for Linux
   char delimeter='\\'; //for Windows
@@ -72,6 +72,55 @@ void get_dir(int argc, char *argv[], string& Outdir){
   full = t;
   full+="files\\";
   Outdir = full;
+}
+
+bool UDP_decode(char* message, bool& value1, bool& value2)
+{
+  char b_true[6]="true";
+  char b_false[6]="false";
+  int comp_t = 0, comp_f=0, pos = 0, pos_cont = 0;
+  bool valid1 = false, valid2 = false, valid_msg = false, b_v1=false, b_v2= false;
+  // Decode 1st part of the message:
+  for(int j=0; j<=3; j++){
+    comp_t = comp_t + message[j]-b_true[j];
+    comp_f = comp_f + message[j]-b_false[j];
+    //printf(" %c->%dT,%dF \\", message[j],comp_t, comp_f);
+  }
+  if((comp_t==0)||(comp_f==0)){
+    valid1 = true;
+  }
+  // Decode 2nd part of the message:
+  if(comp_t==0){
+    pos = 5;
+    b_v1 = true;
+  }else{
+    pos = 6;
+  }
+  comp_t = 0;
+  comp_f = 0;
+  for(int j=0; j<=3; j++){
+    comp_t = comp_t + message[j+pos]-b_true[j];
+    comp_f = comp_f + message[j+pos]-b_false[j];
+  }
+  if(comp_t==0){
+    valid2 = true;
+    b_v2 = true;
+  }
+  else if(comp_f==0){
+    valid2 = true;
+  }
+  // Outputs:
+  valid_msg = valid1 && valid2;
+
+  if (valid_msg){
+    value1 = b_v1;
+    value2 = b_v2;
+    //printf("UDP interpretation: isMoving = %d, Reached = %d\n", b_v1, b_v2);
+  }
+//  else{
+//    printf("UDP message not valid\n");
+//  }
+  return valid_msg;
 }
 //=========================== Hasomed fcn ===============================
 void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init)

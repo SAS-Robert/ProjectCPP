@@ -72,3 +72,4 @@ figure('Name','Dirks data');
 hold on
 grid on
 plot(t,filter_data(:,1)',t,filter_data(:,2)')
+plot(t,filter_data(:,1)',t,filter_data(:,2)')

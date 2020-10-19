@@ -63,6 +63,7 @@ ofstream msgData;
 RehaMove3_type stimulator_device;
 RehaIngest_type recorder_device;
 ROB_Type screen_status;
+bool IsMoving = false, EOPR = false;
 float gain_th = 2.5, rec_threshold = 0, mean_th = 0;
 // Filters:
 bandStopType* bandStop = bandStop_create();
@@ -134,6 +135,7 @@ static void thread_recording();
 void tic();
 bool toc();
 bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, RehaIngest_Req_Type& recorder, ROB_Type& status, int& rep);
+
 //Communication between threads
 void keyboard();
 void stimulation_set(RehaMove3_Req_Type& code);
@@ -206,13 +208,19 @@ int main(int argc, char *argv[]) {
     // Starting UPD Connection
     std::cout << "Starting connection with ROBERT and Touch Screen\n";
     strcpy(ROBERT.SERVERc, "127.0.0.1");  //This is an address for testing
-//    ROBERT.display = false;               //Chosen not to show messages during messages exchange
+    ROBERT.display = true;               //Chosen not to show messages during messages exchange
      do{
        ROBERT.start();
      }while(ROBERT.error);
      // Send first message
-     strcpy(ROBERT.message, "0;STATUS;");
-     ROBERT.get();
+     ROBERT.display = false;               //Chosen not to show messages during messages exchange
+     for (int kkk = 1; kkk < 20; kkk++) {
+        sprintf(ROBERT.message, "%d;STATUS;", kkk);
+        ROBERT.get();
+        //UDP_decode(ROBERT.buf, IsMoving, EOPR);
+        std::cout << "UDP Update: IsMoving = " << ROBERT.isMoving << ", EOPR = " << ROBERT.Reached << endl;
+        Sleep(1000);
+     }
 
   }else{
     printf("UDP Connection skipped\n\n");
@@ -433,6 +441,7 @@ bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, RehaIngest_Req_Ty
   return valid_msg;
 }
 
+
 void keyboard(){
       int ch;
       ch = _getch();
@@ -641,7 +650,7 @@ void thread_connect(){
     }
   // TCP Stuff
 } // while loop
-} // thread 
+} // thread
 
 float process_data(){
   float mean = 0, temp = 0;

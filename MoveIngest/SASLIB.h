@@ -41,6 +41,7 @@ using namespace std;
 // ------------------------------ Function hearders -----------------------------
 void generate_date(char* outStr);
 void get_dir(int argc, char *argv[], string& Outdir);
+bool UDP_decode(char* message, bool& value1, bool& value2);
 
 void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init);
 void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_ml_channel_config values);
@@ -356,21 +357,19 @@ typedef struct {
 		FD_ZERO(&fds);
 		FD_SET(s, &fds);
 		char* ip = inet_ntoa(si_other.sin_addr);
-		std::cout << "UDP Client running on IP " << ip << ", port " << PORTn << endl;
-		//send a "hello!" so the server can start sending stuff
-		strcpy(message, "RobotStateInformer;STATUS;1");
+		if (!error) { std::cout << "UDP Client running on IP " << ip << ", port " << PORTn << endl; }
+		//send a start message so the server can start sending stuff
+		strcpy(message, "0;STATUS");
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR)
 		{
 			error = true;
 		}
-		// For afterwards:
-		//strcpy(message, "RobotStateInformer;STATUS;1");
 	};
 	void get() {
     error = false;
 		memset(buf, '\0', BUFLEN);
 		valid_msg = false;
-		//if(display){printf("UPD: Requesting status...\n");}
+		if(display){printf("UPD: Requesting status...\n");}
 		//strcpy(message, "RobotStateInformer;Ping;1");
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR)
 		{
@@ -384,56 +383,18 @@ typedef struct {
 		// Re-editar esto para que no muestre el mensaje
 		if ((n == 0) || (n == -1))
 		{
-			//if(n==0){printf("Timeout\n");}
+			if(n==0){printf("Timeout\n");}
+			else { printf("Error while receiving.\n"); }
 			error = true;
 			//Sleep(10);
 		}
 		if (!error) {
 			int length = sizeof(SERVERc);
 			recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*)&si_other, &slen);
-			if (display) { std::cout << "UDP Received: " << buf << "  --->  "; }// endl; }// puts(buf);
-	  // Decode message
-			int comp = 0, pos = 0, pos_cont = 0, j = 0;
-			bool comp_b = false, valid1 = false, valid2 = false;
-			//Looking for beginning of the message:
-			while ((j < BUFLEN) && !valid_msg) {
-				// Beginning of the string found
-				if ((buf[j] == 'R') && (pos_cont <= 1)) { //start_msg[0]){
-					comp_b = true;
-					pos_cont = 0;
-					comp = 0;
-					pos = j;
-					//  printf("Beginning found on pos %d.\n", pos);
-				}
-				// If the beginning is found, start storing the "ROBERT" identifier
-				if ((comp_b) && (pos_cont < 7)) {
-					comp = comp + (buf[j] - start_msg[j - pos]);
-					pos_cont++;
-				}
-				// After 6 iteractions, verify that the identifier was found
-				if ((pos_cont >= 6) && (comp == 0)) {
-					//std::cout<<"\nMessage found. valid 1 = "<<buf[pos+7]<<", valid 2 = "<<buf[pos+9]<<endl;
-					valid1 = (buf[pos + 7] == '1') || (buf[pos + 7] == '0');
-					valid2 = (buf[pos + 9] == '1') || (buf[pos + 9] == '0');
-					valid_msg = (comp == 0) && valid1 && valid2;
-					//printf("RESULT: valid1 = %d, valid2 = %d, valid_msg = %d. ", valid1, valid2, valid_msg);
-				}
-				else if (pos_cont >= 6) {
-					comp_b = false; // If not found_set up back
-				}
-				j++;
-			}
-			// Booleans from Robert: only true if valid
-			//std::cout<<"Found: "<<buf[pos+7]<<", reached "<<buf[pos+9]<<endl;
-			isMoving = valid_msg && (buf[pos + 7] == '1');
-			Reached = valid_msg && (buf[pos + 9] == '1');
-			if (valid_msg && display) {
-				printf("UDP interpretation: isMoving = %d, Reached = %d\n", isMoving, Reached);
-			}
-			else if (display) {
-				printf("UDP message not valid\n");
-			}
-
+     if (display) { std::cout << "UDP Received: " << buf << endl; }// endl; }// puts(buf);
+	  // Decode message here
+     error = UDP_decode(buf, isMoving, Reached);
+     error = !error;
 		}
 	};
 	void end() {
