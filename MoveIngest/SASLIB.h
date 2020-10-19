@@ -165,7 +165,7 @@ typedef struct{
 	  smpt_port = false;
 	  fill_ml_init(&device, &ml_init);
 	  smpt_send_ml_init(&device, &ml_init);
-	  std::cout << "Reha Move3 message: Device ready.\n";
+	  //std::cout << "Reha Move3 message: Device ready.\n";
 	  ready = true;
 	}
   }; // void start
@@ -195,6 +195,18 @@ typedef struct{
 	  }
 	  if(smpt_check){std::cout << "Reha Move3 message: Process successfully finished.\n";}
   }; // void end
+
+  void pause(){
+    smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
+    fill_ml_init(&device, &ml_init);
+	  smpt_send_ml_init(&device, &ml_init);
+	  fill_ml_update(&device, &ml_update, stim);
+	  smpt_send_ml_update(&device, &ml_update);
+	  fill_ml_get_current_data(&device, &ml_get_current_data);
+	  // This last command check if it's received all the data requested
+	  smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+    Sleep(1000); // Making sure the stimulator has been properly stopped
+  }
 }RehaMove3_type;
 
 typedef struct{
@@ -393,8 +405,8 @@ typedef struct {
 			recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*)&si_other, &slen);
      if (display) { std::cout << "UDP Received: " << buf << endl; }// endl; }// puts(buf);
 	  // Decode message here
-     error = UDP_decode(buf, isMoving, Reached);
-     error = !error;
+     valid_msg = UDP_decode(buf, isMoving, Reached);
+     //error = !error;
 		}
 	};
 	void end() {

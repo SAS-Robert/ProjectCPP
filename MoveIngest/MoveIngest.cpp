@@ -104,6 +104,13 @@ auto time2_start = std::chrono::steady_clock::now();
 auto time2_end = std::chrono::steady_clock::now();
 auto time3_start = std::chrono::steady_clock::now();
 auto time3_end = std::chrono::steady_clock::now();
+auto auto_start_stim = std::chrono::steady_clock::now();
+auto auto_end_stim = std::chrono::steady_clock::now();
+std::chrono::duration<double> auto_diff_stim;
+std::chrono::duration<double> auto_diff_rec;
+auto auto_start_rec = std::chrono::steady_clock::now();
+auto auto_end_rec = std::chrono::steady_clock::now();
+
 // files
 char date[15];
 string file_dir;
@@ -114,8 +121,8 @@ string time1_s("time1_");
 string time2_s("time2_");
 string time3_s("time3_");
 
-bool stim_do_once = false;
-bool rec_do_once = false;
+bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
+bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false;
 
 string format(".txt");
 struct device_to_device{
@@ -170,7 +177,6 @@ int main(int argc, char *argv[]) {
   time2_s.append(format);
   time3_s.append(date);
   time3_s.append(format);
-
   // other dummy stuff
   dummy_valid = false;
   printf("Do you wanna use the UDP connection to Robert's controller? [Y/N]: ");
@@ -196,7 +202,6 @@ int main(int argc, char *argv[]) {
     dummy_valid = (ch == 'Y') || (ch == 'N');
     printf("%c ",ch);
   }
-  //printf("dummy tcp = %d\n", dummy_tcp);
   // Flushing input and output buffers
   cout.flush();
   fflush(stdin);
@@ -208,20 +213,10 @@ int main(int argc, char *argv[]) {
     // Starting UPD Connection
     std::cout << "Starting connection with ROBERT and Touch Screen\n";
     strcpy(ROBERT.SERVERc, "127.0.0.1");  //This is an address for testing
-    ROBERT.display = true;               //Chosen not to show messages during messages exchange
+    ROBERT.display = false;               //Chosen not to show messages during messages exchange
      do{
        ROBERT.start();
      }while(ROBERT.error);
-     // Send first message
-     ROBERT.display = false;               //Chosen not to show messages during messages exchange
-     for (int kkk = 1; kkk < 20; kkk++) {
-        sprintf(ROBERT.message, "%d;STATUS;", kkk);
-        ROBERT.get();
-        //UDP_decode(ROBERT.buf, IsMoving, EOPR);
-        std::cout << "UDP Update: IsMoving = " << ROBERT.isMoving << ", EOPR = " << ROBERT.Reached << endl;
-        Sleep(1000);
-     }
-
   }else{
     printf("UDP Connection skipped\n\n");
   }
@@ -234,8 +229,6 @@ int main(int argc, char *argv[]) {
   }
 
   std::cout << "==================================="<< endl;
-  std::cout << "Press any key to start process.\nThen press 0 to finish.\n";
-  std::cout << "==================================="<< endl;
   if(dummy_udp && dummy_tcp){
     std::cout << "---> TCP/UDP controllers:\n-T = Show/hide TCP messages.\n-U = Show/hide UDP messages.\n\n";
   } else if (dummy_udp){
@@ -244,26 +237,25 @@ int main(int argc, char *argv[]) {
     std::cout << "---> TCP controllers:\n-T = Show/hide TCP messages.\n\n";
   }
   if (!dummy_tcp){
-    std::cout << "---> RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n\n";
-    std::cout << "---> RehaIngest controllers:\n-P = Increase threshold gain.\n-M = Decrease threshold gain.\n\n\n\r";
+    std::cout << "---> RehaMove3 controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
+    std::cout<<"-Q = Stop stimulation.\n-E = Restore initial stimulation values.\n\n";
+    std::cout << "---> RehaIngest controllers:\n-P = Increase threshold gain.\n-M = Decrease threshold gain.\n\n";
+    std::cout << "---> Process controllers:\n-G = Increase repetitions nr.\n-H = Decrease repetitions nr.\n\n\n";
   }
+  std::cout << "Press any key to start process.\nThen press 0 to finish.\n";
+  std::cout << "==================================="<< endl;
 
   _getch();
 
   std::thread TCPRun(thread_connect);
 
   MAIN_to_all.start = true;
-  SCREEN.display = true;
+  //SCREEN.display = true;
   printf("State machine = initialization\n");
 
-  while (!MAIN_to_all.end){
+  while ((!MAIN_to_all.end)&&(state_process != st_end)){
     Sleep(10);
-    one_to_escape = _kbhit();
-    if (one_to_escape != 0 ){
-      keyboard();
-    }
-
-    // Devices functions
+    // functions
     thread_stimulation();
     thread_recording();
     // Biiiiiiiiiiig global State machine
@@ -298,7 +290,7 @@ int main(int argc, char *argv[]) {
             if(ROB_rep<TCP_rep){
               std::cout<<"Waiting for robot to return to start position."<<endl;
             }
-//            printf("State machine change: stimulating -> stop\n");
+            printf("State machine change: stimulating -> stop\n");
             state_process = st_stop;
             }
         break;
@@ -316,7 +308,11 @@ int main(int argc, char *argv[]) {
     }// State machine
 
 
-  }
+  }// while loop
+  // Finish devices one last time
+  state_process = st_end;
+  thread_recording();
+  thread_stimulation();
   // Waiting for other thread to finish
   TCPRun.join();
 
@@ -472,6 +468,25 @@ void keyboard(){
         case 'D':
             if (!dummy_tcp){Move3_hmi = Move3_ramp_more;}
         break;
+        case 'G':
+            if (!dummy_tcp){
+              TCP_rep++;
+              if(TCP_rep>=10){
+                TCP_rep=10;
+              }
+              std::cout<<"Rep nr. modified to "<<TCP_rep<<endl;
+            }
+        break;
+        case 'H':
+            if (!dummy_tcp){
+              TCP_rep--;
+              if(TCP_rep<ROB_rep){
+                TCP_rep=ROB_rep+1;
+                std::cout<<"Rep nr. cannot be lower than the already finished amount. ";
+              }
+              std::cout<<"Rep nr. modified to "<<TCP_rep<<endl;
+            }
+        break;
         case 'M':
             // Modify threshold
           if (!dummy_tcp){Inge_key = Inge_decr;}
@@ -479,7 +494,13 @@ void keyboard(){
         case 'P':
           // Modify threshold
           if (!dummy_tcp){Inge_key = Inge_incr;}
-          break;
+        break;
+        case 'Q':
+          if (!dummy_tcp){Move3_hmi = Move3_stop;}
+        break;
+        case 'E':
+          if (!dummy_tcp){Move3_hmi = Move3_start;}
+        break;
         case 'S':
           if (!dummy_tcp){Move3_hmi = Move3_decr;}
         break;
@@ -527,10 +548,12 @@ void stimulation_set(RehaMove3_Req_Type& code){
        next_val.points[2].current = next_val.points[2].current-0.1;
        break;
      // Process profiles
-     case Move3_stop:
-       next_val.points[0].current = 0;
-       next_val.points[2].current = 0;
-       break;
+     // case Move3_stop:
+     //   next_val.points[0].current = 0;
+     //   next_val.points[2].current = 0;
+     //   next_val.number_of_points = 0;
+     //   next_val.ramp = 0;
+     //   break;
      case Move3_start:
        next_val.points[0].current = 5;
        next_val.points[2].current = 5;
@@ -541,14 +564,14 @@ void stimulation_set(RehaMove3_Req_Type& code){
    // Checking max and min possible values:
    if(next_val.number_of_points>5){
      next_val.number_of_points = 5;
-   }else if(next_val.number_of_points<2){
-     next_val.number_of_points = 2;
+   }else if(next_val.number_of_points<=0){
+     next_val.number_of_points = 0;
    }
 
    if(next_val.ramp>5){
      next_val.ramp = 5;
-   }else if(next_val.ramp<2){
-     next_val.ramp = 2;
+   }else if(next_val.ramp<=0){
+     next_val.ramp = 0;
    }
 
    if(next_val.points[0].current>=10){
@@ -563,11 +586,12 @@ void stimulation_set(RehaMove3_Req_Type& code){
    if((code != Move3_stop) && (code != Move3_start)){
    printf("RehaMove3 message: Stimulation update -> current = %2.1f, ramp points = %d, ramp value = %d\n", stimulator_device.stim.points[0].current, stimulator_device.stim.number_of_points, stimulator_device.stim.ramp);
    //%2.1f is the format to show a float number, 2.1 means 2 units and 1 decimal
- }else if (code == Move3_stop){
-   printf("RehaMove3 message: Stimulation stopped\n");
- }else{
-   printf("RehaMove3 message: Stimulation values set to initial values (but not sent to device, chiiiiiiiill )\n");
  }
+ // else if (code == Move3_stop){
+ //   printf("RehaMove3 message: Stimulation stopped\n");
+ // }else{
+ //   printf("RehaMove3 message: Stimulation values set to initial values (but not sent to device, chiiiiiiiill )\n");
+ // }
    code = Move3_none;
    Move3_cmd = Move3_none;
    Move3_hmi = Move3_none;
@@ -614,11 +638,16 @@ void thread_t2(){
   }
 }
 
+
 void thread_connect(){
   bool decode_successful;
 
   while (!MAIN_to_all.end){
 
+    one_to_escape = _kbhit();
+    if (one_to_escape != 0 ){
+      keyboard();
+    }
   // TCP Stuff
   if (!SCREEN.finish && dummy_tcp){
       //printf(" -- checking... -- \n");
@@ -649,6 +678,7 @@ void thread_connect(){
       }
     }
   // TCP Stuff
+  Sleep(500);
 } // while loop
 } // thread
 
@@ -688,29 +718,18 @@ float process_data(){
 void thread_stimulation()
 {
     // Local Variables
-    std::chrono::duration<double> elapsed_seconds;
-    auto auto_start = std::chrono::steady_clock::now();
-    auto auto_end = std::chrono::steady_clock::now();
-    bool print_once = false;
-
-  //  while((state_process!=st_end) && !MAIN_to_all.end){ // process
       switch(state_process){
           case st_init:
           // initialization
-              if (!stim_do_once) {
-                  stimulator_device.port_name_rm = "COM3";
-                  stimulator_device.abort = (one_to_escape != 0);
-                  stimulator_device.init();
-                  stim_status.ready = stimulator_device.ready;
-
-                  auto_end = std::chrono::steady_clock::now();
-                  elapsed_seconds = auto_end - auto_start;
-                  std::cout << "Reha Move3 init time = " << elapsed_seconds.count() << " s\n";
-
-                  std::cout << "Reha Move3 message: Waiting for start.\n";
-                  stim_do_once = true;
-            }
-
+              stimulator_device.port_name_rm = "COM5";
+              stimulator_device.abort = (one_to_escape != 0);
+              auto_start_stim = std::chrono::steady_clock::now();
+              stimulator_device.init();
+              auto_end_stim = std::chrono::steady_clock::now();
+              auto_diff_stim = auto_end_stim - auto_start_stim;
+              std::cout << "Reha Move3 init time = " << auto_diff_stim.count() << " s\n";
+              std::cout << "Reha Move3 message: Waiting for start.\n";
+              stim_status.ready = stimulator_device.ready;
           break;
 
           case st_wait:
@@ -723,40 +742,52 @@ void thread_stimulation()
 
           case st_running:
             // do stuff
-            if(Move3_hmi != Move3_none){
+            if((Move3_hmi != Move3_none)&&(Move3_hmi != Move3_stop)){
               stimulation_set(Move3_hmi);
+              stim_fl0 = false;
             }
-            stimulator_device.update();
+
+            if(Move3_hmi == Move3_stop && !stim_fl0){
+              stimulator_device.pause();
+              std::cout<<"RehaMove3 message: Stimulator stopped."<<endl;
+              //Sleep(1000);
+              stim_fl0 = true;
+            }else if(!stim_fl0){
+              stimulator_device.update();
+            }
             // things to do only once
-            if(stim_do_once){
+            if(!stim_fl2){
               std::cout << "Reha Move3 message: Stimulating.\n";
               time1_end = std::chrono::steady_clock::now();
               time1_diff = time1_end - time1_start;
               time1_v.push_back((double)time1_diff.count());
-              stim_do_once = true;
+              stim_fl2 = true;
               stim_status.ready = false;
             }
+          //  stimulator_device.update();
+
           break;
 
           case st_stop:
               // Stop process and restore initial values
-              Move3_cmd = Move3_stop;
-              stimulation_set(Move3_cmd);
-              stimulator_device.update();
-
-              Move3_cmd = Move3_start;
-              stimulation_set(Move3_cmd);
-
-              stim_status.ready = true;
+              if(!stim_fl3){ // Stop stimulator
+                stimulator_device.pause();
+                stim_fl3 = true;
+              }
+                Move3_cmd = Move3_start;
+                stimulation_set(Move3_cmd);
+                stim_status.ready = true;
+                stim_fl0 = false;
+                stim_fl2 = false;
             break;
 
             case st_end:
-                if (!stim_do_once) {
-                    auto_start = std::chrono::steady_clock::now();
+                // if (!stim_fl4) {
+                    auto_start_stim = std::chrono::steady_clock::now();
                     stimulator_device.end();
-                    auto_end = std::chrono::steady_clock::now();
-                    elapsed_seconds = auto_end - auto_start;
-                    std::cout << "Reha Move3 finish time = " << elapsed_seconds.count() << " s\n";
+                    auto_end_stim = std::chrono::steady_clock::now();
+                    auto_diff_stim = auto_end_stim - auto_start_stim;
+                    std::cout << "Reha Move3 finish time = " << auto_diff_stim.count() << " s\n";
 
                     // Safe here the time samples on a file
                     time1_f.open(time1_s);
@@ -770,7 +801,7 @@ void thread_stimulation()
                         printf("RehaMove3: Data t1 could not be saved.\n");
                     }
                     time1_f.close();
-              }
+              // }
 
             break;
       } // switch case
@@ -796,14 +827,12 @@ void thread_recording()
             notch50_result.clear();
             notch100_result.clear();
 
-            if (!rec_do_once) {
-                recorder_device.port_name_ri = "COM4";
-                recorder_device.init();
-                recorder_device.start();
-                rec_status.ready = recorder_device.ready;
-                std::cout << "Reha Ingest message: Waiting for start.\n";
-                rec_do_once = true;
-            }
+            recorder_device.port_name_ri = "COM4";
+            recorder_device.init();
+            recorder_device.start();
+            rec_status.ready = recorder_device.ready;
+            std::cout << "Reha Ingest message: Waiting for start.\n";
+            rec_fl0 = true;
 
           break;
 
@@ -815,7 +844,7 @@ void thread_recording()
             if (recorder_device.data_received && recorder_device.data_start && !fileRAW.is_open() && !fileFILTERS.is_open()) {
               fileRAW.open(init1);
               fileFILTERS.open(init2);
-              std::cout << "Files opened"<< endl;
+              //std::cout << "Files opened"<< endl;
               tic();
             }
             if (recorder_device.data_received && recorder_device.data_start && fileRAW.is_open()) {
@@ -825,7 +854,7 @@ void thread_recording()
             set_th = (toc() && recorder_device.data_start);
             if(set_th && !rec_status.th){
                 mean_th = process_data();
-                rec_threshold = mean*gain_th;
+                rec_threshold = mean_th*gain_th;
                 std::cout<<"Reha Ingest message: Threshold set to -> resting mean = "<<mean_th<<", gain = "<<gain_th<<", th value = "<<rec_threshold<<endl;
                 rec_status.th = true;
                 recorder_device.channel_raw.clear();
@@ -839,6 +868,7 @@ void thread_recording()
           break;
 
           case st_wait:
+            time3_start = std::chrono::steady_clock::now();
             // Collect data
             recorder_device.record();
             sample_nr=recorder_device.channel_raw.size();
@@ -852,10 +882,10 @@ void thread_recording()
             if(modify_th){
               switch(Inge_key){
               case Inge_decr:
-                gain_th = gain_th + 0.1;
+                gain_th = gain_th - 0.1;
               break;
               case Inge_incr:
-                gain_th = gain_th-0.1;
+                gain_th = gain_th + 0.1;
               break;
               }
               Inge_key = Inge_none;
@@ -865,7 +895,14 @@ void thread_recording()
 
             // Communication with RehaMove3 thread and main
             if(set_value){
+              time2_start = std::chrono::steady_clock::now();
               mean = process_data();
+
+              time2_end = std::chrono::steady_clock::now();
+              time2_diff = time2_end - time2_start;
+              time2_v.push_back((double)time2_diff.count());
+
+
               if(dummy_udp){ // if the connection is active
                 udp_cnt++;
                 sprintf(ROBERT.message, "%d;STATUS;", udp_cnt);
@@ -880,6 +917,9 @@ void thread_recording()
                 time1_start = std::chrono::steady_clock::now();
               }
 
+              time3_end = std::chrono::steady_clock::now();
+              time3_diff = time3_end - time3_start;
+              time3_v.push_back((double)time3_diff.count());
             } // if set_value
           break;
 
@@ -891,7 +931,8 @@ void thread_recording()
               fileRAW << recorder_device.data << "\n";
             }
 
-            if(dummy_udp){ // if the connection is active
+          //  set_value = (sample_nr >= recorder_device.limit_samples);
+            if(dummy_udp){// && sample_nr >= recorder_device.limit_samples){ // if the connection is active
               udp_cnt++;
               sprintf(ROBERT.message, "%d;STATUS;", udp_cnt);
               ROBERT.get();
@@ -921,14 +962,42 @@ void thread_recording()
 
          case st_end:
            // Finish all processes (just once)
-           if (!rec_do_once) {
                recorder_device.end();
                fileRAW.close();
                fileFILTERS.close();
                bandStop_destroy(bandStop);
                notch50_destroy(notch50);
                notch100_destroy(notch100);
-           }
+               auto_start_stim = std::chrono::steady_clock::now();
+               stimulator_device.end();
+               auto_end_stim = std::chrono::steady_clock::now();
+               auto_diff_stim = auto_end_stim - auto_start_stim;
+               std::cout << "Reha Move3 finish time = " << auto_diff_stim.count() << " s\n";
+
+               // Safe here the time samples on a file
+               time2_f.open(time2_s);
+               if (time2_f.is_open()) {
+                   for (int k = 0; k < time2_v.size(); k++) {
+                       time2_f << time2_v[k] << " ; " << endl;
+                   }
+                   printf("RehaIngest: time measurement t2 saved in file.\n");
+               }
+               else {
+                   printf("RehaIngest: Data t1 could not be saved.\n");
+               }
+               time2_f.close();
+
+               time3_f.open(time3_s);
+               if (time3_f.is_open()) {
+                   for (int k = 0; k < time3_v.size(); k++) {
+                       time3_f << time3_v[k] << " ; " << endl;
+                   }
+                   printf("RehaIngest: time measurement t3 saved in file.\n");
+               }
+               else {
+                   printf("RehaIngest: Data t3 could not be saved.\n");
+               }
+               time3_f.close();
          break;
         }
 

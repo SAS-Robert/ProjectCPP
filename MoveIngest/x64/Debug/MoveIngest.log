@@ -1,24 +1,25 @@
 ﻿  MoveIngest.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SASLIB.h(344,18): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SASLIB.h(363,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SASLIB.h(374,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SASLIB.h(480,14): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SASLIB.h(644,16): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(346,31): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(431,15): warning C4244: '=': conversion from 'unsigned __int64' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(522,63): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(523,63): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(526,63): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(527,63): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(634,37): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(637,36): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(644,34): warning C4477: 'sprintf' : format string '%1.1f' requires an argument of type 'double', but variadic argument 2 has type 'int'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(658,45): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(813,57): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SASLIB.h(356,18): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SASLIB.h(375,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SASLIB.h(386,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SASLIB.h(492,14): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\SASLIB.h(656,16): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(342,31): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(427,15): warning C4244: '=': conversion from 'unsigned __int64' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(543,63): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(544,63): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(547,63): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(548,63): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(663,37): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(666,36): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(673,34): warning C4477: 'sprintf' : format string '%1.1f' requires an argument of type 'double', but variadic argument 2 has type 'int'
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(688,45): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
 C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(844,57): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(855,35): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(858,34): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(889,57): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(876,57): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(887,35): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(890,34): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\MoveIngest.cpp(931,57): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
      Creating library C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.lib and object C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.exp
 LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
   MoveIngest.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.exe
+  MoveIngest.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\MoveIngest\x64\Debug\MoveIngest.pdb (Partial -> Full PDB)
