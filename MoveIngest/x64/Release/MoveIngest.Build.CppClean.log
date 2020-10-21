@@ -2,7 +2,6 @@ c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\sas.obj
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\notch50.obj
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\notch100.obj
-c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\moveingest.obj
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\bandstop.obj
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\state.obj
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\rbj.obj
@@ -13,6 +12,8 @@ c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\cascade.obj
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\butterworth.obj
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\biquad.obj
+c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\saslib.obj
+c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\moveingest.obj
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\moveingest.exe
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\moveingest.pdb
 c:\users\carolina\desktop\internship\software\projectcpp\moveingest\x64\release\moveingest.lib

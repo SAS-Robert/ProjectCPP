@@ -111,14 +111,14 @@ typedef struct{
 
   void init(){
 	  // Stimulation values
-	  stim.number_of_points = 3;  //* Set the number of points
-	  stim.ramp = 3;              //* Three lower pre-pulses
+	  stim.number_of_points = 0;  //* Set the number of points
+	  stim.ramp = 0;              //* Three lower pre-pulses
 	  stim.period = 20;           //* Frequency: 50 Hz
 	  // Set the stimulation pulse
-	  stim.points[0].current = 5;
+	  stim.points[0].current = 0;
 	  stim.points[0].time = 200;
-	  stim.points[1].time = 100;
-	  stim.points[2].current = -5;
+	  stim.points[1].time = 200;
+	  stim.points[2].current = 0;
 	  stim.points[2].time = 200;
 	printf("RehaMove3 message: Stimulation initial values -> current = %2.2f, ramp points = %d, ramp value = %d\n",stim.points[0].current,stim.number_of_points,stim.ramp);
 	// Start Process
@@ -168,6 +168,17 @@ typedef struct{
 	  //std::cout << "Reha Move3 message: Device ready.\n";
 	  ready = true;
 	}
+
+  // Update values
+  stim.number_of_points = 3;  //* Set the number of points
+  stim.ramp = 3;              //* Three lower pre-pulses
+  stim.period = 20;           //* Frequency: 50 Hz
+  // Set the stimulation pulse
+  stim.points[0].current = 23;
+  stim.points[0].time = 200;
+  stim.points[1].time = 200;
+  stim.points[2].current = -23;
+  stim.points[2].time = 200;
   }; // void start
 
   void update(){
@@ -197,6 +208,16 @@ typedef struct{
   }; // void end
 
   void pause(){
+    // Update values
+    stim.number_of_points = 0;  //* Set the number of points
+    stim.ramp = 0;              //* Three lower pre-pulses
+    stim.period = 20;           //* Frequency: 50 Hz
+    // Set the stimulation pulse
+    stim.points[0].current = 0;
+    stim.points[0].time = 200;
+    stim.points[1].time = 200;
+    stim.points[2].current = 0;
+    stim.points[2].time = 200;
     smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
     fill_ml_init(&device, &ml_init);
 	  smpt_send_ml_init(&device, &ml_init);
@@ -205,7 +226,6 @@ typedef struct{
 	  fill_ml_get_current_data(&device, &ml_get_current_data);
 	  // This last command check if it's received all the data requested
 	  smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
-    Sleep(1000); // Making sure the stimulator has been properly stopped
   }
 }RehaMove3_type;
 
@@ -381,7 +401,7 @@ typedef struct {
     error = false;
 		memset(buf, '\0', BUFLEN);
 		valid_msg = false;
-		if(display){printf("UPD: Requesting status...\n");}
+		if(display){printf("UPD: Requesting status...");}
 		//strcpy(message, "RobotStateInformer;Ping;1");
 		if (sendto(s, message, strlen(message), 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR)
 		{
@@ -403,9 +423,11 @@ typedef struct {
 		if (!error) {
 			int length = sizeof(SERVERc);
 			recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*)&si_other, &slen);
-     if (display) { std::cout << "UDP Received: " << buf << endl; }// endl; }// puts(buf);
+    // if (display) { std::cout << "UDP Received: " << buf << endl; }// endl; }// puts(buf);
 	  // Decode message here
      valid_msg = UDP_decode(buf, isMoving, Reached);
+     if(display && valid_msg){ std::cout<<"UDP Received: isMoving="<<isMoving<<",Reached="<<Reached<<endl;}
+     if(display && !valid_msg){ std::cout<<"UDP message not valid"<<endl;}
      //error = !error;
 		}
 	};
