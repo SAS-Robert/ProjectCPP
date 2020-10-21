@@ -1,0 +1,7 @@
+﻿  TestFilters.cpp
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\TestFilters.cpp(192,37): warning C4244: 'argument': conversion from 'double' to 'const _Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+  TestFilters.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\x64\Debug\TestFilters.exe

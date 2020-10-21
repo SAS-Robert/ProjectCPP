@@ -42,6 +42,7 @@ using namespace std;
 void generate_date(char* outStr);
 void get_dir(int argc, char *argv[], string& Outdir);
 bool UDP_decode(char* message, bool& value1, bool& value2);
+string convertToString(char* a, int size);
 
 void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init);
 void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_ml_channel_config values);

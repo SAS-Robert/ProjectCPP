@@ -1,12 +1,12 @@
 %% Load data files
 path = pwd;
 % Add source directories
-data_path = genpath('MoveIngest');
+data_path = genpath('SAS');
 fcn_path = genpath('Matlab_scripts');
 addpath(data_path);
 addpath(fcn_path);
 % Find and filter files
-files1=dir('MoveIngest/files/file_raw_*.txt');
+files1=dir('SAS/files/file_raw_*.txt');
 % -> select somewhere here what files are going to be processed?
 % Load containing data into matlab variables/files
 [amount, dummy ] = size(files1);
@@ -19,7 +19,7 @@ file1_emg2 = file1(:,3)';    %value[2] : channel 3, emg 2
 file1_alg = file1(:,4)';     %value[3] : channel 4, analog signal.
 file1_t = file1(:,5)';       %value[4] : time_ofset between last sample and actual sample
 % -> necessary to add files 2 and 3
-files2=dir('MoveIngest/file_filtered_*.txt');
+files2=dir('SAS/files/file_filtered_*.txt');
 [amount, dummy ] = size(files2);
 file2_full_name = [files2(amount).folder '\' files2(amount).name]; %Just take the last one
 %file2 = load(file2_full_name);
@@ -74,14 +74,17 @@ filet_filter2  = filetest(:,3)';
 filet_filter3  = filetest(:,4)';
 filet_filter4  = filetest(:,5)';
 filet_filter5  = filetest(:,6)';
+
 t = zeros(1,length(filet_raw));
+sr = 4000;                          % Sampling rate = 4000 Hz
 for i = 1:length(t)
- t(i) = i;
+ t(i) = i/sr;
 end
 figure('Name','Yesterday data');
 hold on
 grid on
-plot(t,filet_raw,t,filet_filter5)
+plot(t,filet_raw,t,filet_filter3)
+%plot(t,filet_raw,t,filet_filter5)
 
 figure('Name','Yesterday data filtering process');
 hold on

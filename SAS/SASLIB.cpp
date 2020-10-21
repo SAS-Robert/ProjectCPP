@@ -32,6 +32,16 @@ void generate_date(char* outStr){
   }
 }
 
+string convertToString(char* a, int size)
+{
+    int i;
+    string s = "";
+    for (i = 0; i < size-1; i++) {
+        s = s + a[i];
+    }
+    return s;
+}
+
 void get_dir(int argc, char *argv[], string& Outdir){
   //Gets the current directory of the programme, but for files
   std::stringstream sst(argv[0]);

@@ -55,7 +55,8 @@ std::vector<float> channel_filter;//Filtered data
 
 // Files handler to store recorded data
 ofstream fileRAW;
-ofstream fileFILTERS;
+ofstream fileFILTERS_MM;    // From MicroModeller
+ofstream fileFILTERS_iir;   // From iir.h library
 //ofstream file3;
 // ------------------------- Connection and devices  ------------------------
 UDPClient ROBERT;
@@ -67,13 +68,66 @@ RehaIngest_type recorder_device;
 ROB_Type screen_status;
 bool IsMoving = false, EOPR = false;
 float gain_th = 2.5, rec_threshold = 0, mean_th = 0;
-// Filters:
+// Filters from MicroModeller:
 bandStopType* bandStop = bandStop_create();
 std::vector<float> BandStop_result;
 notch50Type* notch50 = notch50_create();
 std::vector<float> notch50_result;
 notch100Type* notch100 = notch100_create();
 std::vector<float> notch100_result;
+
+// Filters from iir.h library. All the filters require the following parameters:
+// - Nr of order
+// - Sampling rate
+// - Central frequency (Hz)
+// - Frequency width (Hz)
+// - Chebyshev II: also Stop band attenuation (dB)
+// - Most of these parameters are calculated from Matlab's original scripts
+const int samplingrate = 4000;
+
+const int orderButty = 4;
+double Low_Hz = 30;
+double High_Hz = 200;
+const double B_Fq = (High_Hz+Low_Hz)/2;
+const double B_Fqw = (High_Hz-Low_Hz);
+Iir::Butterworth::BandPass<orderButty> Butty;
+std::vector<float> Butty_result;
+//Cheby50 = designfilt('bandstopiir', 'PassbandFrequency1', 47,
+//        'StopbandFrequency1', 49, 'StopbandFrequency2', 51,
+//        'PassbandFrequency2', 53, 'PassbandRipple1', 1,
+//        'StopbandAttenuation', 60, 'PassbandRipple2', 1,
+//        'SampleRate', 1000, 'DesignMethod', 'cheby2');
+const double C50_Fq = 50;
+double C50_Pfq1 = 47;
+double C50_Sfq1 = 49;
+double C50_Sfq2 = 51;
+double C50_Pfq2 = 53;
+double C50_PSfq1 = (C50_Sfq1+C50_Pfq1)/2;
+double C50_PSfq2 = (C50_Pfq2+C50_Sfq2)/2;
+
+const double C50_Fqw = (C50_PSfq2-C50_PSfq1);
+const double C50_dB = 60;
+const int order50 = 10;
+Iir::ChebyshevII::BandStop<order50> Cheby50;
+std::vector<float> C50_result;
+
+//Cheby100 = designfilt('bandstopiir', 'PassbandFrequency1', 97,
+//          'StopbandFrequency1', 99, 'StopbandFrequency2', 101,
+//          'PassbandFrequency2', 103, 'PassbandRipple1', 1,
+//          'StopbandAttenuation', 60, 'PassbandRipple2', 1,
+//          'SampleRate', 1000, 'DesignMethod', 'cheby2');
+const double C100_Fq = 100;
+double C100_Pfq1 = 97;
+double C100_Sfq1 = 99;
+double C100_Sfq2 = 101;
+double C100_Pfq2 = 103;
+double C100_PSfq1 = (C100_Sfq1+C100_Pfq1)/2;
+double C100_PSfq2 = (C100_Pfq2+C100_Sfq2)/2;
+const double C100_Fqw = (C100_PSfq2-C100_PSfq1);
+const double C100_dB = 60;
+const int order100 = 10;
+Iir::ChebyshevII::BandStop<order100> Cheby100;
+std::vector<float> C100_result;
 
 int ROB_rep = 0;
 ROB_Type wololo;
@@ -116,8 +170,11 @@ auto auto_end_rec = std::chrono::steady_clock::now();
 // files
 char date[15];
 string file_dir;
+string date_s;
+string format(".txt");
 string init1("file_raw_");
 string init2("file_filtered_");
+string init2b("file_iir_");
 
 string time1_s("time1_");
 string time2_s("time2_");
@@ -126,7 +183,6 @@ string time3_s("time3_");
 bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
 bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false;
 
-string format(".txt");
 struct device_to_device {
     bool start = false;
     bool end = false;
@@ -156,29 +212,29 @@ void thread_t2();
 //void create_file();
 bool dummy_udp = false, dummy_tcp = false;
 bool dummy_valid = false;
+bool dummy_ff = false;
 void thread_connect();
-float process_data();
+float process_data_MM();
+float process_data_iir();
 // ------------------------------ Main  -----------------------------
 
 int main(int argc, char* argv[]) {
     // initialize files names
     get_dir(argc, argv, file_dir);
     generate_date(date); //get current date/time in format YYMMDD_hhmm
-    init1.insert(0, file_dir);
-    init2.insert(0, file_dir);
-    time1_s.insert(0, file_dir);
-    time2_s.insert(0, file_dir);
-    time3_s.insert(0, file_dir);
-    init1.append(date);
-    init1.append(format);
-    init2.append(date);
-    init2.append(format);
-    time1_s.append(date);
-    time1_s.append(format);
-    time2_s.append(date);
-    time2_s.append(format);
-    time3_s.append(date);
-    time3_s.append(format);
+    date_s = convertToString(date,sizeof(date));
+    init1 = file_dir + init1 + date_s.c_str()  +  ".txt";
+    init2 = file_dir + init2 + date_s.c_str()  +  ".txt";
+    init2b = file_dir + init2b + date_s.c_str()  +  ".txt";
+    time1_s = file_dir + time1_s + date_s.c_str()  +  ".txt";
+    time2_s = file_dir + time2_s + date_s.c_str()  +  ".txt";
+    time3_s = file_dir + time3_s + date_s.c_str()  +  ".txt";
+    //std::cout << "date="<<date_s<<", init2b="<<init1<<endl;
+    // Start filters
+    Butty.setup(samplingrate, B_Fq, B_Fqw);
+    Cheby50.setup(samplingrate, C50_Fq, C50_Fqw, C50_dB);
+    Cheby100.setup(samplingrate, C100_Fq, C100_Fqw, C100_dB);
+
     // other dummy stuff
     dummy_valid = false;
     printf("Do you wanna use the UDP connection to Robert's controller? [Y/N]: ");
@@ -202,6 +258,18 @@ int main(int argc, char* argv[]) {
             dummy_tcp = true;
         }
         dummy_valid = (ch == 'Y') || (ch == 'N');
+        printf("%c ", ch);
+    }
+
+    dummy_valid = false;
+    printf("\nDo you wanna use Hasomed or MicroModeller filters? [H/M]: ");
+    while (!dummy_valid) {
+        ch = _getch();
+        ch = toupper(ch);
+        if (ch == 'H') {
+            dummy_ff = true;
+        }
+        dummy_valid = (ch == 'H') || (ch == 'M');
         printf("%c ", ch);
     }
     // Flushing input and output buffers
@@ -703,22 +771,21 @@ void thread_connect() {
     } // while loop
 } // thread
 
-float process_data() {
+float process_data_MM() {
     float mean = 0, temp = 0;
     int N_len;
     N_len = recorder_device.channel_raw.size();
     for (int i = 0; i < N_len; ++i)                           // Loop for the length of the array
     {
-        // Filter data
+        // Filter data - Hasomed
         bandStop_writeInput(bandStop, recorder_device.channel_raw[i]);              // Write one sample into the filter
         BandStop_result.push_back(bandStop_readOutput(bandStop));        // Read one sample from the filter and store it in the array.
         notch50_writeInput(notch50, BandStop_result[i]);
-        notch50_result.push_back(bandStop_readOutput(bandStop));
+        notch50_result.push_back(bandStop_readOutput(notch50));
         notch100_writeInput(notch100, notch50_result[i]);
-        notch100_result.push_back(bandStop_readOutput(bandStop));
+        notch100_result.push_back(bandStop_readOutput(notch100));
         // Saving data
-        //fileRAW << recorder_device.channel_raw[i] << "\n";
-        fileFILTERS << recorder_device.channel_raw[i] << "," << BandStop_result[i] << "," << notch50_result[i] << "," << notch100_result[i] << "\n";
+        fileFILTERS_MM << recorder_device.channel_raw[i] << "," << BandStop_result[i] << "," << notch50_result[i] << "," << notch100_result[i] << "\n";
         // Calculating mean of retified EMG
         if (notch100_result[i] > 0) {
             temp = notch100_result[i];
@@ -736,6 +803,36 @@ float process_data() {
     notch100_result.clear();
     return mean;
 }
+
+float process_data_iir() {
+    float mean = 0, temp = 0;
+    int N_len;
+    N_len = recorder_device.channel_raw.size();
+    for (int i = 0; i < N_len; ++i)                           // Loop for the length of the array
+    {
+        // Filter data - Christian's
+        Butty_result.push_back(Butty.filter(recorder_device.channel_raw[i]));
+        C50_result.push_back(Cheby50.filter(Butty_result[i]));
+        C100_result.push_back(Cheby100.filter(C50_result[i]));
+        // Saving data
+        fileFILTERS_iir << recorder_device.channel_raw[i] << "," <<Butty_result[i] << "," <<C50_result[i] << "," << C100_result[i] << "\n";
+        // Calculating mean of retified EMG
+        if (C100_result[i] > 0) {
+            temp = C100_result[i];
+        }
+        else {
+            temp = -C100_result[i];
+        }
+        mean = mean + (temp / N_len);
+    }
+    //Preparing for next sample set
+    recorder_device.channel_raw.clear();
+    channel_filter.clear();
+    Butty_result.clear();
+    C50_result.clear();
+    C100_result.clear();
+    return mean;
+}
 //================================================
 void thread_stimulation()
 {
@@ -743,7 +840,7 @@ void thread_stimulation()
     switch (state_process) {
     case st_init:
         // initialization
-        stimulator_device.port_name_rm = "COM6";
+        stimulator_device.port_name_rm = "COM5";
         stimulator_device.abort = (one_to_escape != 0);
         auto_start_stim = std::chrono::steady_clock::now();
         stimulator_device.init();
@@ -855,9 +952,15 @@ void thread_recording()
         //Preparing for next sample set
         recorder_device.channel_raw.clear();
         channel_filter.clear();
-        BandStop_result.clear();
-        notch50_result.clear();
-        notch100_result.clear();
+        if(dummy_ff){
+          Butty_result.clear();
+          C50_result.clear();
+          C100_result.clear();
+        }else{
+          BandStop_result.clear();
+          notch50_result.clear();
+          notch100_result.clear();
+        }
 
         recorder_device.port_name_ri = "COM4";
         recorder_device.init();
@@ -873,9 +976,13 @@ void thread_recording()
         recorder_device.record();
         sample_nr = recorder_device.channel_raw.size();
         // Open files
-        if (recorder_device.data_received && recorder_device.data_start && !fileRAW.is_open() && !fileFILTERS.is_open()) {
+        if (recorder_device.data_received && recorder_device.data_start && !fileRAW.is_open() && !fileFILTERS_MM.is_open()) {
             fileRAW.open(init1);
-            fileFILTERS.open(init2);
+            if(dummy_ff){
+              fileFILTERS_iir.open(init2b);
+            }else{
+              fileFILTERS_MM.open(init2);
+            }
             //std::cout << "Files opened"<< endl;
             tic();
         }
@@ -885,7 +992,12 @@ void thread_recording()
         // Set threshold conditions
         set_th = (toc() && recorder_device.data_start);
         if (set_th && !rec_status.th) {
-            mean_th = process_data();
+
+            if(dummy_ff){
+              mean_th = process_data_iir();
+            }else{
+              mean_th = process_data_MM();
+            }
             rec_threshold = mean_th * gain_th;
             std::cout << "Reha Ingest message: Threshold set to -> resting mean = " << mean_th << ", gain = " << gain_th << ", th value = " << rec_threshold << endl;
             rec_status.th = true;
@@ -928,7 +1040,12 @@ void thread_recording()
         // Communication with RehaMove3 thread and main
         if (set_value) {
             time2_start = std::chrono::steady_clock::now();
-            mean = process_data();
+
+            if(dummy_ff){
+              mean = process_data_iir();
+            }else{
+              mean = process_data_MM();
+            }
 
             time2_end = std::chrono::steady_clock::now();
             time2_diff = time2_end - time2_start;
@@ -996,7 +1113,7 @@ void thread_recording()
         // Finish all processes (just once)
         recorder_device.end();
         fileRAW.close();
-        fileFILTERS.close();
+        fileFILTERS_MM.close();
         bandStop_destroy(bandStop);
         notch50_destroy(notch50);
         notch100_destroy(notch100);
