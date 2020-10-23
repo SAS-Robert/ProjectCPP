@@ -1,6 +1,11 @@
 function [data] = getdata(file)
-%Clean data from file so it does not look so shit
-%   Detailed explanation goes here
+%This function reads the saved data in a file, and ommits the unuseful
+%lines (that do not match the file format or is not numeric).
+% [data] = getdata(file)
+%- file = file's name string. It must include file folder if the file 
+%         it is not in Matlab workspace.
+%- data = output matrix with the containing data in the file.
+% e.g.:     recorded_signal = getdata('folder1/example.txt');
 
 fid = fopen(file, 'rt') ;              % Open source file.
 v = [];
@@ -11,7 +16,7 @@ while ~feof(fid)
     %disp(tline)
     comp = strsplit(read_line, ',');
     [s1, s2] = size( comp );
-    if (s2>=3)   % filter not-good lines 
+    if (s2>=2)   % filter not-good lines 
         v = [v; comp];
     end 
 end

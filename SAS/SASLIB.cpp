@@ -221,7 +221,7 @@ float handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack,
     //value[2] : channel 3, emg 2
     //value[3] : channel 4, analog signal.
     //value[4] : time_ofset between last sample and actual sample
-    sprintf(outStr, "%2.7f, %2.7f, %2.7f, %2.7f, %3.1f", values[0], values[1], values[2], values[3], values[4]);
+    sprintf(outStr, "%2.7f, %2.7f, %2.7f, %2.7f, %3.1f;", values[0], values[1], values[2], values[3], values[4]);
     output = values[1]; // raw data value
     return output;
 }

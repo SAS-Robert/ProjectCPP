@@ -112,8 +112,8 @@ typedef struct{
 
   void init(){
 	  // Stimulation values
-	  stim.number_of_points = 0;  //* Set the number of points
-	  stim.ramp = 0;              //* Three lower pre-pulses
+	  stim.number_of_points = 3;  //* Set the number of points
+	  stim.ramp = 3;              //* Three lower pre-pulses
 	  stim.period = 20;           //* Frequency: 50 Hz
 	  // Set the stimulation pulse
 	  stim.points[0].current = 0;
@@ -121,7 +121,6 @@ typedef struct{
 	  stim.points[1].time = 200;
 	  stim.points[2].current = 0;
 	  stim.points[2].time = 200;
-	printf("RehaMove3 message: Stimulation initial values -> current = %2.2f, ramp points = %d, ramp value = %d\n",stim.points[0].current,stim.number_of_points,stim.ramp);
 	// Start Process
 	printf("Reha Move3 message: Initializing device on port %s\n",port_name_rm);//<<port_name_rm<<endl;
 	while(!smpt_next){
@@ -130,7 +129,7 @@ typedef struct{
 	  // Request ID Data
 	  packet = smpt_packet_number_generator_next(&device);
 	  smpt_send_get_device_id(&device, packet);
-
+    //
 	  fill_ml_init(&device, &ml_init);
 	  smpt_send_ml_init(&device, &ml_init);
 	  fill_ml_update(&device, &ml_update, stim);
@@ -175,11 +174,16 @@ typedef struct{
   stim.ramp = 3;              //* Three lower pre-pulses
   stim.period = 20;           //* Frequency: 50 Hz
   // Set the stimulation pulse
-  stim.points[0].current = 23;
+
+  stim.points[0].current = 9;
   stim.points[0].time = 200;
   stim.points[1].time = 200;
-  stim.points[2].current = -23;
+  stim.points[2].current = -9;
   stim.points[2].time = 200;
+  printf("RehaMove3 message: Stimulation initial values -> current = %2.2f, ramp points = %d, ramp value = %d\n",stim.points[0].current,stim.number_of_points,stim.ramp);
+
+  //printf("\n 3 Reha Move3 message: done");//<<port_name_rm<<endl;
+
   }; // void start
 
   void update(){
@@ -209,25 +213,41 @@ typedef struct{
   }; // void end
 
   void pause(){
+    // Stop values
+    stim.number_of_points = 3;  //* Set the number of points
+	  stim.ramp = 3;              //* Three lower pre-pulses
+	  stim.period = 20;           //* Frequency: 50 Hz
+	  // Set the stimulation pulse
+	  stim.points[0].current = 0;
+	  stim.points[0].time = 200;
+	  stim.points[1].time = 200;
+	  stim.points[2].current = 0;
+	  stim.points[2].time = 200;
+
+    fill_ml_update(&device, &ml_update, stim);
+	  smpt_send_ml_update(&device, &ml_update);
+
     // Update values
-    stim.number_of_points = 0;  //* Set the number of points
-    stim.ramp = 0;              //* Three lower pre-pulses
+    stim.number_of_points = 3;  //* Set the number of points
+    stim.ramp = 3;              //* Three lower pre-pulses
     stim.period = 20;           //* Frequency: 50 Hz
     // Set the stimulation pulse
-    stim.points[0].current = 0;
+    stim.points[0].current = 9;
     stim.points[0].time = 200;
     stim.points[1].time = 200;
-    stim.points[2].current = 0;
+    stim.points[2].current = -9;
     stim.points[2].time = 200;
-    smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
-    fill_ml_init(&device, &ml_init);
-	  smpt_send_ml_init(&device, &ml_init);
-	  fill_ml_update(&device, &ml_update, stim);
-	  smpt_send_ml_update(&device, &ml_update);
-	  fill_ml_get_current_data(&device, &ml_get_current_data);
-	  // This last command check if it's received all the data requested
-	  smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
-  }
+  }; // void pause
+
+  //   smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
+  //   fill_ml_init(&device, &ml_init);
+	//   smpt_send_ml_init(&device, &ml_init);
+	//   fill_ml_update(&device, &ml_update, stim);
+	//   smpt_send_ml_update(&device, &ml_update);
+	//   fill_ml_get_current_data(&device, &ml_get_current_data);
+	//   // This last command check if it's received all the data requested
+	//   smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+  // };
 }RehaMove3_type;
 
 typedef struct{
@@ -245,6 +265,7 @@ typedef struct{
 	bool abort = false, ready = false;
 	bool data_received = false, data_start = false, data_printed = false;
 	std::vector<float> channel_raw;
+  string channels;
 
 	int iterator = 0;
 
@@ -328,6 +349,7 @@ typedef struct{
 
 		  if (data_received && data_start) {
 			channel_raw.push_back(raw_value);
+      //channels.append(convertToString(data,sizeof(data))+"\n\r");
 		  }
 	  }
 	}; // void record
