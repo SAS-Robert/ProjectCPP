@@ -1,0 +1,22 @@
+-Compensate the stimulator signal
+-Start stimulator, check stimulator (voluntary EMG) -> check if it stops or not?
+Separate FES from EMG
+-Separate recorder from stimulator?
+
+-How do signals look while stimulating and when not.
+
+
+-> Check that the patient is continously trying to go over the threshold
+-> Deactivate the movement when the robot goes under the threshold, so the patient has to keep pushing and not relaxing
+
+Maximum threshold? -> Recording the patient doing a very strong push
+	-> Then set up the threshold in between
+Only resting EMG signal is bad to calibrate 
+
+Adaptative threshold
+
+Put electrodes separately (from EMG and FES).
+eg.: FES in the knee and EMG in the gluteus/cuadriceps
+Necessary to check good locations for the electrodes.
+
+--> Look at girls' project references from Threshold

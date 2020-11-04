@@ -1,5 +1,5 @@
 ﻿  TestFilters.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\TestFilters.cpp(192,37): warning C4244: 'argument': conversion from 'double' to 'const _Ty', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\TestFilters.cpp(200,37): warning C4244: 'argument': conversion from 'double' to 'const _Ty', possible loss of data
           with
           [
               _Ty=float

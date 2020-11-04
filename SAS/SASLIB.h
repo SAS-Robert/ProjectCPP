@@ -37,6 +37,9 @@
 
 #define BUFLEN 512
 using namespace std;
+//
+static std::vector<double> recorder_emg1;
+static std::vector<double> recorder_time;
 
 // ------------------------------ Function hearders -----------------------------
 void generate_date(char* outStr);
@@ -49,13 +52,82 @@ void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, 
 void fill_ml_get_current_data(Smpt_device* const device, Smpt_ml_get_current_data* const ml_get_current_data);
 void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init);
 void fill_dl_power_module(Smpt_device* const device, Smpt_dl_power_module* const dl_power_module);
-bool handle_dl_packet_global(Smpt_device* const device, char* outStr, float& raw_data);
-float handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack, char* outStr);
 void handleInitAckReceived(Smpt_device* const device, const Smpt_ack& ack);
 void handlePowerModuleAckReceived(Smpt_device* const device, const Smpt_ack& ack);
 void handleStopAckReceived(Smpt_device* const device, const Smpt_ack& ack);
-void handleGetAckReceived(Smpt_device* const device, const Smpt_ack& ack);
+//void handleGetAckReceived(Smpt_device* const device, const Smpt_ack& ack);
 
+// Modified from original Hasomeds examples:
+//void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack);
+//bool handle_dl_packet_global(Smpt_device* const device);
+static void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack)
+{
+	Smpt_dl_send_live_data live_data;
+	float values[5] = { 0 };
+	smpt_get_dl_send_live_data(device, &live_data);
+
+	for (int i = 0; i < live_data.n_channels; i++)
+	{
+		values[i] = live_data.electrode_samples[i].value;
+	}
+	values[4] = (float)live_data.time_offset;
+
+	//value[0] : channel 1, bioimpedance measurement
+	//value[1] : channel 2, emg 1 measurement
+	//value[2] : channel 3, emg 2
+	//value[3] : channel 4, analog signal.
+	//value[4] : time_ofset between last sample and actual sample
+	recorder_emg1.push_back((double)values[1]);
+	//recorder_time.push_back((double)values[4]);
+}
+
+static bool handle_dl_packet_global(Smpt_device* const device)
+{
+	Smpt_ack ack;
+	smpt_last_ack(device, &ack);
+	Smpt_Cmd cmd = (Smpt_Cmd)ack.command_number;
+	bool output = false;
+
+	switch (cmd)
+	{
+	case Smpt_Cmd_Dl_Power_Module_Ack:
+	{
+		handlePowerModuleAckReceived(device, ack);
+		break;
+	}
+	case Smpt_Cmd_Dl_Get_Ack:
+	{
+		//handleGetAckReceived(ack);
+		break;
+	}
+	case Smpt_Cmd_Dl_Init_Ack:
+	{
+		handleInitAckReceived(device, ack);
+		break;
+	}
+	case Smpt_Cmd_Dl_Start_Ack:
+	{
+		//handleStartAckReceived(ack);
+		break;
+	}
+	case Smpt_Cmd_Dl_Stop_Ack:
+	{
+		handleStopAckReceived(device, ack);
+		break;
+	}
+	case Smpt_Cmd_Dl_Send_Live_Data:
+	{
+		handleSendLiveDataReceived(device, ack);
+		output = true;
+		break;
+	}
+	default:
+	{
+		break;
+	}
+	}
+	return output;
+}
 // ---------------------- Variables for process control ---------------------
 typedef enum
 {
@@ -100,7 +172,7 @@ typedef struct{
   Smpt_ml_init ml_init = { 0 };           // Struct for ml_init command *
   Smpt_ml_update ml_update = { 0 };       // Struct for ml_update command
   Smpt_ml_get_current_data ml_get_current_data = { 0 };
-  UINT i = 0;
+  //UINT i = 0;
   bool smpt_port = false, smpt_check = false, smpt_next = false;
   bool smpt_end = false, smpt_get = false, tstart = false, ready = false;
   double diff;
@@ -170,15 +242,15 @@ typedef struct{
 	}
 
   // Update values
-  stim.number_of_points = 3;  //* Set the number of points
-  stim.ramp = 3;              //* Three lower pre-pulses
+  stim.number_of_points = 2;  //* Set the number of points
+  stim.ramp = 2;              //* Three lower pre-pulses
   stim.period = 20;           //* Frequency: 50 Hz
   // Set the stimulation pulse
 
-  stim.points[0].current = 9;
+  stim.points[0].current = 27;
   stim.points[0].time = 200;
   stim.points[1].time = 200;
-  stim.points[2].current = -9;
+  stim.points[2].current = -27;
   stim.points[2].time = 200;
   printf("RehaMove3 message: Stimulation initial values -> current = %2.2f, ramp points = %d, ramp value = %d\n",stim.points[0].current,stim.number_of_points,stim.ramp);
 
@@ -189,13 +261,6 @@ typedef struct{
   void update(){
 	fill_ml_update(&device, &ml_update, stim);
 	smpt_send_ml_update(&device, &ml_update);
-	while (i <= 600)
-	{
-	  fill_ml_get_current_data(&device, &ml_get_current_data);
-	  smpt_send_ml_get_current_data(&device, &ml_get_current_data);
-	  Sleep(1);
-	  i++;
-	}
 
 	fill_ml_get_current_data(&device, &ml_get_current_data);
 	smpt_send_ml_get_current_data(&device, &ml_get_current_data);
@@ -209,45 +274,30 @@ typedef struct{
 		smpt_port = smpt_close_serial_port(&device);
 		smpt_check = smpt_check_serial_port(port_name_rm); // it must be available after closing
 	  }
+	  ready = false;
 	  if(smpt_check){std::cout << "Reha Move3 message: Process successfully finished.\n";}
   }; // void end
 
   void pause(){
-    // Stop values
-    stim.number_of_points = 3;  //* Set the number of points
-	  stim.ramp = 3;              //* Three lower pre-pulses
-	  stim.period = 20;           //* Frequency: 50 Hz
-	  // Set the stimulation pulse
-	  stim.points[0].current = 0;
-	  stim.points[0].time = 200;
-	  stim.points[1].time = 200;
-	  stim.points[2].current = 0;
-	  stim.points[2].time = 200;
+    // Option 1: setting current value = 0 and update it
+    // stim.number_of_points = 3;
+    // stim.ramp = 3;
+    // stim.period = 20;
+    // stim.points[0].current = 0;
+    // stim.points[0].time = 200;
+    // stim.points[1].time = 200;
+    // stim.points[2].current = -0;
+    // stim.points[2].time = 200;
+    //
+    // fill_ml_update(&device, &ml_update, stim);
+    // smpt_send_ml_update(&device, &ml_update);
 
-    fill_ml_update(&device, &ml_update, stim);
-	  smpt_send_ml_update(&device, &ml_update);
-
-    // Update values
-    stim.number_of_points = 3;  //* Set the number of points
-    stim.ramp = 3;              //* Three lower pre-pulses
-    stim.period = 20;           //* Frequency: 50 Hz
-    // Set the stimulation pulse
-    stim.points[0].current = 9;
-    stim.points[0].time = 200;
-    stim.points[1].time = 200;
-    stim.points[2].current = -9;
-    stim.points[2].time = 200;
+    // Option 2: using stop comand and restart it?
+    smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
+    fill_ml_init(&device, &ml_init);
+    smpt_send_ml_init(&device, &ml_init);
   }; // void pause
 
-  //   smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
-  //   fill_ml_init(&device, &ml_init);
-	//   smpt_send_ml_init(&device, &ml_init);
-	//   fill_ml_update(&device, &ml_update, stim);
-	//   smpt_send_ml_update(&device, &ml_update);
-	//   fill_ml_get_current_data(&device, &ml_get_current_data);
-	//   // This last command check if it's received all the data requested
-	//   smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
-  // };
 }RehaMove3_type;
 
 typedef struct{
@@ -255,113 +305,108 @@ typedef struct{
 	uint8_t packet_number = 0;
 	Smpt_device device_ri = { 0 };
 	Smpt_ml_init ml_init = { 0 };           // Struct for ml_init command
-	char data[256];
-	float raw_value = 0;
 	//Process variables
 	bool smpt_port = false, smpt_check = false, smpt_stop = false, smpt_next = false;
 	bool smpt_end = false;
-	int limit_samples = 400;
+	int limit_samples = 100;
 	double diff;
 	bool abort = false, ready = false;
 	bool data_received = false, data_start = false, data_printed = false;
-	std::vector<float> channel_raw;
-  string channels;
-
+	// For debuging:
 	int iterator = 0;
 
-	void init(){ // intializes communication
+	void init() { // intializes communication
 	  // First step
-	  std::cout <<"Reha Ingest message: Setting communication on port "<<port_name_ri<<endl;
-	  while(!smpt_next){
-		smpt_check = smpt_check_serial_port(port_name_ri);
-		smpt_port = smpt_open_serial_port(&device_ri, port_name_ri);
-		packet_number = smpt_packet_number_generator_next(&device_ri);
-		smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
-		smpt_next = smpt_check && smpt_port && smpt_stop;
-		if(!smpt_next){
-		  std::cout << "Error - Reha Ingest: Device not found. Turn it on and/or check connection.\n";
-		  smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
-			smpt_close_serial_port(&device_ri);
-		  Sleep(5000); // waits for 5 seconds to give you time to regret your life
-		  std::cout << "Reha Ingest message: Retrying...\n";
+		std::cout << "Reha Ingest message: Setting communication on port " << port_name_ri << endl;
+		while (!smpt_next) {
+			smpt_check = smpt_check_serial_port(port_name_ri);
+			smpt_port = smpt_open_serial_port(&device_ri, port_name_ri);
+			packet_number = smpt_packet_number_generator_next(&device_ri);
+			smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
+			smpt_next = smpt_check && smpt_port && smpt_stop;
+			if (!smpt_next) {
+				std::cout << "Error - Reha Ingest: Device not found. Turn it on and/or check connection.\n";
+				smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
+				smpt_close_serial_port(&device_ri);
+				Sleep(5000); // waits for 5 seconds to give you time to regret your life
+				std::cout << "Reha Ingest message: Retrying...\n";
+			}
+			if (abort) {
+				smpt_end = true;
+				break;
+			}
 		}
-		if(abort){
-		  smpt_end = true;
-		  break; }
-	  }
-	} // void init
+
+	}; // void init
 	// 2nd-3rd-4th steps if the user has not stopped the process
-	void start(){ // starts the device internal measurement unit
+	void start() { // starts the device internal measurement unit
 	  // Fourth step
 	  // Clean the input buffer
-	  while (smpt_new_packet_received(&device_ri))
-	  {
-		  handle_dl_packet_global(&device_ri, data, raw_value);
-	  }
-	  // Second step: enable device
-	  std::cout << "Reha Ingest message: Enabling and initializing device...\n";
-	  Smpt_dl_power_module dl_power_module = { 0 };
-	  fill_dl_power_module(&device_ri, &dl_power_module);
-	  smpt_send_dl_power_module(&device_ri, &dl_power_module);
+		while (smpt_new_packet_received(&device_ri))
+		{
+			handle_dl_packet_global(&device_ri);
+		}
+		// Second step: enable device
+		std::cout << "Reha Ingest message: Enabling and initializing device...\n";
+		Smpt_dl_power_module dl_power_module = { 0 };
+		fill_dl_power_module(&device_ri, &dl_power_module);
+		smpt_send_dl_power_module(&device_ri, &dl_power_module);
 
-	  // wait, because the enabling takes some time (normal up to 4ms)
-	  Sleep(10);
+		// wait, because the enabling takes some time (normal up to 4ms)
+		Sleep(10);
 
-	  while (smpt_new_packet_received(&device_ri))
-	  {
-		  handle_dl_packet_global(&device_ri, data, raw_value);
-	  }
-	  // Third step: initialize device
-	  Smpt_dl_init dl_init = { 0 };
-	  fill_dl_init(&device_ri, &dl_init);
-	  smpt_send_dl_init(&device_ri, &dl_init);
+		while (smpt_new_packet_received(&device_ri))
+		{
+			handle_dl_packet_global(&device_ri);
+		}
+		// Third step: initialize device
+		Smpt_dl_init dl_init = { 0 };
+		fill_dl_init(&device_ri, &dl_init);
+		smpt_send_dl_init(&device_ri, &dl_init);
 
-	  Sleep(10);
+		Sleep(10);
 
-	  while (smpt_new_packet_received(&device_ri))
-	  {
-		  handle_dl_packet_global(&device_ri, data, raw_value);
-	  }
-	  Sleep(10);
-	  // Every step is needed for ini.
-		//---------------------------------------------
-	  // Waiting here for start from main:
-	  // send measurement start cmd
-	  packet_number = smpt_packet_number_generator_next(&device_ri);
-	  smpt_send_dl_start(&device_ri, packet_number);
-	  ready = true;
-	  std::cout << "Reha Ingest message: device ready.\n";
+		while (smpt_new_packet_received(&device_ri))
+		{
+			handle_dl_packet_global(&device_ri);
+		}
+		Sleep(10);
+		// Every step is needed for ini.
+		  //---------------------------------------------
+		// Waiting here for start from main:
+		// send measurement start cmd
+		packet_number = smpt_packet_number_generator_next(&device_ri);
+		smpt_send_dl_start(&device_ri, packet_number);
+		ready = true;
+		std::cout << "Reha Ingest message: device ready.\n";
 	};// void start
 
-	void record(){
-	  // clean data variables before starting
-	  data_received = false;
-	  memset(data, '\0', 256);
-	  while (smpt_new_packet_received(&device_ri))
-	  {
-		  data_received = handle_dl_packet_global(&device_ri, data, raw_value);
-		  if (data_received && !data_start) { data_start = true; }
-		  if(data_start && !data_printed){
-			std::cout<< "Reha Ingest message: Data available at iteration number "<<iterator<<endl;
-			std::cout << "Reha Ingest message: Recording data.\n";
-			data_printed = true;
-		  }
+	void record() {
+		// clean data variables before starting
+		data_received = false;
+		while (smpt_new_packet_received(&device_ri))
+		{
+			data_received = handle_dl_packet_global(&device_ri);
+			if (data_received && !data_start) {
+				data_start = true;
 
-		  if (data_received && data_start) {
-			channel_raw.push_back(raw_value);
-      //channels.append(convertToString(data,sizeof(data))+"\n\r");
-		  }
-	  }
+			}
+			if (data_start && !data_printed) {
+				std::cout << "Reha Ingest message: Recording data.\n";
+				data_printed = true;
+			}
+
+		}
 	}; // void record
-	void end(){
-	  printf("Reha Ingest message: Ending process.\n");
-	  packet_number = smpt_packet_number_generator_next(&device_ri);
-	  smpt_port = smpt_send_dl_stop(&device_ri, packet_number);
-	  smpt_port = smpt_close_serial_port(&device_ri);
-	  smpt_check = smpt_check_serial_port(port_name_ri);
+	void end() {
+		packet_number = smpt_packet_number_generator_next(&device_ri);
+		smpt_port = smpt_send_dl_stop(&device_ri, packet_number);
+		smpt_port = smpt_close_serial_port(&device_ri);
+		smpt_check = smpt_check_serial_port(port_name_ri);
+		ready = false;
+		printf("Reha Ingest message: process finished.\n");
 	}; // void end
 }RehaIngest_type;
-
 // -------------------- Communication  ----------------------
 typedef struct {
 	struct sockaddr_in si_other;

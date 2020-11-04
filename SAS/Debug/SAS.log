@@ -14,19 +14,42 @@ C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\notch100.cpp(27,1):
   notch50.cpp
 C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\notch50.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
   SAS.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(388,27): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(513,23): warning C4244: '=': conversion from 'unsigned __int64' to 'int', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(629,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(630,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(633,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(634,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(775,44): warning C4477: 'sprintf' : format string '%1.1f' requires an argument of type 'double', but variadic argument 2 has type 'int'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(944,31): warning C4018: '<': signed/unsigned mismatch
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(1046,35): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(1049,35): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(1148,31): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(387,27): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(399,27): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(411,27): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(423,27): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(448,23): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(675,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(676,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(679,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(680,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(749,10): warning C4101: 'decode_successful': unreferenced local variable
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(811,59): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(812,58): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(813,58): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(815,38): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(815,64): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(815,88): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(815,113): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(817,25): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(818,32): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(821,33): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(852,59): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(853,58): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(854,58): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(857,38): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(857,64): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(857,88): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(857,113): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(862,29): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(863,36): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(866,37): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(877,25): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(878,32): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(881,33): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const unsigned int', possible loss of data
   SASLIB.cpp
   Generating Code...
      Creating library C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\Debug\SAS.lib and object C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\Debug\SAS.exp
 LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
   SAS.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\Debug\SAS.exe
+  SAS.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\Debug\SAS.pdb (Partial -> Full PDB)

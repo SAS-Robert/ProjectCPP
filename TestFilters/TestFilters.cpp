@@ -179,7 +179,15 @@ int main(int argc, char* argv[]) {
     const double Butty_widthFrequency = (High_Hz-Low_Hz);
     Butty.setup(samplingrate, Butty_centerFrequency, Butty_widthFrequency);
     // Load raw data
-    infile.open("file_filtered_20201020_1543.txt");
+    //infile.open("CA_ind1_EMG_20201027_9000.txt");
+    //infile.open("CA_ind2_EMG_20201027_9005.txt");
+    //infile.open("CA_ind3_EMG_20201027_9010.txt");
+
+    //infile.open("EMG_desk_20201027_9030.txt");
+    //infile.open("EMG_desk_20201027_9035.txt");
+    infile.open("EMG_desk_20201027_9040.txt");
+
+
     std::cout << "Reading from the file" << endl;
     string data0, data1, data2, data3, data4;
     while(!infile.eof()){
@@ -189,14 +197,14 @@ int main(int argc, char* argv[]) {
       values[2] = std::stod(data2);
       values[3] = std::stod(data3);
       values[4] = std::stod(data4);
-      channel_raw.push_back(values[0]);
+      channel_raw.push_back(values[1]);
     }
     infile.close();
     std::cout << "Raw data loaded." << endl;
     //std::cout << "Values format: "<<values[0]<<"," << values[1]<<"," << values[2]<<"," << values[3]<<"," << values[4]<< endl;
 
     // Filter data
-    fileName = fileDir + "output_"+ date_s.c_str() + ".txt";
+    fileName = fileDir + "desk3_Hasomed.txt";//+date_s.c_str() + ".txt";
     outFile.open(fileName);
 
     float raw_value = 0;

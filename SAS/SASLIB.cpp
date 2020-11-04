@@ -14,6 +14,7 @@
 #include "smpt_ml_client.h"
 #include "smpt_dl_client.h"
 #include "smpt_definitions.h"
+//
 
 //========================== Millesaceous ==================================
 //New functions
@@ -73,7 +74,7 @@ void get_dir(int argc, char *argv[], string& Outdir){
 
   // Output
   full = t;
-  full+="files\\";
+  full+="test\\";
   Outdir = full;
 }
 
@@ -179,7 +180,7 @@ void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init)
     dl_init->ads129x.ch2set = 0;
     dl_init->ads129x.ch3set = 0;
     dl_init->ads129x.ch4set = 0;
-    dl_init->ads129x.config1 = 131;
+    dl_init->ads129x.config1 = 133; // 131 = 4KHz, 133 = 1 KHz, 134 = 500 SPS
     dl_init->ads129x.config2 = 0;
     dl_init->ads129x.config3 = 252;
     dl_init->ads129x.rld_sensn = 2;
@@ -202,40 +203,12 @@ void fill_dl_power_module(Smpt_device* const device, Smpt_dl_power_module* const
 
 }
 
-float handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack, char* outStr)
-{
-    Smpt_dl_send_live_data live_data;
-    float values[5] = { 0 };
-    smpt_get_dl_send_live_data(device, &live_data);
-    float output = 0;
-    //Data samples
-    for (int i = 0; i < live_data.n_channels; i++)
-    {
-        values[i] = live_data.electrode_samples[i].value;
-    }
-    //uint32_t timeDiff = live_data.time_offset - m_lastTimeOffset;
-    values[4] = (float)live_data.time_offset;
-
-    //value[0] : channel 1, bioimpedance measurement
-    //value[1] : channel 2, emg 1 measurement
-    //value[2] : channel 3, emg 2
-    //value[3] : channel 4, analog signal.
-    //value[4] : time_ofset between last sample and actual sample
-    sprintf(outStr, "%2.7f, %2.7f, %2.7f, %2.7f, %3.1f;", values[0], values[1], values[2], values[3], values[4]);
-    output = values[1]; // raw data value
-    return output;
-}
-
 void handleInitAckReceived(Smpt_device* const device, const Smpt_ack& ack)
 {
     Smpt_dl_init_ack init_ack;
     smpt_get_dl_init_ack(device, &init_ack);
 }
-void handleGetAckReceived(Smpt_device* const device, const Smpt_ack& ack)
-{
-    Smpt_dl_get get_ack;
-    smpt_send_dl_get(device, &get_ack);
-}
+
 void handlePowerModuleAckReceived(Smpt_device* const device, const Smpt_ack& ack)
 {
     Smpt_dl_power_module_ack power_module_ack;
@@ -248,50 +221,29 @@ void handleStopAckReceived(Smpt_device* const device, const Smpt_ack& ack)
     smpt_get_dl_power_module_ack(device, &power_module_ack);
 }
 
-// Hasomed functions that were modified:
-bool handle_dl_packet_global(Smpt_device* const device, char* outStr, float& raw_data)
+/*void handleGetAckReceived(Smpt_device* const device, const Smpt_ack& ack)
 {
-    Smpt_ack ack;
-    smpt_last_ack(device, &ack);
-    Smpt_Cmd cmd = (Smpt_Cmd)ack.command_number;
-    bool output = false;
-    switch (cmd)
+    Smpt_dl_get get_ack;
+    smpt_send_dl_get(device, &get_ack);
+}*/
+
+/*
+void thread_recording() {
+    unsigned long long int sample_test = 0;
+    recorder_device.port_name_ri = "COM4";
+
+    recorder_device.init();
+    recorder_device.start();
+    Sleep(1000);
+    while (one_to_escape == 0)  // Check if new package is arrived, then handel this package.
     {
-    case Smpt_Cmd_Dl_Power_Module_Ack:
-    {
-        handlePowerModuleAckReceived(device, ack);
-        break;
+        one_to_escape = _kbhit();
+        recorder_device.record();
+        sample_test = recorder_emg1.size()-processed;
+        if (sample_test > 100) {
+            process_data_iir();
+        }
     }
-    case Smpt_Cmd_Dl_Get_Ack:
-    {
-        handleGetAckReceived(device, ack);
-        break;
-    }
-    case Smpt_Cmd_Dl_Init_Ack:
-    {
-        handleInitAckReceived(device, ack);
-        break;
-    }
-    case Smpt_Cmd_Dl_Start_Ack:
-    {
-        //handleStartAckReceived(device, ack);
-        break;
-    }
-    case Smpt_Cmd_Dl_Stop_Ack:
-    {
-        handleStopAckReceived(device, ack);
-        break;
-    }
-    case Smpt_Cmd_Dl_Send_Live_Data:
-    {
-        raw_data = handleSendLiveDataReceived(device, ack, outStr);
-        output = true;
-        break;
-    }
-    default:
-    {
-        break;
-    }
-    }
-    return output;
+    recorder_device.end();
 }
+*/

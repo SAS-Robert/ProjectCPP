@@ -40,6 +40,17 @@ C_Butty = C_data(2,:);
 C_Cheby50 = C_data(3,:);
 C_Cheby100 = C_data(4,:);
 
+% File 3: Hasomed Filters with last session
+files_iir=dir('SAS/files/CA_ind_iir_20201027_*.txt');
+[amount, dummy ] = size(files_iir);
+file_iir_full_name = [files_iir(1).folder '\' files_iir(2).name]; %Just take the last one
+C_data = (load(file_iir_full_name))';
+save('Matlab_scripts/C_data_sample.mat','C_data');
+C_raw = C_data(1,:);
+C_Butty = C_data(2,:);
+C_Cheby50 = C_data(3,:);
+C_Cheby100 = C_data(4,:);
+
 %% Plotting data in time 
 % Raw data
 f1_bio_n = {'Bioimpedance', 'Data [unit]'};
@@ -81,8 +92,14 @@ t = zeros(1,length(C_data));
 for i = 1:length(t)
  t(i) = i/srate;
 end
+figure('Name','Raw data');
+plot(t,C_raw);
 figure('Name','Filtered data');
-SubPlotData(C_data,t,[H_1_n; H_2_n; H_3_n; H_4_n]);
+plot(t,C_Cheby100);
+
+fftEMG(C_raw);
+fftEMG(C_Cheby100);
+%SubPlotData(C_data,t,[H_1_n; H_2_n; H_3_n; H_4_n]);
 
 %% Testing filters offline:
 test_path = genpath('TestFilters');
@@ -157,8 +174,8 @@ Lphz = 300/Fn;
 %[Lb,La]=butter(4,(Lphz/s.Rate),'low');
 [b,a] = butter(4,[Hphz,Lphz],'bandpass');
 
-Cheby50 = designfilt('bandstopiir', 'PassbandFrequency1', 47, 'StopbandFrequency1', 49, 'StopbandFrequency2', 51, 'PassbandFrequency2', 53, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', 1000, 'DesignMethod', 'cheby2');
-Cheby100 = designfilt('bandstopiir', 'PassbandFrequency1', 97, 'StopbandFrequency1', 99, 'StopbandFrequency2', 101, 'PassbandFrequency2', 103, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', 1000, 'DesignMethod', 'cheby2');
+Cheby50 = designfilt('bandstopiir', 'PassbandFrequency1', 47, 'StopbandFrequency1', 49, 'StopbandFrequency2', 51, 'PassbandFrequency2', 53, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', 4000, 'DesignMethod', 'cheby2');
+Cheby100 = designfilt('bandstopiir', 'PassbandFrequency1', 97, 'StopbandFrequency1', 99, 'StopbandFrequency2', 101, 'PassbandFrequency2', 103, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', 4000, 'DesignMethod', 'cheby2');
 
 % Transform here some data: based on a example from Matlab webpage
 x = C_raw;
