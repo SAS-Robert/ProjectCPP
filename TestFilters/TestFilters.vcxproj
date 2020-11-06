@@ -142,6 +142,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\SAS\bandStop.cpp" />
+    <ClCompile Include="..\SAS\E100.cpp" />
+    <ClCompile Include="..\SAS\E50.cpp" />
     <ClCompile Include="..\SAS\iir\Biquad.cpp" />
     <ClCompile Include="..\SAS\iir\Butterworth.cpp" />
     <ClCompile Include="..\SAS\iir\Cascade.cpp" />
@@ -157,6 +159,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SAS\bandStop.h" />
+    <ClInclude Include="..\SAS\E100.h" />
+    <ClInclude Include="..\SAS\E50.h" />
     <ClInclude Include="..\SAS\Iir.h" />
     <ClInclude Include="..\SAS\iir\Custom.h" />
     <ClInclude Include="..\SAS\iir\Layout.h" />

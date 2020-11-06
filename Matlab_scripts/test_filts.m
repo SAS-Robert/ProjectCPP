@@ -1,4 +1,4 @@
-function [outData_t, outData_f] = test_filts(directory,type,name)
+function [outData_t, outData_f] = test_filts(directory,type,name,order, bwidth)
 % type = '0' -> Raw data, 'C' -> SAS filters, 'M' -> use Matlab filters
 [amount, dummy ] = size(directory);
 
@@ -10,6 +10,19 @@ Fn = srate/2;
 Hphz = 20/Fn;
 Lphz = 300/Fn;
 [b,a] = butter(4,[Hphz,Lphz],'bandpass');
+
+% Matlab Butterworth bandstop example
+% [b,a] = butter(3,[0.2 0.6],'stop');
+% freqz(b,a)
+
+Sp1Hz = (50-bwidth/2)/Fn;
+Sp2Hz = (50+bwidth/2)/Fn;
+[b50,a50] = butter(order,[Sp1Hz,Sp2Hz],'stop');
+
+Sp1Hz = (100-bwidth/2)/Fn;
+Sp2Hz = (100+bwidth/2)/Fn;
+[b100,a100] = butter(order,[Sp1Hz,Sp2Hz],'stop');
+
 Stop50 = designfilt('bandstopfir', 'PassbandFrequency1', 47, 'StopbandFrequency1', 49, 'StopbandFrequency2', 51, 'PassbandFrequency2', 53, 'PassbandRipple1', 1, 'StopbandAttenuation', 80, 'PassbandRipple2', 1, 'SampleRate', srate);
 Stop100 = designfilt('bandstopfir', 'PassbandFrequency1', 80, 'StopbandFrequency1', 89, 'StopbandFrequency2', 110, 'PassbandFrequency2', 120, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', srate);
 Cheby50 = designfilt('bandstopiir', 'PassbandFrequency1', 47, 'StopbandFrequency1', 49, 'StopbandFrequency2', 51, 'PassbandFrequency2', 53, 'PassbandRipple1', 1, 'StopbandAttenuation', 80, 'PassbandRipple2', 1, 'SampleRate', srate, 'DesignMethod', 'cheby2');
@@ -26,16 +39,24 @@ C_Butty = data(2,:);
 C_Cheby50 = data(3,:);
 C_Cheby100 = data(4,:);
 
+% Current filtering implemented in C:
 MatButty =filtfilt(b,a,C_raw);
-MatStop50 = filtfilt(Stop50,MatButty);
-MatStop100 = filtfilt(Stop100,MatStop50);
 
 MatCheby50 = filtfilt(Cheby50,MatButty);
 MatCheby100 = filtfilt(Cheby100,MatCheby50);
+
+% Other filters
+% 1.
+MatStop50 = filtfilt(Stop50,MatButty);
+MatStop100 = filtfilt(Stop100,MatStop50);
+% 2.
 %MatCheby150 = filtfilt(Cheby150,MatStop100);
 %MatCheby200 = filtfilt(Cheby200,MatCheby150);
+% 3.
+BStop50 = filtfilt(b50,a50,MatButty);
+BStop100 = filtfilt(b100,a100,BStop50);
 
-temp_plot = MatStop100;       
+temp_plot = BStop100;       
         
     t = zeros(1,length(temp_plot));
     for j = 1:length(t)
@@ -68,38 +89,57 @@ temp_plot = MatStop100;
         t_t(j) = t_th(end) + j/1000;
     end
     th_value = toff(1) * ones(1,tend(end)-tend(1));
-
+    % new mean  
+    ny_t =[];
+    for j=2:length(mean_v)
+        y_temp = mean(abs(temp_plot(tinit(j):tend(j)))) * ones(1,toff(1,j));
+        ny_t = [ny_t y_temp];
+    end
+    
     % Plotting
     figure('Name',[name])
-    subplot(1,2,1)
+    subplot(2,2,1)
     hold on
+    grid on
     plot(t,abs(temp_plot))
-    plot(t_th,y_th,'g',t_t,y_t,'r',t_t, th_value,'y')
-    
     xlim([0 t(1,length(t))])
     title(['Time domain retified EMG' num2str(i)], 'Interpreter','none'); 
     xlabel('t (s)');
     ylabel('v (V)');
-    legend('EMG','SAS-resting mean', 'SAS-activity mean', 'SAS-Threshold')
+    %legend('EMG','SAS-resting mean', 'SAS-activity mean', 'SAS-Threshold', 'MatLab new mean')
 
-    subplot(1,2,2)
+    subplot(2,2,2)
     plot_f = fftEMG(temp_plot,['Frequency domain EMG ' num2str(i)],srate);
-    xlim([0 500])
-    if(type=='C' || type=='M')
-     ylim([0 max(plot_f)])
-    else
-        if (max(temp_plot)<0.004)
-            ylim([0 max(plot_f)])
-        else
-            ylim([0 0.004])
-        end
-    end
+    %xlim([0 500])
+    xlim([0 130])       % only for Butterworth testing
+    ylim([0 0.0002])     % only for Butterworth testing
+%     if(type=='C' || type=='M')
+%      ylim([0 max(plot_f)])
+%     else
+%         if (max(temp_plot)<0.004)
+%             ylim([0 max(plot_f)])
+%         else
+%             ylim([0 0.004])
+%         end
+%     end
     
-    figure('Name',[name ' difference'])
-    plot(t,temp_plot,t,abs(MatCheby100)-abs(temp_plot))
+    subplot(2,1,2)
+    grid on
+    hold on
+    plot(t_th,y_th,'g',t_t,y_t,'r',t_t, th_value,'y')
+    plot(t_t,ny_t,'k');   
     xlim([0 t(1,length(t))])
-    legend('New EMG','Difference with old one')
-    title('Filtered EMGs difference');
+    title(['Comparison between means EMG ' num2str(i)], 'Interpreter','none'); 
+    xlabel('t (s)');
+    ylabel('v (V)');
+    legend('SAS-resting mean', 'SAS-activity mean', 'SAS-Threshold', 'MatLab new mean')    
+    
+    ylim([0 1.5*0.0001])     % only for Butterworth testing
+%     figure('Name',[name ' difference'])
+%     plot(t,temp_plot,t,abs(MatCheby100)-abs(temp_plot))
+%     xlim([0 t(1,length(t))])
+%     legend('New EMG','Difference with old one')
+%     title('Filtered EMGs difference');
 
     % for the output
     temp_out_t = [temp_out_t; (temp_plot')];

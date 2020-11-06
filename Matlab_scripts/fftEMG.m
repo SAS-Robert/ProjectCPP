@@ -8,6 +8,7 @@ P1 = P2(1:L/2+1);
 P1(2:end-1) = 2*P1(2:end-1);
 f = fs*(0:(L/2))/L;
 %figure
+grid on
 plot(f,P1) 
 title(name)
 xlabel('f (Hz)')

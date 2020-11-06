@@ -123,8 +123,20 @@ const int order100 = 20;
 Iir::ChebyshevII::BandStop<order100> Cheby100;
 std::vector<double> C100_result;
 
-std::vector<double> Filter_result;
+// New filters:
+// Filter: setup(samplingrate, Frquency , Frequency bandwidth);
+const double B50_Fq = 50;
+const double B100_Fq = 100;
+const double B50_100_Fqw = 5;
+const int orderB50_100 = 1;
 
+Iir::Butterworth::BandStop<orderB50_100> B50;
+std::vector<double> B50_result;
+
+Iir::Butterworth::BandStop<orderB50_100> B100;
+std::vector<double> B100_result;
+
+// TCP Stuff
 int ROB_rep = 0;
 ROB_Type wololo;
 int TCP_rep = 20;
@@ -232,6 +244,8 @@ int main(int argc, char* argv[]) {
     SASName6 = file_dir + "CUL_leg_th_" + date_s.c_str() + ".txt";
     // Start filters
     Butty.setup(samplingrate, B_Fq, B_Fqw);
+    B50.setup(samplingrate, B50_Fq, B50_Fqw);
+    B100.setup(samplingrate, B100_Fq, B100_Fqw);
     Cheby50.setup(samplingrate, C50_Fq, C50_Fqw, C50_dB);
     Cheby100.setup(samplingrate, C100_Fq, C100_Fqw, C100_dB);
 
@@ -809,8 +823,10 @@ double process_data_iir(unsigned long long int v_size) {
     {
         // Filter data - Christian's
         Butty_result.push_back(Butty.filter(recorder_emg1[i]));
-        C50_result.push_back(Cheby50.filter(Butty_result[i]));
-        C100_result.push_back(Cheby100.filter(C50_result[i]));
+        // C50_result.push_back(Cheby50.filter(Butty_result[i]));
+        // C100_result.push_back(Cheby100.filter(C50_result[i]));
+        B50_result.push_back(B50.filter(Butty_result[i]));
+        B100_result.push_back(B100.filter(B50_result[i]));
         // Saving data
         fileFILTERS << recorder_emg1[i] << "," << Butty_result[i] << "," << C50_result[i] << "," << C100_result[i] << "\n";
         // Calculating mean of retified EMG
@@ -850,8 +866,10 @@ double process_th(unsigned long long int v_size) {
     {
         // Filter data - Christian's
         Butty_result.push_back(Butty.filter(recorder_emg1[i]));
-        C50_result.push_back(Cheby50.filter(Butty_result[i]));
-        C100_result.push_back(Cheby100.filter(C50_result[i]));
+        // C50_result.push_back(Cheby50.filter(Butty_result[i]));
+        // C100_result.push_back(Cheby100.filter(C50_result[i]));
+        B50_result.push_back(B50.filter(Butty_result[i]));
+        B100_result.push_back(B100.filter(B50_result[i]));
 
         // Saving data
         fileFILTERS << recorder_emg1[i] << "," << Butty_result[i] << "," << C50_result[i] << "," << C100_result[i] << "\n";
@@ -885,7 +903,7 @@ double process_th(unsigned long long int v_size) {
     sd = sqrt(sd / N_len);
 
     // Calculate final threshold value
-    value = mean + (sd / 2);
+    value = mean + (sd / 3);
 
     fileVALUES << mean << "," << sd << "," << th_discard << "," << v_size << "," << value << "\n";
 

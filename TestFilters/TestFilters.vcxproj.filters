@@ -57,6 +57,12 @@
     <ClCompile Include="..\SAS\iir\State.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
+    <ClCompile Include="..\SAS\E50.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SAS\E100.cpp">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SAS\bandStop.h">
@@ -90,6 +96,12 @@
       <Filter>Header Files\Hasomed</Filter>
     </ClInclude>
     <ClInclude Include="..\SAS\iir\State.h">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SAS\E50.h">
+      <Filter>Header Files\Hasomed</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SAS\E100.h">
       <Filter>Header Files\Hasomed</Filter>
     </ClInclude>
   </ItemGroup>

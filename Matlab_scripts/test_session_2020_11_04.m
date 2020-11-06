@@ -4,8 +4,10 @@ path = pwd;
 %data_path = genpath('SAS/files');
 data_path = genpath('SAS/test/after lunch');
 fcn_path = genpath('Matlab_scripts');
+test_path = genpath('TestFilters/output');
 addpath(data_path);
 addpath(fcn_path);
+addpath(test_path);
 %%
 raw_dev_dir = dir('SAS/test/after lunch/CUL_leg_raw*.txt');
 data_dir = dir('SAS/test/after lunch/CUL_leg_filter*.txt');
@@ -19,14 +21,22 @@ th_dir = dir('SAS/test/after lunch/CUL_leg_th*.txt');
 files_dir = 'SAS/test/after lunch/CUL_leg';
 [amount dummy] = size(dir([files_dir '_th_*']));
 
-%for k=1:amount
-    k = 3
+for k=1:2
+%    k = 3
     name = ['Christians leg recording after lunch, nr.' num2str(k)];
     data = plot_th(files_dir,name,k);    
-    figure
-    spectrogram(data,'yaxis')
-%end
+  %  figure
+  %  spectrogram(data,'yaxis')
+end
 
+
+for k=3:4
+%    k = 3
+    name = ['Christians leg recording after lunch, nr.' num2str(k)];
+    data = plot_th(files_dir,name,k);    
+  %  figure
+  %  spectrogram(data,'yaxis')
+end
 
 files_dir = 'SAS/test/good stuff/CUL_leg';
 [amount dummy] = size(dir([files_dir '_th_*']));
@@ -79,10 +89,47 @@ plot(max_c_t_t, max_c_t, 'bo', max_temp_t, max_temp, 'ro')
 %% Working on fir filters
 
 files_dir = dir('SAS/test/after lunch/CUL_leg_filter*.txt');
-analysis(files_dir,'0','Raw data');
+analysis(files_dir(1),'0','Raw data');
 analysis(files_dir,'C','SAS filtered data');
 analysis(files_dir,'M','Filtered data with Matlab');
 
 th_name = strrep(files_dir(1).name,'filter','th');
-th_dir = dir(th_dir);
-test_filts(files_dir(1:2),'M','Filtered data with Matlab');
+th_dir = dir(th_name);
+
+% Playing with the order nr.
+bandwidth = 2;
+for j=1:5
+test_filts(files_dir(1),'M',['Filtered data with Butterworth order nr.' num2str(j)],j,bandwidth);
+end
+
+% Playing with the bandwidth
+order = 1;
+for j=2:2:10
+test_filts(files_dir(1),'M',['Filtered data with Butterworth  bandwidth = ' num2str(j)],order,j);
+end
+
+test_filts(files_dir(1),'M',['Filtered data with Butterworth  order = 2, bandwidth = 4.5'],2,4.5);
+
+
+% Reviewing the offline C program for filter testing
+test_dir = dir('C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\output/out_CUL_leg_filter*.txt');
+analysis(test_dir(1),'0','SAS raw data');
+analysis(test_dir(1),'C','SAS raw data');
+
+[c_t, c_f] = samples_analysis(test_dir(1),'C',1,'SAS filtered data');
+
+
+
+test_dir_string = 'TestFilters/output/out_CUL_leg';
+for k=1:4
+    % k = 1;
+    name = ['Christians leg recording after lunch, nr.' num2str(k)];
+%    data = plot_th(test_dir_string,name,k,'C');    
+    data = plot_th(test_dir_string,name,k,'T');    
+end
+
+test_dir1_string = 'TestFilters/output/out1_CUL_leg';
+k = 1;
+name = ['Testing Butterworth order 1'];
+%    data = plot_th(test_dir_string,name,k,'C');    
+data = plot_th(test_dir1_string,name,k,'T');  
