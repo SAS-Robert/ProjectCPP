@@ -45,20 +45,6 @@ end
 
 th_value = toff(1) * ones(1,tend(end)-tend(1));
 
-
-% new resting mean threshold  
-temp_value = abs(c_t(tinit(1):tend(1)));
-ny_th = mean(temp_value) * ones(1,tend(1)-tinit(1));
-nth_value = (mean(temp_value) + std(temp_value)/3) * ones(1,tend(end)-tend(1));
-
-% new mean and sd 
-ny_t =[];
-for j=2:length(mean_v)
-    y_temp = mean(abs(c_t(tinit(j):tend(j)))) * ones(1,toff(1,j));
-    ny_t = [ny_t y_temp];
-end
-
-
 if(plot_type=='C')
     figure('Name',name)
     %
@@ -102,6 +88,19 @@ if(plot_type=='C')
     ylabel('v (V)');
     
 elseif(plot_type=='T')
+    
+    % new resting mean threshold  
+    temp_value = abs(c_t(tinit(1):tend(1)));
+    ny_th = mean(temp_value) * ones(1,tend(1)-tinit(1));
+    nth_value = (mean(temp_value) + std(temp_value)/3) * ones(1,tend(end)-tend(1));
+
+    % new mean and sd 
+    ny_t =[];
+    for j=2:length(mean_v)
+        y_temp = mean(abs(c_t(tinit(j):tend(j)))) * ones(1,toff(1,j));
+        ny_t = [ny_t y_temp];
+    end
+
     figure('Name',name)
     %
     subplot(2,2,1)

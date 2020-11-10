@@ -230,3 +230,28 @@ subplot(2,2,2)
 ylim([-100 100])
 subplot(2,2,3)
 ylim([-100 100])
+
+%% Directly going to the figures:
+fig_path = genpath('C:\Users\Carolina\Desktop\Internship\Software\Matlab_figs_and_data');
+addpath(fig_path);
+
+% With Chebyshev II filters: session 04th Nov
+open('2020_11_04_record1_stim.fig');
+open('2020_11_04_record2_stim.fig');
+%open('2020_11_04_record3_no_stim.fig');
+%open('2020_11_04_record4_no_stim.fig');
+
+% With 1st order Butterworth filters instead of Chebyshev II: session 9th Nov
+open('2020_11_09_record1.fig');
+open('2020_11_09_record2.fig');
+open('2020_11_09_record3.fig');
+open('2020_11_09_record4.fig');
+
+% Adding the mean-under-the-threshold condition and different thresholds
+open('2020_11_10_record1.fig');
+open('2020_11_10_record2.fig');
+open('2020_11_10_record3.fig');
+% Butterworth filters modified to 2 order and a bigger bandwidth
+open('2020_11_10_record4.fig');
+open('2020_11_10_record5.fig');
+open('2020_11_10_record6.fig');

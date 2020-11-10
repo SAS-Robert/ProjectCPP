@@ -110,11 +110,11 @@ temp_plot = BStop100;
 
     subplot(2,2,2)
     plot_f = fftEMG(temp_plot,['Frequency domain EMG ' num2str(i)],srate);
-    %xlim([0 500])
-    xlim([0 130])       % only for Butterworth testing
-    ylim([0 0.0002])     % only for Butterworth testing
+    xlim([0 500])
+    %xlim([0 130])       % only for Butterworth testing
+   % ylim([0 0.0002])     % only for Butterworth testing
 %     if(type=='C' || type=='M')
-%      ylim([0 max(plot_f)])
+      ylim([0 max(plot_f)])
 %     else
 %         if (max(temp_plot)<0.004)
 %             ylim([0 max(plot_f)])
@@ -134,7 +134,7 @@ temp_plot = BStop100;
     ylabel('v (V)');
     legend('SAS-resting mean', 'SAS-activity mean', 'SAS-Threshold', 'MatLab new mean')    
     
-    ylim([0 1.5*0.0001])     % only for Butterworth testing
+%    ylim([0 1.5*0.0001])     % only for Butterworth testing
 %     figure('Name',[name ' difference'])
 %     plot(t,temp_plot,t,abs(MatCheby100)-abs(temp_plot))
 %     xlim([0 t(1,length(t))])

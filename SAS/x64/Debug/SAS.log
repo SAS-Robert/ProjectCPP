@@ -1,0 +1,60 @@
+﻿  bandStop.cpp
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\bandStop.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\bandStop.cpp(74,17): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
+  Biquad.cpp
+  Butterworth.cpp
+  Cascade.cpp
+  ChebyshevI.cpp
+  ChebyshevII.cpp
+  Custom.cpp
+  PoleFilter.cpp
+  RBJ.cpp
+  State.cpp
+  notch100.cpp
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\notch100.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\notch100.cpp(74,17): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
+  notch50.cpp
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\notch50.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\notch50.cpp(74,17): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
+  SAS.cpp
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SASLIB.h(444,18): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SASLIB.h(463,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SASLIB.h(474,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SASLIB.h(582,14): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SASLIB.h(746,16): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(689,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(690,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(693,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(694,65): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SAS.cpp(763,10): warning C4101: 'decode_successful': unreferenced local variable
+  SASLIB.cpp
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SASLIB.h(444,18): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SASLIB.h(463,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SASLIB.h(474,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SASLIB.h(582,14): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\SASLIB.h(746,16): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
+  Generating Code...
+     Creating library C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\x64\Debug\SAS.lib and object C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\x64\Debug\SAS.exp
+SAS.obj : error LNK2019: unresolved external symbol smpt_packet_number_generator_next referenced in function "public: void __cdecl RehaIngest_type::end(void)" (?end@RehaIngest_type@@QEAAXXZ)
+SASLIB.obj : error LNK2001: unresolved external symbol smpt_packet_number_generator_next
+SAS.obj : error LNK2019: unresolved external symbol smpt_open_serial_port referenced in function "public: void __cdecl RehaIngest_type::init(void)" (?init@RehaIngest_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_close_serial_port referenced in function "public: void __cdecl RehaIngest_type::end(void)" (?end@RehaIngest_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_check_serial_port referenced in function "public: void __cdecl RehaIngest_type::end(void)" (?end@RehaIngest_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_new_packet_received referenced in function "public: void __cdecl RehaIngest_type::record(void)" (?record@RehaIngest_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_last_ack referenced in function "bool __cdecl handle_dl_packet_global(struct Smpt_device * const)" (?handle_dl_packet_global@@YA_NQEAUSmpt_device@@@Z)
+SAS.obj : error LNK2019: unresolved external symbol smpt_send_get_device_id referenced in function "public: void __cdecl RehaMove3_type::init(void)" (?init@RehaMove3_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_send_ml_init referenced in function "public: void __cdecl RehaMove3_type::init(void)" (?init@RehaMove3_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_send_ml_update referenced in function "public: void __cdecl RehaMove3_type::init(void)" (?init@RehaMove3_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_send_ml_get_current_data referenced in function "public: void __cdecl RehaMove3_type::init(void)" (?init@RehaMove3_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_send_ml_stop referenced in function "public: void __cdecl RehaMove3_type::end(void)" (?end@RehaMove3_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_send_dl_init referenced in function "public: void __cdecl RehaIngest_type::start(void)" (?start@RehaIngest_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_send_dl_start referenced in function "public: void __cdecl RehaIngest_type::start(void)" (?start@RehaIngest_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_send_dl_stop referenced in function "public: void __cdecl RehaIngest_type::end(void)" (?end@RehaIngest_type@@QEAAXXZ)
+SAS.obj : error LNK2019: unresolved external symbol smpt_get_dl_send_live_data referenced in function "void __cdecl handleSendLiveDataReceived(struct Smpt_device * const,struct Smpt_ack const &)" (?handleSendLiveDataReceived@@YAXQEAUSmpt_device@@AEBUSmpt_ack@@@Z)
+SAS.obj : error LNK2019: unresolved external symbol smpt_send_dl_power_module referenced in function "public: void __cdecl RehaIngest_type::start(void)" (?start@RehaIngest_type@@QEAAXXZ)
+SASLIB.obj : error LNK2019: unresolved external symbol smpt_clear_ml_init referenced in function "void __cdecl fill_ml_init(struct Smpt_device * const,struct Smpt_ml_init * const)" (?fill_ml_init@@YAXQEAUSmpt_device@@QEAUSmpt_ml_init@@@Z)
+SASLIB.obj : error LNK2019: unresolved external symbol smpt_clear_ml_update referenced in function "void __cdecl fill_ml_update(struct Smpt_device * const,struct Smpt_ml_update * const,struct Smpt_ml_channel_config)" (?fill_ml_update@@YAXQEAUSmpt_device@@QEAUSmpt_ml_update@@USmpt_ml_channel_config@@@Z)
+SASLIB.obj : error LNK2019: unresolved external symbol smpt_get_dl_init_ack referenced in function "void __cdecl handleInitAckReceived(struct Smpt_device * const,struct Smpt_ack const &)" (?handleInitAckReceived@@YAXQEAUSmpt_device@@AEBUSmpt_ack@@@Z)
+SASLIB.obj : error LNK2019: unresolved external symbol smpt_get_dl_power_module_ack referenced in function "void __cdecl handlePowerModuleAckReceived(struct Smpt_device * const,struct Smpt_ack const &)" (?handlePowerModuleAckReceived@@YAXQEAUSmpt_device@@AEBUSmpt_ack@@@Z)
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\32bit lib\lib\libsmpt.lib : warning LNK4272: library machine type 'x86' conflicts with target machine type 'x64'
+C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\x64\Debug\SAS.exe : fatal error LNK1120: 20 unresolved externals

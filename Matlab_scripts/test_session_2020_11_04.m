@@ -21,10 +21,10 @@ th_dir = dir('SAS/test/after lunch/CUL_leg_th*.txt');
 files_dir = 'SAS/test/after lunch/CUL_leg';
 [amount dummy] = size(dir([files_dir '_th_*']));
 
-for k=1:2
+for k=1:amount
 %    k = 3
-    name = ['Christians leg recording after lunch, nr.' num2str(k)];
-    data = plot_th(files_dir,name,k);    
+    name = ['Recording 4th Nov, nr.' num2str(k)];
+    data = plot_th(files_dir,name,k,'C');    
   %  figure
   %  spectrogram(data,'yaxis')
 end
@@ -121,7 +121,7 @@ analysis(test_dir(1),'C','SAS raw data');
 
 
 test_dir_string = 'TestFilters/output/out_CUL_leg';
-for k=1:4
+for k=2:4
     % k = 1;
     name = ['Christians leg recording after lunch, nr.' num2str(k)];
 %    data = plot_th(test_dir_string,name,k,'C');    
@@ -129,7 +129,13 @@ for k=1:4
 end
 
 test_dir1_string = 'TestFilters/output/out1_CUL_leg';
-k = 1;
+k = 4;
 name = ['Testing Butterworth order 1'];
 %    data = plot_th(test_dir_string,name,k,'C');    
 data = plot_th(test_dir1_string,name,k,'T');  
+
+test_dir1_string2 = 'TestFilters/output/out2_CUL_leg';
+k = 3;
+name = ['Testing Butterworth bandwith = 6.5 '];
+%    data = plot_th(test_dir_string,name,k,'C');    
+data = plot_th(test_dir1_string2,name,k,'T');

@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
     Butty.setup(1000, B_Fq, B_Fqw);
 
     B50.setup(1000, B50_Fq, B50_100_Fq);
-    B100.setup(1000, B100_Fq, B50_100_Fq);
+    B100.setup(1000, B100_Fq, 6.5);
 
 
     // Load raw data: arm sessions
@@ -261,7 +261,7 @@ int main(int argc, char* argv[]) {
     outFile_t.close();
     */
     // Filter data
-    fileName = fileDir + "out1_" + infileName;//+date_s.c_str() + ".txt";
+    fileName = fileDir + "out2_" + infileName;//+date_s.c_str() + ".txt";
     outFile.open(fileName);
 
     std::cout << "Filtering data. Sample amount: "<< channel_raw.size() << endl;

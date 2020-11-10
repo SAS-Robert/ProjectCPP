@@ -1,26 +1,2 @@
-﻿  bandStop.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\bandStop.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\bandStop.cpp(74,17): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
-  E100.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\E100.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-  E50.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\E50.cpp(28,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-  Biquad.cpp
-  Butterworth.cpp
-  Cascade.cpp
-  ChebyshevI.cpp
-  ChebyshevII.cpp
-  Custom.cpp
-  PoleFilter.cpp
-  RBJ.cpp
-  State.cpp
-  notch100.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\notch100.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\notch100.cpp(74,17): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
-  notch50.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\notch50.cpp(27,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SAS\notch50.cpp(74,17): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
-  TestFilters.cpp
-  Generating Code...
-     Creating library C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\x64\Debug\TestFilters.lib and object C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\x64\Debug\TestFilters.exp
+﻿  TestFilters.cpp
   TestFilters.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\x64\Debug\TestFilters.exe

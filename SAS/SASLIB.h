@@ -242,15 +242,15 @@ typedef struct{
 	}
 
   // Update values
-  stim.number_of_points = 2;  //* Set the number of points
-  stim.ramp = 2;              //* Three lower pre-pulses
+  stim.number_of_points = 3;  //* Set the number of points
+  stim.ramp = 3;              //* Three lower pre-pulses
   stim.period = 20;           //* Frequency: 50 Hz
   // Set the stimulation pulse
 
-  stim.points[0].current = 27;
+  stim.points[0].current = 28;
   stim.points[0].time = 200;
   stim.points[1].time = 200;
-  stim.points[2].current = -27;
+  stim.points[2].current = -28;
   stim.points[2].time = 200;
   printf("RehaMove3 message: Stimulation initial values -> current = %2.2f, ramp points = %d, ramp value = %d\n",stim.points[0].current,stim.number_of_points,stim.ramp);
 

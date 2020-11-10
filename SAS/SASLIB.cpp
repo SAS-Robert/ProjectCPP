@@ -74,7 +74,7 @@ void get_dir(int argc, char *argv[], string& Outdir){
 
   // Output
   full = t;
-  full+="test\\";
+  full+="test_session_10Nov\\";
   Outdir = full;
 }
 
