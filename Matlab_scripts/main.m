@@ -1,237 +1,25 @@
 %% Load data files
 path = pwd;
 % Add source directories
-data_path = genpath('SAS');
+data_path = genpath('SAS/files');
 fcn_path = genpath('Matlab_scripts');
 addpath(data_path);
 addpath(fcn_path);
-% Find and filter files
-files1=dir('SAS/files/file_raw_*.txt');
-% -> select somewhere here what files are going to be processed?
-% Load containing data into matlab variables/files
-srate = 4000;           % sampling rate
-% File 1: raw data 
-[amount, dummy ] = size(files1);
-file1_full_name = [files1(amount).folder '\' files1(amount).name];
-file1 = getdata(file1_full_name);
-file1_bio = file1(:,1)';     %value[0] : channel 1, bioimpedance measurement
-file1_emg1 = file1(:,2)';    %value[1] : channel 2, emg 1 measurement
-file1_emg2 = file1(:,3)';    %value[2] : channel 3, emg 2
-file1_alg = file1(:,4)';     %value[3] : channel 4, analog signal.
-file1_t = file1(:,5)';       %value[4] : time_ofset between last sample and actual sample
 
-% File 2: MicroModeler Filter 
-files_MM=dir('SAS/files/file_filtered_*.txt');
-[amount, dummy ] = size(files_MM);
-fileMM_full_name = [files_MM(amount).folder '\' files_MM(amount).name]; %Just take the last one
-fileMM = getdata(file2_full_name);
-MMbandstop = fileMM(:,1)';
-MMnotch50 = fileMM(:,2)';
-MMnotch100 = fileMM(:,3)';
+C_files_backup = 'C:\Users\Carolina\Desktop\Internship\Software\C_files_backup';
+backup_path = genpath(C_files_backup);
+addpath(backup_path);
 
-% File 3: Hasomed Filters
-files_iir=dir('SAS/files/file_iir_*.txt');
-[amount, dummy ] = size(files_iir);
-file_iir_full_name = [files_iir(amount).folder '\' files_iir(1).name]; %Just take the last one
-C_data = (getdata(file_iir_full_name))';
-save('Matlab_scripts/C_data_sample.mat','C_data');
-C_raw = C_data(1,:);
-C_Butty = C_data(2,:);
-C_Cheby50 = C_data(3,:);
-C_Cheby100 = C_data(4,:);
+%% Session 0: testing the recorder with electrodes on the arm and at the desk
+CUL_dir=dir([C_files_backup '/files/CUL_arm_raw_*']);
+[emg_raw_t1, emg_raw_f] = samples_analysis(CUL_dir,'C',0,'Raw data EMG 1');
+[emg_raw_t2, emg_raw_f] = samples_analysis(CUL_dir,'C',0,'Raw data EMG 2');
 
-% File 3: Hasomed Filters with last session
-files_iir=dir('SAS/files/CA_ind_iir_20201027_*.txt');
-[amount, dummy ] = size(files_iir);
-file_iir_full_name = [files_iir(1).folder '\' files_iir(2).name]; %Just take the last one
-C_data = (load(file_iir_full_name))';
-save('Matlab_scripts/C_data_sample.mat','C_data');
-C_raw = C_data(1,:);
-C_Butty = C_data(2,:);
-C_Cheby50 = C_data(3,:);
-C_Cheby100 = C_data(4,:);
-
-%% Plotting data in time 
-% Raw data
-f1_bio_n = {'Bioimpedance', 'Data [unit]'};
-f1_emg1_n = {'EMG 1', 'Data [unit]'};
-f1_emg2_n = {'EMG 2', 'Data [unit]'};
-f1_alg_n = {'Analog measurement', 'Data [unit]'};
-f1_t = {'Time offset', 'Data [unit]'};
-
-%Calculating time values:
-t = zeros(size(file1_t));
-t(1) = file1_t(1);
-for i = 2:length(t)
- t(i) = t(i-1)+file1_t(i);
-end
-figure('Name','Raw data');
-SubPlotData(file1(:,1:4)',t,[f1_bio_n; f1_emg1_n; f1_emg2_n; f1_alg_n]);
-
-f2_1_n = {'Raw data', 'Voltage [V]'};
-f2_2_n = {'Bandstop filter', 'Voltage [V]'};
-f2_3_n = {'Notch50 filter', 'Voltage [V]'};
-f2_4_n = {'Notch100 filter', 'Voltage [V]'};
-f2_t = {'Iteration', 'Data [unit]'};
-%Calculating time values:
-t = zeros(size(file2_bandstop));
-for i = 1:length(t)
- t(i) = i;
-end
-figure('Name','Filtered data');
-SubPlotData(fileMM',t,[f2_1_n; f2_2_n; f2_3_n]);
+[emg_f_t1, emg_f_f] = samples_analysis(CUL_dir,'C',1,'SAS filtered data EMG 1');
+[emg_f_t2, emg_f_f] = samples_analysis(CUL_dir,'C',1,'SAS filtered data EMG 2');
 
 
-H_1_n = {'Raw data', 'Voltage [V]', 'time [s]'};
-H_2_n = {'Butterworth filter', 'Voltage [V]', 'time [s]'};
-H_3_n = {'ChebyshevII 50Hz filter', 'Voltage [V]', 'time [s]'};
-H_4_n = {'ChebyshevII 100Hz filter', 'Voltage [V]', 'time [s]'};
-%H_t = {'Time', 'Data [s]'};
-%Calculating time values:
-t = zeros(1,length(C_data));
-for i = 1:length(t)
- t(i) = i/srate;
-end
-figure('Name','Raw data');
-plot(t,C_raw);
-figure('Name','Filtered data');
-plot(t,C_Cheby100);
-
-fftEMG(C_raw);
-fftEMG(C_Cheby100);
-%SubPlotData(C_data,t,[H_1_n; H_2_n; H_3_n; H_4_n]);
-
-%% Testing filters offline:
-test_path = genpath('TestFilters');
-addpath(test_path);
-filesTest=dir('TestFilters/output/output_*.txt');
-[amount, dummy ] = size(filesTest);
-filet_full_name = [filesTest(amount).folder '\' filesTest(amount).name];
-
-filetest = getdata(filet_full_name);
-filet_raw = filetest(:,1)';
-filet_filter1 = filetest(:,2)';
-filet_filter2  = filetest(:,3)';
-filet_filter3  = filetest(:,4)';
-filet_filter4  = filetest(:,5)';
-filet_filter5  = filetest(:,6)';
-
-t = zeros(1,length(filet_raw));
-sr = 4000;                          % Sampling rate = 4000 Hz
-for i = 1:length(t)
- t(i) = i/sr;
-end
-figure('Name','Yesterday data');
-hold on
-grid on
-plot(t,filet_raw,t,filet_filter3)
-%plot(t,filet_raw,t,filet_filter5)
-
-figure('Name','Yesterday data filtering process');
-hold on
-grid on
-subplot(5,1,1)
-title('Filter 1')
-plot(t,filet_raw,t,filet_filter1)
-subplot(5,1,2)
-title('Filter 2')
-plot(t,filet_filter1,t,filet_filter2)
-subplot(5,1,3)
-title('Filter 3')
-plot(t,filet_filter2,t,filet_filter3)
-subplot(5,1,4)
-title('Filter 4')
-plot(t,filet_filter3,t,filet_filter4)
-subplot(5,1,5)
-title('Filter 5')
-plot(t,filet_filter4,t,filet_filter5)
-
-
-%% From Dirk's example application
-data2_path = genpath('sciencemode_stim_trigger');
-addpath(data2_path);
-directory = pwd;
-raw_data=load([directory '\sciencemode_stim_trigger\sciencemode_stim_trigger\example.txt']);
-filter_data=load([directory '\sciencemode_stim_trigger\sciencemode_stim_trigger\data.txt']);
-[amount types] = size(filter_data);
-%Calculating time values:
-t = zeros(1,amount);
-for i = 1:length(t)
- t(i) = i;
-end
-figure('Name','Dirks data');
-hold on
-grid on
-plot(t,filter_data(:,1)',t,filter_data(:,2)')
-plot(t,filter_data(:,1)',t,filter_data(:,2)')
-
-
-%% Christian's filters
-Fn = srate/2;
-Hphz = 20/Fn;
-Lphz = 300/Fn;
-%[Hb,Ha]=butter(4,(Hphz/s.Rate),'high');
-%[Lb,La]=butter(4,(Lphz/s.Rate),'low');
-[b,a] = butter(4,[Hphz,Lphz],'bandpass');
-
-Cheby50 = designfilt('bandstopiir', 'PassbandFrequency1', 47, 'StopbandFrequency1', 49, 'StopbandFrequency2', 51, 'PassbandFrequency2', 53, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', 4000, 'DesignMethod', 'cheby2');
-Cheby100 = designfilt('bandstopiir', 'PassbandFrequency1', 97, 'StopbandFrequency1', 99, 'StopbandFrequency2', 101, 'PassbandFrequency2', 103, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', 4000, 'DesignMethod', 'cheby2');
-
-% Transform here some data: based on a example from Matlab webpage
-x = C_raw;
-fs = srate;
-y = fft(x);
-n = length(x);          % number of samples
-f = (0:n-1)*(fs/n);     % frequency range
-power = abs(y).^2/n;    % power of the DFT
-
-plot(f,power)
-xlabel('Frequency')
-ylabel('Power')
-
-% Filtering data
-%Filtered = filtfilt(Cheby100,(filtfilt(Cheby50,(filtfilt(b,a,C_raw)))));
-MatButty =filtfilt(b,a,C_raw);
-MatCheby50 = filtfilt(Cheby50,MatButty);
-MatCheby100 = filtfilt(Cheby100,MatCheby50);
-MatData = [C_raw; MatButty; MatCheby50; MatCheby100];
-
-t = zeros(1,length(MatData));
-for i = 1:length(t)
- t(i) = i/srate;
-end
-figure('Name','MATLAB Filtered data');
-SubPlotData(MatData,t,[H_1_n; H_2_n; H_3_n; H_4_n]);
-
-% Difference between the data filtered in C and the one in Matlab:
-d1_n = {'Butterworth difference', 'DeltaV [V]', 'time [s]'};
-d2_n = {'ChebyshevII difference', 'DeltaV [V]', 'time [s]'};
-d3_n = {'ChebyshevII difference', 'DeltaV [V]', 'time [s]'};
-
-diff = [C_Butty-MatButty; C_Cheby50-MatCheby50; C_Cheby100-MatCheby100];
-
-SubPlotData(diff,t,[d1_n; d2_n; d3_n]);
-
-% Proportional difference respecting to the Matlab Values:
-diff_dV = diff;
-for i = 1:length(t)
- diff_dV(1,i) = diff(1,i)/MatButty(i); 
- diff_dV(2,i) = diff(2,i)/MatCheby50(i); 
- diff_dV(3,i) = diff(3,i)/MatCheby100(i); 
-end
-d1_n = {'Butterworth difference', 'DeltaV [%]', 'time [s]'};
-d2_n = {'ChebyshevII 50 difference', 'DeltaV [%]', 'time [s]'};
-d3_n = {'ChebyshevII 100 difference', 'DeltaV [%]', 'time [s]'};
-
-SubPlotData(diff_dV,t,[d1_n; d2_n; d3_n]);
-subplot(2,2,1)
-ylim([-100 100])
-subplot(2,2,2)
-ylim([-100 100])
-subplot(2,2,3)
-ylim([-100 100])
-
-%% Directly going to the figures:
+%% Sessions 1-3 ( beginning Nov) -> Directly going to the figures:
 fig_path = genpath('C:\Users\Carolina\Desktop\Internship\Software\Matlab_figs_and_data');
 addpath(fig_path);
 
@@ -255,3 +43,123 @@ open('2020_11_10_record3.fig');
 open('2020_11_10_record4.fig');
 open('2020_11_10_record5.fig');
 open('2020_11_10_record6.fig');
+
+%% Sessions 1-3 ( beginning Nov) -> Loading data to generate the figures 
+% Session 1, 4th Nov 2020
+% Goal: test complete set up
+% Result: Chebyshev II filters too little stable. Stimulator getting always
+% triggered because of this issue.
+% Note: only plotting the most relevant one.
+data_dir_session1 = dir([C_files_backup '/test/after lunch/CUL_leg_filter*.txt']);
+[amount dummy] = size(data_dir_session1);
+[s1raw_t, s1raw_f] = samples_analysis(data_dir_session1,'C',0,'Recorded raw data');
+[s1c_t, s1c_f] = samples_analysis(data_dir_session1,'C',1,'SAS filtered data');
+
+files_dir_s1 = [C_files_backup '/test/after lunch/CUL_leg'];
+for k=1:amount
+    name = ['Recording 04th Nov, nr.' num2str(k)];
+    data = plot_th(files_dir_s1,name,k,'C');    
+end
+
+% Session 2, 9th Nov 2020
+% Goal: test 1st order Butterworth filters
+% Result: filters kinda noisy, stimulator trigger too easily and
+% (sometines) unexpectedly.
+data_dir_session2 = dir([C_files_backup '/test_session_09Nov/CUL_filter*.txt']);
+[amount dummy] = size(data_dir_session2);
+[s2raw_t, s2raw_f] = samples_analysis(data_dir_session2,'C',0,'Recorded raw data');
+[s2c_t, s2c_f] = samples_analysis(data_dir_session2,'C',1,'SAS filtered data');
+
+files_dir_s2 = [C_files_backup '/test_session_09Nov/CUL'];
+for k=1:amount
+    name = ['Recording 09th Nov, nr.' num2str(k)];
+    data = plot_th2(files_dir_s2,name,k,'C');    
+end
+
+% Session 3, 10th Nov 2020
+% Goal: test 2nd order Butterworth filters + different thresholds
+% Results: filters much better behaviour. Threshold still quite messy.
+data_dir_session3 = dir([C_files_backup '/test_session_10Nov/CUL_filter*.txt']);
+[amount dummy] = size(data_dir_session3);
+[s3raw_t, s3raw_f] = samples_analysis(data_dir_session3,'C',0,'Recorded raw data');
+[s3c_t, s3c_f] = samples_analysis(data_dir_session3,'C',1,'SAS filtered data');
+
+files_dir = [C_files_backup '/test_session_10Nov/CUL'];
+for k=1:amount
+    name = ['Recording 10th Nov, nr.' num2str(k)];
+    data = plot_th3(files_dir,name,k,'C');    
+end
+
+%% Remarks: session 2 peaks
+[s2c_t, s2c_f] = samples_analysis(data_dir_session2(2),'C',1,'SAS filtered data');
+% peak 1 
+srate = 1000;
+t11 = 34.04; t12 = 34.4;
+peak1 = c_t(t11*srate:t12*srate);
+t_peak1 = [t11:(1/srate):t12];
+t21 = 34.4; t22 = 37;
+peak2 = c_t(t21*srate:t22*srate);
+t_peak2 = [t21:(1/srate):t22];
+
+figure('Name','Analysing peaks')
+subplot(2,2,1)
+plot(t_peak1, peak1)
+xlim([t_peak1(1) t_peak1(end)])
+ylim([0 max(peak1)])
+subplot(2,2,2)
+peak1_f = fftEMG(peak1,['Frequency domain EMG 1'],srate);
+subplot(2,2,3)
+plot(t_peak2, peak2)
+xlim([t_peak2(1) t_peak2(end)])
+ylim([0 max(peak2)])
+subplot(2,2,4)
+peak2_f = fftEMG(peak2,['Frequency domain EMG 2'],srate);
+
+%% Testing different filters on Matlab
+% This is useful to tune filters and choose what would suit better
+
+% select raw data to process 
+files_dir = dir([C_files_backup '/test/after lunch/CUL_leg_filter*.txt']);
+file_select = 1;                % choose a concrete set of data
+% Raw and different types of filters
+analysis(files_dir(file_select),'0','Raw data');
+analysis(files_dir(file_select),'C','SAS filtered data');
+analysis(files_dir(file_select),'M','Filtered data with Matlab');
+
+% Playing with the Butterworth order nr.
+bandwidth = 2;
+for j=1:5
+test_filts(files_dir(file_select),'M',['Filtered data with Butterworth order nr.' num2str(j)],j,bandwidth);
+end
+
+% Playing with the Butterworth bandwidth
+order = 1;
+for j=2:2:10
+test_filts(files_dir(file_select),'M',['Filtered data with Butterworth  bandwidth = ' num2str(j)],order,j);
+end
+% Trying a fixed value on a concrete data set
+test_filts(files_dir(file_select),'M',['Filtered data with Butterworth  order = 2, bandwidth = 4.5'],2,4.5);
+
+%% Testing different filters on the TestFilters.cpp program
+% This is to check if the set up on the filters on C is good, run different
+% filters test on previous sessions raw data and without having to wait for
+% a complete prototype set up to analyse the filters results on C++
+
+test_dir = dir([C_files_backup '/output/out_CUL_leg_filter*.txt']);
+analysis(test_dir(1),'0','SAS raw data');
+analysis(test_dir(1),'C','SAS raw data');
+
+[c_t, c_f] = samples_analysis(test_dir(1),'C',1,'SAS filtered data');
+
+
+% 'C' = original used filters (when the original data was recorded) vs new 
+% filtering done on TestFilters.cpp
+% 'T' = original used filters (when the original data was recorded) vs new 
+% filtering done on Matlab
+
+test_dir_string = [C_files_backup '/output/out_CUL_leg'];
+for k=2:4
+    name = ['Christians leg recording after lunch, nr.' num2str(k)];
+%    data = plot_th(test_dir_string,name,k,'C');    
+    data = plot_th(test_dir_string,name,k,'T');    
+end

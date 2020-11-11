@@ -6,7 +6,7 @@
 %% Load data files
 path = pwd;
 % Add source directories
-data_path = genpath('SAS');
+data_path = genpath('SAS/files');
 fcn_path = genpath('Matlab_scripts');
 addpath(data_path);
 addpath(fcn_path);

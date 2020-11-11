@@ -151,7 +151,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="bandStop.cpp" />
     <ClCompile Include="iir\Biquad.cpp" />
     <ClCompile Include="iir\Butterworth.cpp" />
     <ClCompile Include="iir\Cascade.cpp" />
@@ -161,8 +160,6 @@
     <ClCompile Include="iir\PoleFilter.cpp" />
     <ClCompile Include="iir\RBJ.cpp" />
     <ClCompile Include="iir\State.cpp" />
-    <ClCompile Include="notch100.cpp" />
-    <ClCompile Include="notch50.cpp" />
     <ClCompile Include="SAS.cpp" />
     <ClCompile Include="SASLIB.cpp" />
   </ItemGroup>

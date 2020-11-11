@@ -1,8 +1,0 @@
-﻿  TestFilters.cpp
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\TestFilters.cpp(144,37): warning C4244: 'argument': conversion from 'double' to 'const _Ty', possible loss of data
-          with
-          [
-              _Ty=float
-          ]
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\TestFilters.cpp(169,19): warning C4018: '<': signed/unsigned mismatch
-  TestFilters.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\Debug\TestFilters.exe

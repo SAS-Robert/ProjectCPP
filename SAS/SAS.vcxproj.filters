@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Micromodeller">
-      <UniqueIdentifier>{ed99401e-6407-4069-8d80-b031eb99152f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Hasomed">
       <UniqueIdentifier>{73c8b48b-e558-4c52-9964-fb7543429ca7}</UniqueIdentifier>
     </Filter>
@@ -26,15 +23,6 @@
     </ClCompile>
     <ClCompile Include="SASLIB.cpp">
       <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="bandStop.cpp">
-      <Filter>Header Files\Micromodeller</Filter>
-    </ClCompile>
-    <ClCompile Include="notch50.cpp">
-      <Filter>Header Files\Micromodeller</Filter>
-    </ClCompile>
-    <ClCompile Include="notch100.cpp">
-      <Filter>Header Files\Micromodeller</Filter>
     </ClCompile>
     <ClCompile Include="iir\State.cpp">
       <Filter>Header Files\Hasomed</Filter>

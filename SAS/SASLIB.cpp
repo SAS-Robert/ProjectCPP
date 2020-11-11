@@ -74,7 +74,6 @@ void get_dir(int argc, char *argv[], string& Outdir){
 
   // Output
   full = t;
-  full+="test_session_10Nov\\";
   Outdir = full;
 }
 
@@ -220,30 +219,3 @@ void handleStopAckReceived(Smpt_device* const device, const Smpt_ack& ack)
     Smpt_dl_power_module_ack power_module_ack;
     smpt_get_dl_power_module_ack(device, &power_module_ack);
 }
-
-/*void handleGetAckReceived(Smpt_device* const device, const Smpt_ack& ack)
-{
-    Smpt_dl_get get_ack;
-    smpt_send_dl_get(device, &get_ack);
-}*/
-
-/*
-void thread_recording() {
-    unsigned long long int sample_test = 0;
-    recorder_device.port_name_ri = "COM4";
-
-    recorder_device.init();
-    recorder_device.start();
-    Sleep(1000);
-    while (one_to_escape == 0)  // Check if new package is arrived, then handel this package.
-    {
-        one_to_escape = _kbhit();
-        recorder_device.record();
-        sample_test = recorder_emg1.size()-processed;
-        if (sample_test > 100) {
-            process_data_iir();
-        }
-    }
-    recorder_device.end();
-}
-*/

@@ -224,10 +224,11 @@ int main(int argc, char* argv[]) {
     //infile.open("EMG_desk_20201027_9040.txt");
 
     // Load raw data: arm sessions
-    string infileName = "CUL_leg_filter_20201104_1325.txt";
+    // string infileName = "CUL_leg_filter_20201104_1325.txt";
     // string infileName = "CUL_leg_filter_20201104_1330.txt";
     // string infileName = "CUL_leg_filter_20201104_1336.txt";
     // string infileName = "CUL_leg_filter_20201104_1340.txt";
+     string infileName = "example.txt";
     infile.open(infileName);
 
     std::cout << "Reading from the file" << endl;
@@ -249,17 +250,6 @@ int main(int argc, char* argv[]) {
     //std::cout << "Values format: "<<values[0]<<"," << values[1]<<"," << values[2]<<"," << values[3]<<"," << values[4]<< endl;
     double raw_value = 0;
 
-    // Test data
-    /*
-    string fileName_t = fileDir + "raw_" + infileName;//+date_s.c_str() + ".txt";
-    ofstream outFile_t;
-    outFile_t.open(fileName_t);
-    for (unsigned int i = 0; i < channel_raw.size(); i++) {
-        raw_value = channel_raw[i];
-        outFile_t << raw_value << "\n";
-    }
-    outFile_t.close();
-    */
     // Filter data
     fileName = fileDir + "out2_" + infileName;//+date_s.c_str() + ".txt";
     outFile.open(fileName);
@@ -301,8 +291,6 @@ int main(int argc, char* argv[]) {
       // temp[12]= Cheby_i_100.filter(temp[11]);
 
       // save it
-      // Hasomed
-      //outFile << raw_value<<","<< temp[0] << ", " << temp[1] << ", " << temp[2] << ", " << temp[3] << ", " << temp[4] << "\n";
       outFile << raw_value<<","<< temp[10] << ", " << temp[11] << "," << temp[12] << "\n";
 
     }
@@ -313,16 +301,3 @@ int main(int argc, char* argv[]) {
     std::cout<<"Output file: "<<fileName <<endl;
 
 }
-
-// others
-// std::string s = data.c_str();
-// std::string delimiter = ",";
-// std::cout << s << endl;
-// size_t pos = 0;
-// std::string token;
-// while ((pos = s.find(delimiter)) != std::string::npos) {
-//     token = s.substr(0, pos);
-//     std::cout << token << std::endl;
-//     s.erase(0, pos + delimiter.length());
-// }
-// std::cout << s << std::endl;
