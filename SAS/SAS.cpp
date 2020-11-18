@@ -51,13 +51,13 @@ struct device_to_device {
 //MAIN_to_all: the main function writes here and all threads read
 //rec_status: Ingest writes on the variable, Move3 reads it
 
-// Dummies 
+// Dummies
 char date[15];
 string file_dir;
 string date_s;
 string filter_s;
 
-// ------------------------- Filtering  ------------------------ 
+// ------------------------- Filtering  ------------------------
 // Filters from iir.h library. All the filters require the following parameters:
 // - Nr of order
 // - Sampling rate
@@ -76,6 +76,10 @@ std::vector<double> Butty_result;
 
 const double B50_Fq = 50;
 const double B100_Fq = 100;
+const double B150_Fq = 150;
+const double B200_Fq = 200;
+const double B250_Fq = 250;
+
 const double B50_100_Fqw = 10;
 const int orderB50_100 = 2;
 
@@ -84,6 +88,15 @@ std::vector<double> B50_result;
 
 Iir::Butterworth::BandStop<orderB50_100> B100;
 std::vector<double> B100_result;
+
+Iir::Butterworth::BandStop<orderB50_100> B150;
+std::vector<double> B150_result;
+
+Iir::Butterworth::BandStop<orderB50_100> B200;
+std::vector<double> B200_result;
+
+Iir::Butterworth::BandStop<orderB50_100> B250;
+std::vector<double> B250_result;
 
 // ------------------------- Devices handling --------------------------------
 
@@ -102,7 +115,7 @@ RehaMove3 stimulator_device(port_stim);
 char port_rec[5] = "COM4";
 RehaIngest recorder_device(port_rec);
 
-// Other variables 
+// Other variables
 bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
 bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false;
 unsigned long long int processed = 0;
@@ -112,7 +125,7 @@ double th_discard = samplingrate * 1.1;                // discard first filtered
 double th_discard_nr = 0;
 int th_wait = 3, th_wait_cnt = 0;                                       // amount of mean sets before triggering
 
-// Dummies 
+// Dummies
 // Files handler to store recorded data
 ofstream fileRAW, fileFILTERS;
 ofstream fileVALUES, fileLOGS;
@@ -137,7 +150,7 @@ ROB_Type screen_status;
 bool start_train = false;
 unsigned long long int sample_nr = 0;
 // ------------------------------ Timing -------------------
-// Threads cycles 
+// Threads cycles
 auto th1_st = std::chrono::steady_clock::now();
 auto th1_fn = std::chrono::steady_clock::now();
 std::chrono::duration<double> th1_diff;
@@ -187,9 +200,10 @@ string time1_s;
 string time2_s;
 string time3_s;
 string time4_s;
-char folder[256] = "files\\";
+char folder[256] = "demo_18Nov\\";
+char Sname[256] = "subject1";
 // ---------------------------- Functions declaration  -----------------------------
-// Dummies 
+// Dummies
 bool dummy_tcp = false;
 bool dummy_valid = false;
 // Various
@@ -218,19 +232,21 @@ int main(int argc, char* argv[]) {
     get_dir(argc, argv, file_dir);
     generate_date(date); //get current date/time in format YYMMDD_hhmm
     date_s = convertToString(date,sizeof(date));
-    filter_s = file_dir + folder +"CUL_filter_" + date_s.c_str() + ".txt";
-    time1_s = file_dir + folder + "CUL_time1_" + date_s.c_str()  +  ".txt";
-    time2_s = file_dir + folder + "CUL_time2_" + date_s.c_str()  +  ".txt";
-    time3_s = file_dir + folder + "CUL_time3_" + date_s.c_str()  +  ".txt";
-    time4_s = file_dir + folder + "CUL_time4_" + date_s.c_str() + ".txt";
-    th_s = file_dir + folder + "CUL_th_" + date_s.c_str() + ".txt";
-    string LOGS_s = file_dir + folder + "CUL_log_" + date_s.c_str() + ".txt";
+    filter_s = file_dir + folder + Sname + "_filter_" + date_s.c_str() + ".txt";
+    time1_s = file_dir + folder + Sname + "_time1_" + date_s.c_str()  +  ".txt";
+    time2_s = file_dir + folder + Sname + "_time2_" + date_s.c_str()  +  ".txt";
+    time3_s = file_dir + folder + Sname + "_time3_" + date_s.c_str()  +  ".txt";
+    time4_s = file_dir + folder + Sname + "_time4_" + date_s.c_str() + ".txt";
+    th_s = file_dir + folder + Sname + "_th_" + date_s.c_str() + ".txt";
+    string LOGS_s = file_dir + folder + Sname + "_log_" + date_s.c_str() + ".txt";
     fileLOGS.open(LOGS_s);
     // Start filters
     Butty.setup(samplingrate, B_Fq, B_Fqw);
     B50.setup(samplingrate, B50_Fq, B50_100_Fqw);
     B100.setup(samplingrate, B100_Fq, B50_100_Fqw);
-
+    B150.setup(samplingrate, B150_Fq, B50_100_Fqw);
+    B200.setup(samplingrate, B200_Fq, B50_100_Fqw);
+    B250.setup(samplingrate, B250_Fq, B50_100_Fqw);
     // other dummy stuff
 
     int ch;
@@ -259,7 +275,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting connection with ROBERT and Touch Screen\n";
     ROBERT.display = true;               //Chosen not to show messages during messages exchange
     do {
-        ROBERT.start(robot_IP_e, robot_port);
+        ROBERT.start(robot_IP, robot_port);
     } while (ROBERT.error);
     ROBERT.display = false;
     if (dummy_tcp) {
@@ -293,9 +309,10 @@ int main(int argc, char* argv[]) {
 
     printf("SAS PROGRAMME: starting up devices.\n");
 
+    one_to_escape = 0;
+
     while(!MAIN_to_all.end && (state_process != st_end)) {
         th1_st = std::chrono::steady_clock::now();
-
         thread_recording();
         thread_stimulation();
 
@@ -367,7 +384,7 @@ int main(int argc, char* argv[]) {
 
         Sleep(10);
 
-        // Controlling thread cycle time 
+        // Controlling thread cycle time
         th1_fn = std::chrono::steady_clock::now();
         th1_diff = th1_fn - th1_st;
         th1_d = ((double)th1_diff.count())+0.015;
@@ -397,7 +414,7 @@ int main(int argc, char* argv[]) {
     thread_stimulation();
     // Waiting for other thread to finish
     Interface.join();
-    
+
     fileFILTERS.close();
     fileVALUES.close();
 
@@ -453,7 +470,7 @@ int main(int argc, char* argv[]) {
 
 
     ROBERT.end();
-    if (dummy_tcp) { SCREEN.end(); }
+ //   if (dummy_tcp) { SCREEN.end(); }
 
     std::cout << "\n--------------------------\nHej Hej!\n--------------------------\n";
     // Flushing input and output buffers
@@ -711,7 +728,7 @@ void thread_connect() {
         // TCP Stuff
         Sleep(10);
 
-        // Controlling thread cycle time 
+        // Controlling thread cycle time
         th2_fn = std::chrono::steady_clock::now();
         th2_diff = th2_fn - th2_st;
         th2_d = ((double)th2_diff.count())+0.015;
@@ -721,7 +738,7 @@ void thread_connect() {
 
             Sleep(th2_sleep);
         }
-        
+
         time4_end = std::chrono::steady_clock::now();
         time4_diff = time4_end - th2_st;
         time4_v.push_back((double)time4_diff.count());
@@ -834,10 +851,21 @@ void thread_stimulation()
     case st_init:
         // initialization
         stimulator_device.init();
+        // Update values
+        stimulator_device.stim.number_of_points = 3;  //* Set the number of points
+        stimulator_device.stim.ramp = 3-;              //* Three lower pre-pulses
+        stimulator_device.stim.period = 20;           //* Frequency: 50 Hz
+        stimulator_device.stim.points[0].current = 25.0;
+        stimulator_device.stim.points[0].time = 200;
+        stimulator_device.stim.points[1].time = 200;
+        stimulator_device.stim.points[2].current = -25.0;
+        stimulator_device.stim.points[2].time = 200;
+
         stim_status.ready = stimulator_device.ready;
         break;
 
     case st_wait:
+        stim_fl3 = false;
         // do stuff
         if (Move3_hmi != Move3_none) {
             stimulation_set(Move3_hmi);
@@ -878,6 +906,7 @@ void thread_stimulation()
         if (!stim_fl3) { // Stop stimulator
             stimulator_device.pause();
             stim_fl3 = true;
+            fileLOGS << "6.0, " << processed << "\n";
         }
         else {
         // Move3_cmd = Move3_start;
@@ -912,14 +941,17 @@ double process_data_iir(unsigned long long int v_size) {
         Butty_result.push_back(Butty.filter(recorder_emg1[i]));
         B50_result.push_back(B50.filter(Butty_result[i]));
         B100_result.push_back(B100.filter(B50_result[i]));
+        B150_result.push_back(B150.filter(B100_result[i]));
+        B200_result.push_back(B200.filter(B150_result[i]));
+        B250_result.push_back(B250.filter(B200_result[i]));
         // Saving data
-        fileFILTERS << recorder_emg1[i] << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] << "\n";
+        fileFILTERS << recorder_emg1[i] << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] <<"," << B150_result[i] << "," << B200_result[i] << "," << B250_result[i] << "\n";
         // Calculating mean of retified EMG
         if (B100_result[i] > 0) {
-            temp = B100_result[i];
+            temp = B250_result[i];
         }
         else {
-            temp = -B100_result[i];
+            temp = -B250_result[i];
         }
         mean = mean + temp;
     }
@@ -945,18 +977,21 @@ double process_th(unsigned long long int v_size) {
     // Filtering + calculate mean
     for (i = processed; i < v_size; ++i)                           // Loop for the length of the array
     {
-        // Filter data 
+        // Filter data
         Butty_result.push_back(Butty.filter(recorder_emg1[i]));
         B50_result.push_back(B50.filter(Butty_result[i]));
         B100_result.push_back(B100.filter(B50_result[i]));
+        B150_result.push_back(B150.filter(B100_result[i]));
+        B200_result.push_back(B200.filter(B150_result[i]));
+        B250_result.push_back(B250.filter(B200_result[i]));
         // Saving data
-        fileFILTERS << recorder_emg1[i] << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] << "\n";
+        fileFILTERS << recorder_emg1[i] << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] << "," << B150_result[i] << "," << B200_result[i] << "," << B250_result[i] << "\n";
         // Calculating mean of retified EMG
         if (B100_result[i] > 0) {
-            temp = B100_result[i];
+            temp = B250_result[i];
         }
         else {
-            temp = -B100_result[i];
+            temp = -B250_result[i];
         }
         mean = mean + temp;
     }
@@ -966,17 +1001,17 @@ double process_th(unsigned long long int v_size) {
         temp = 0;
         for (i = processed; i < v_size; ++i)
         {
-            if (B100_result[i] > 0) {
-                temp = B100_result[i];
+            if (B250_result[i] > 0) {
+                temp = B250_result[i];
             }
             else {
-                temp = -B100_result[i];
+                temp = -B250_result[i];
             }
             sd += pow(temp - mean, 2);
         }
         sd = sqrt(sd / N_len);
         // Calculate final threshold value
-        value = (mean + sd * 2) * N_len;
+        value = (mean + sd/2) * N_len;
     }
     else {
         th_discard_nr = v_size;
@@ -1036,6 +1071,7 @@ void thread_recording()
             }
             if(processed >= th_nr){
               rec_threshold = rec_threshold / (sample_nr - th_discard_nr);
+              //rec_threshold = 2.0;
               std::cout << "Reha Ingest message: threshold = " << rec_threshold << endl;
               rec_status.th = true;
             }
@@ -1050,7 +1086,7 @@ void thread_recording()
 
             st_wait_jump =!rec_status.start && !ROBERT.isMoving && ROBERT.valid_msg && start_train;
 
-            if ((mean >= rec_threshold)&&(th_wait_cnt > th_wait)&& st_wait_jump){ 
+            if ((mean >= rec_threshold)&&(th_wait_cnt > th_wait)&& st_wait_jump){
                 printf("Reha Ingest message: threshold overpassed.\n", th_wait_cnt);
                 rec_status.start = true;
                 time1_start = std::chrono::steady_clock::now();
@@ -1079,6 +1115,7 @@ void thread_recording()
 
     case st_stop:
         th_wait_cnt = 0;
+        rec_fl2 = false;
         recorder_device.record();
         sample_nr = recorder_emg1.size();
         if (sample_nr - processed >= 100) {

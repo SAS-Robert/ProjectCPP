@@ -22,8 +22,6 @@
 
 #include "Iir.h"
 
-#include "E50.h"
-#include "E100.h"
 
 using namespace std;
 
@@ -40,36 +38,31 @@ Iir::Butterworth::HighPass<order2> m_f2;
 const int order3 = 4; // 4th order (=2 biquads)
 Iir::Butterworth::LowPass<order2> m_f3;
 
-// Christian's filters:
-//Cheby50 = designfilt('bandstopiir', 'PassbandFrequency1', 47,
-//        'StopbandFrequency1', 49, 'StopbandFrequency2', 51,
-//        'PassbandFrequency2', 53, 'PassbandRipple1', 1,
-//        'StopbandAttenuation', 60, 'PassbandRipple2', 1,
-//        'SampleRate', 1000, 'DesignMethod', 'cheby2');
-const int order50 = 10;
-Iir::ChebyshevII::BandStop<order50> Cheby50;
+// SAS filters:
+// Filters from iir.h library. All the filters require the following parameters:
+// - Nr of order
+// - Sampling rate
+// - Central frequency (Hz)
+// - Frequency width (Hz)
+// - Most of these parameters are calculated from Matlab's original scripts
+const int samplingrate = 1000;
 
-const int orderC1 = 2;
-Iir::ChebyshevI::BandStop<orderC1> Cheby_i_50;
-
-//Cheby100 = designfilt('bandstopiir', 'PassbandFrequency1', 97,
-//          'StopbandFrequency1', 99, 'StopbandFrequency2', 101,
-//          'PassbandFrequency2', 103, 'PassbandRipple1', 1,
-//          'StopbandAttenuation', 60, 'PassbandRipple2', 1,
-//          'SampleRate', 1000, 'DesignMethod', 'cheby2');
-const int order100 = 10;
-Iir::ChebyshevII::BandStop<order100> Cheby100;
-Iir::ChebyshevI::BandStop<orderC1> Cheby_i_100;
-
-const int orderButty = 4; // 4th order (=2 biquads)
+const int orderButty = 4;
+double Low_Hz = 20;
+double High_Hz = 300;
+const double B_Fq = (High_Hz + Low_Hz) / 2;
+const double B_Fqw = (High_Hz - Low_Hz);
 Iir::Butterworth::BandPass<orderButty> Butty;
+std::vector<double> Butty_result;
 
-// New filters:
-// Filter: setup(samplingrate, Frquency , Frequency bandwidth);
-const int orderB50_100 = 1;
 const double B50_Fq = 50;
 const double B100_Fq = 100;
-const double B50_100_Fq = 5;
+const double B150_Fq = 150;
+const double B200_Fq = 200;
+const double B250_Fq = 250;
+
+const double B50_100_Fqw = 10;
+const int orderB50_100 = 2;
 
 Iir::Butterworth::BandStop<orderB50_100> B50;
 std::vector<double> B50_result;
@@ -77,11 +70,15 @@ std::vector<double> B50_result;
 Iir::Butterworth::BandStop<orderB50_100> B100;
 std::vector<double> B100_result;
 
-// Filters from MicroModeller:
-E50Type* E50 = E50_create();
-std::vector<float> E50_result;
-E100Type* E100 = E100_create();
-std::vector<float> E100_result;
+Iir::Butterworth::BandStop<orderB50_100> B150;
+std::vector<double> B150_result;
+
+Iir::Butterworth::BandStop<orderB50_100> B200;
+std::vector<double> B200_result;
+
+Iir::Butterworth::BandStop<orderB50_100> B250;
+std::vector<double> B250_result;
+
 
 
 // Global variables:
@@ -178,57 +175,24 @@ int main(int argc, char* argv[]) {
     const float cutoff_frequency3 = 2; // Hz
     m_f3.setup(samplingrate, cutoff_frequency3);
 
-    std::cout << "Setting up Christian's filters"<<endl;
-    // Christian's filters
-    //Cheby50 = designfilt('bandstopiir', 'PassbandFrequency1', 47,
-    //        'StopbandFrequency1', 49, 'StopbandFrequency2', 51,
-    //        'PassbandFrequency2', 53, 'PassbandRipple1', 1,
-    //        'StopbandAttenuation', 60, 'PassbandRipple2', 1,
-    //        'SampleRate', 1000, 'DesignMethod', 'cheby2');
-    const double Cheby50_centerFrequency = 50; // Hz
-    const double Cheby50_widthFrequency = 3;
-    const double Cheby50_stopBandDb = 60;
-    Cheby50.setup(samplingrate, Cheby50_centerFrequency, Cheby50_widthFrequency, Cheby50_stopBandDb);
-    Cheby_i_50.setup(samplingrate, Cheby50_centerFrequency, Cheby50_widthFrequency, Cheby50_stopBandDb);
+    std::cout << "Setting up SAS filters"<<endl;
 
-    //Cheby100 = designfilt('bandstopiir', 'PassbandFrequency1', 97,
-    //          'StopbandFrequency1', 99, 'StopbandFrequency2', 101,
-    //          'PassbandFrequency2', 103, 'PassbandRipple1', 1,
-    //          'StopbandAttenuation', 60, 'PassbandRipple2', 1,
-    //          'SampleRate', 1000, 'DesignMethod', 'cheby2');
-    const double Cheby100_centerFrequency = 100; // Hz
-    const double Cheby100_widthFrequency = 3;
-    const double Cheby100_stopBandDb = 60;
-    Cheby100.setup(samplingrate, Cheby100_centerFrequency, Cheby100_widthFrequency, Cheby100_stopBandDb);
-    Cheby_i_100.setup(samplingrate, Cheby100_centerFrequency, Cheby100_widthFrequency, Cheby100_stopBandDb);
+    // Start SAS filters
+    Butty.setup(samplingrate, B_Fq, B_Fqw);
+    B50.setup(samplingrate, B50_Fq, B50_100_Fqw);
+    B100.setup(samplingrate, B100_Fq, B50_100_Fqw);
+    B150.setup(samplingrate, B150_Fq, B50_100_Fqw);
+    B200.setup(samplingrate, B200_Fq, B50_100_Fqw);
+    B250.setup(samplingrate, B250_Fq, B50_100_Fqw);
 
-    const int orderButty = 4;
-    double Low_Hz = 20;
-    double High_Hz = 300;
-    const double B_Fq = (High_Hz+Low_Hz)/2;
-    const double B_Fqw = (High_Hz-Low_Hz);
-
-    Butty.setup(1000, B_Fq, B_Fqw);
-
-    B50.setup(1000, B50_Fq, B50_100_Fq);
-    B100.setup(1000, B100_Fq, 6.5);
-
-
+    // string infileName = "example.txt";
     // Load raw data: arm sessions
-    //infile.open("CA_ind1_EMG_20201027_9000.txt");
-    //infile.open("CA_ind2_EMG_20201027_9005.txt");
-    //infile.open("CA_ind3_EMG_20201027_9010.txt");
+    // string infileName = "CA_filter_20201113_1503.txt";
+    // string infileName = "CA_filter_20201113_1506.txt";
+    // string infileName = "CA_filter_20201113_1509.txt";
+    // string infileName = "CA_filter_20201113_1512.txt";
+    string infileName = "CA_filter_20201113_1514.txt";
 
-    //infile.open("EMG_desk_20201027_9030.txt");
-    //infile.open("EMG_desk_20201027_9035.txt");
-    //infile.open("EMG_desk_20201027_9040.txt");
-
-    // Load raw data: arm sessions
-    // string infileName = "CUL_leg_filter_20201104_1325.txt";
-    // string infileName = "CUL_leg_filter_20201104_1330.txt";
-    // string infileName = "CUL_leg_filter_20201104_1336.txt";
-    // string infileName = "CUL_leg_filter_20201104_1340.txt";
-     string infileName = "example.txt";
     infile.open(infileName);
 
     std::cout << "Reading from the file" << endl;
@@ -251,51 +215,23 @@ int main(int argc, char* argv[]) {
     double raw_value = 0;
 
     // Filter data
-    fileName = fileDir + "out2_" + infileName;//+date_s.c_str() + ".txt";
+    fileName = fileDir + infileName;//+date_s.c_str() + ".txt";
     outFile.open(fileName);
 
     std::cout << "Filtering data. Sample amount: "<< channel_raw.size() << endl;
     for(unsigned int i=0; i<channel_raw.size(); i++){
       raw_value = channel_raw[i];
-      // Hasomed filters
-      // temp[0] = m_f.filter(raw_value);
-      // temp[1] = m_f1.filter(temp[0]);
-      // temp[2] = m_f2.filter(temp[1]);
-      // temp[3] = sqrt(temp[2] * temp[2]);
-      // temp[4] = m_f3.filter(temp[3]);
-
-      // Christians' filter
-      //temp[10]= Butty.filter(raw_value);
-      // temp[11]= Cheby50.filter(temp[10]);
-      // temp[12]= Cheby100.filter(temp[11]);
-
-      // New filters
-      temp[10]= Butty.filter(raw_value);
-      temp[11]= B50.filter(temp[10]);
-      temp[12]= B100.filter(temp[11]);
-
-      //temp[10] = Butty.filter(raw_value);
-
-      //float temp11 = (float)temp[10];
-      //E50_writeInput(E50, temp11);
-      //E50_result.push_back(E50_readOutput(E50));
-      //temp[11] = (double)E50_readOutput(E50);
-
-      //E100_writeInput(E100, temp11);
-      //E100_result.push_back(E100_readOutput(E100));
-      //temp[12] = (double) E100_readOutput(E100);
-
-      // Type I filters
-      // emp[10]= Butty.filter(raw_value);
-      // temp[11]= Cheby_i_50.filter(temp[10]);
-      // temp[12]= Cheby_i_100.filter(temp[11]);
-
-      // save it
-      outFile << raw_value<<","<< temp[10] << ", " << temp[11] << "," << temp[12] << "\n";
+      // SAS Filtering
+      Butty_result.push_back(Butty.filter(raw_value));
+      B50_result.push_back(B50.filter(Butty_result[i]));
+      B100_result.push_back(B100.filter(B50_result[i]));
+      B150_result.push_back(B150.filter(B100_result[i]));
+      B200_result.push_back(B200.filter(B150_result[i]));
+      B250_result.push_back(B250.filter(B200_result[i]));
+      // Saving data
+      outFile << raw_value << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] << "," << B150_result[i] << "," << B200_result[i] << "," << B250_result[i] << "\n";
 
     }
-    E50_destroy(E50);
-    E100_destroy(E100);
 
     outFile.close();
     std::cout<<"Output file: "<<fileName <<endl;

@@ -8,7 +8,7 @@ data_dir=dir([files_dir '_filter_*']);
 full_name = [data_dir(pos).folder '\' data_dir(pos).name]; %Just take the last one
 data = (load(full_name))';
 c_raw = data(1,:);
-c_t = data(4,:);
+c_t = data(end,:);
 srate = 1000;
 
 t_emg = zeros(1,length(c_t));
@@ -122,8 +122,8 @@ if(plot_type=='C')
     hold on
     grid on 
     plot1 = plot(t_emg, abs(c_t'));
-    plot2 = plot(r_t_th,r_th,'g');
-    plot3 = plot(t,y_t,'r');
+    plot2 = plot(r_t_th,r_th,'c');
+    plot3 = plot(t,abs(y_t),'r');
     plot4 = plot(t, th_value,'y');
     plot_array = [plot1 plot2 plot3 plot4];
     plot_names = {'EMG','Resting mean', 'Activity mean', 'Threshold'};
@@ -137,7 +137,7 @@ if(plot_type=='C')
     ylabel('v (V)');
     
     % plotting the logs 
-    ma = 0; ka = 0; mc = 0; gx = 0; gt = 0; 
+    ma = 0; ka = 0; mc = 0; gx = 0; gt = 0; kc = 0; kt = 0;
     for k=1:length(log_type)
         log_plot = 'b.';
         temp_x_value = t(1)*1000;
@@ -153,17 +153,25 @@ if(plot_type=='C')
                 plot_ka = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
                 ka = 1;
             case 3
-                log_plot = 'mo';    % magenta circle = end of repetition (with stimulator)
-                plot_mc = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
+                log_plot = 'm-';    % magenta circle = end of repetition (with stimulator)
+                plot_mc = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) 0.02], log_plot);
                 mc = 1;
             case 4
-                log_plot = 'gx';    % green X = start repetition
-                plot_gx = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
+                log_plot = '-';    % gx green X = start repetition
+                plot_gx = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) 0.02], log_plot, 'Color', [0.4660 0.6740 0.1880]);
                 gx = 1;
             case 5
                 log_plot = 'g^';    % Start training pressed
                 plot_gt = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
-                gt = 1;
+                gt = 1;              
+            case 6
+                log_plot = 'y*';    % Stimulator actually being stopped
+                plot_kc = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
+                kc = 1;
+             case 7
+                log_plot = 'k^';    % Stimulator stopped by user
+                plot_kt = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
+                kt = 1;               
         end
     
     end
@@ -175,8 +183,7 @@ if(plot_type=='C')
     if(gx==1)
         plot_array = [plot_array plot_gx];
         plot_names{end+1} = 'Start rep';
-    end
-    
+    end    
     if(ma==1)
         plot_array = [plot_array plot_ma];
         plot_names{end+1} = 'Trigger(s)';
@@ -185,11 +192,18 @@ if(plot_type=='C')
         plot_array = [plot_array plot_mc];
         plot_names{end+1} = 'End rep (with stim)';
     end    
+    if(kc==1)
+        plot_array = [plot_array plot_kc];
+        plot_names{end+1} = 'Stop stim';
+    end
     if(ka==1)
         plot_array = [plot_array plot_ka];
         plot_names{end+1} = 'End rep (no stim)';
     end
-
+    if(kt==1)
+        plot_array = [plot_array plot_kt];
+        plot_names{end+1} = 'Stop stim by user';
+    end
 
     legend(plot_array,plot_names);
     

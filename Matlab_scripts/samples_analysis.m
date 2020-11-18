@@ -47,7 +47,7 @@ data = (load(full_name))';
         C_raw = data(1,:);
         C_Butty = data(2,:);
         C_Cheby50 = data(3,:);
-        C_Cheby100 = data(4,:);
+        C_Cheby100 = data(end,:);
         
         if(use_filter==1)
             temp_plot = C_Cheby100;

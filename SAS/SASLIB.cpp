@@ -188,8 +188,8 @@ void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init)
     dl_init->gain_ch1 = Smpt_Dl_Init_Gain_Ch1_20x;
     dl_init->live_data_mode_flag = true;
     // Issue here: it does not matter the value, it does not respond
-     dl_init->filter = Smpt_Dl_Dsp_Filter_off;    /* = 0 no filter is activated*/
-    //dl_init->filter = Smpt_Dl_Dsp_Filter_001;    /* = 1 predefined Filter casade or block for this notation*/
+    dl_init->filter = Smpt_Dl_Dsp_Filter_off;    /* = 0 no filter is activated*/
+    // dl_init->filter = Smpt_Dl_Dsp_Filter_001;    /* = 1 predefined Filter casade or block for this notation*/
     // dl_init->filter = Smpt_Dl_Dsp_Filter_002;    /* = 2 predefined Filter casade or block for this notation*/
     // dl_init->filter = Smpt_Dl_Dsp_Filter_003;    /* = 3 predefined Filter casade or block for this notation*/
     // dl_init->filter = Smpt_Dl_Dsp_Filter_Last;   /* = 3

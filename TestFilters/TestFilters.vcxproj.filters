@@ -24,15 +24,6 @@
     <ClCompile Include="..\SAS\iir\Biquad.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\SAS\bandStop.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SAS\notch50.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SAS\notch100.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\SAS\iir\Butterworth.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
@@ -57,24 +48,9 @@
     <ClCompile Include="..\SAS\iir\State.cpp">
       <Filter>Header Files\Hasomed</Filter>
     </ClCompile>
-    <ClCompile Include="..\SAS\E50.cpp">
-      <Filter>Header Files\Hasomed</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SAS\E100.cpp">
-      <Filter>Header Files\Hasomed</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\SAS\bandStop.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\SAS\Iir.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\SAS\notch50.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\SAS\notch100.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\SAS\iir\Custom.h">
@@ -96,12 +72,6 @@
       <Filter>Header Files\Hasomed</Filter>
     </ClInclude>
     <ClInclude Include="..\SAS\iir\State.h">
-      <Filter>Header Files\Hasomed</Filter>
-    </ClInclude>
-    <ClInclude Include="..\SAS\E50.h">
-      <Filter>Header Files\Hasomed</Filter>
-    </ClInclude>
-    <ClInclude Include="..\SAS\E100.h">
       <Filter>Header Files\Hasomed</Filter>
     </ClInclude>
   </ItemGroup>

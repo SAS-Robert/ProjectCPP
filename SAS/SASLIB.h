@@ -239,7 +239,7 @@ public:
 					std::cout << "\nError - Reha Move3: Device not found. Check connection.\n";
 				}
 				Sleep(5000); // waits for 5 seconds to give you time to regret your life
-				std::cout << "\nReha Move 3 message: Retrying...\n";
+				std::cout << "\nReha Move 3 message: Retrying... ";
 				smpt_port = true;
 			}
 			if (abort) {
@@ -264,10 +264,10 @@ public:
 		stim.period = 20;           //* Frequency: 50 Hz
 		// Set the stimulation pulse
 
-		stim.points[0].current = 9;
+		stim.points[0].current = 2.0;
 		stim.points[0].time = 200;
 		stim.points[1].time = 200;
-		stim.points[2].current = -9;
+		stim.points[2].current = -2.0;
 		stim.points[2].time = 200;
 		//printf("RehaMove3 message: Stimulation initial values -> current = %2.2f, ramp points = %d, ramp value = %d\n", stim.points[0].current, stim.number_of_points, stim.ramp);
 
@@ -427,6 +427,11 @@ public:
 	void end() {
 		packet_number = smpt_packet_number_generator_next(&device_ri);
 		smpt_port = smpt_send_dl_stop(&device_ri, packet_number);
+		Sleep(10);
+		while (smpt_new_packet_received(&device_ri))
+		{
+			handle_dl_packet_global(&device_ri);
+		}
 		smpt_port = smpt_close_serial_port(&device_ri);
 		smpt_check = smpt_check_serial_port(port_name_ri);
 		ready = false;

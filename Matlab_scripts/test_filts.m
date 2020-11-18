@@ -31,6 +31,19 @@ Cheby100 = designfilt('bandstopiir', 'PassbandFrequency1', 80, 'StopbandFrequenc
 % Cheby150 = designfilt('bandstopfir', 'PassbandFrequency1', 147, 'StopbandFrequency1', 149, 'StopbandFrequency2', 151, 'PassbandFrequency2', 153, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', srate, 'DesignMethod', 'cheby2');
    % Cheby200 = designfilt('bandstopfir', 'PassbandFrequency1', 197, 'StopbandFrequency1', 199, 'StopbandFrequency2', 201, 'PassbandFrequency2', 203, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', srate, 'DesignMethod', 'cheby2');
 
+% More butt filters -> After supervisor meeting
+Sp1Hz = (150-bwidth/2)/Fn;
+Sp2Hz = (150+bwidth/2)/Fn;
+[b150,a150] = butter(order,[Sp1Hz,Sp2Hz],'stop');
+
+Sp1Hz = (200-bwidth/2)/Fn;
+Sp2Hz = (200+bwidth/2)/Fn;
+[b200,a200] = butter(order,[Sp1Hz,Sp2Hz],'stop');
+   
+Sp1Hz = (250-bwidth/2)/Fn;
+Sp2Hz = (250+bwidth/2)/Fn;
+[b250,a250] = butter(order,[Sp1Hz,Sp2Hz],'stop');
+   
 for i=1:amount
 full_name = [directory(i).folder '\' directory(i).name]; %Just take the last one
 data = (load(full_name))';
@@ -55,8 +68,11 @@ MatStop100 = filtfilt(Stop100,MatStop50);
 % 3.
 BStop50 = filtfilt(b50,a50,MatButty);
 BStop100 = filtfilt(b100,a100,BStop50);
+BStop150 = filtfilt(b150,a150,BStop100);
+BStop200 = filtfilt(b200,a200,BStop150);
+BStop250 = filtfilt(b250,a250,BStop200);
 
-temp_plot = BStop100;       
+temp_plot = BStop250;       
         
     t = zeros(1,length(temp_plot));
     for j = 1:length(t)
