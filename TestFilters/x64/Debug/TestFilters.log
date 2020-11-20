@@ -1,13 +1,2 @@
-﻿  Biquad.cpp
-  Butterworth.cpp
-  Cascade.cpp
-  ChebyshevI.cpp
-  ChebyshevII.cpp
-  Custom.cpp
-  PoleFilter.cpp
-  RBJ.cpp
-  State.cpp
-  TestFilters.cpp
-  Generating Code...
-     Creating library C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\x64\Debug\TestFilters.lib and object C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\x64\Debug\TestFilters.exp
+﻿  TestFilters.cpp
   TestFilters.vcxproj -> C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\x64\Debug\TestFilters.exe

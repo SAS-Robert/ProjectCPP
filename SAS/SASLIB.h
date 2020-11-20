@@ -127,13 +127,14 @@ static bool handle_dl_packet_global(Smpt_device* const device)
 // ---------------------- Variables for process control ---------------------
 typedef enum
 {
-    Move3_none      	= 0,    // Nothing to do
-    Move3_incr     		= 1,    // Increment current
-    Move3_decr      	= 2,    // Reduce current
+    Move3_none        = 0,    // Nothing to do
+    Move3_incr     	  = 1,    // Increment current
+    Move3_decr        = 2,    // Reduce current
     Move3_ramp_more   = 3,    // Increase ramp
-    Move3_ramp_less		= 4,    // Reduce ramp
+    Move3_ramp_less	  = 4,    // Reduce ramp
     Move3_stop        = 5,    // Stop Stimulating
     Move3_start       = 6,    // Stimulate with initial values
+	Move3_done		  = 7, 		// Finish callibration
 }RehaMove3_Req_Type;
 
 typedef enum
@@ -152,13 +153,15 @@ typedef enum
 
 typedef enum
 {
-    st_init      	    = 0,    // Nothing to do
-    st_th       		  = 1,    // set threshold
+    st_init      	  = 0,    // Nothing to do
+    st_th       	  = 1,    // set threshold
     st_wait           = 2,    // Waiting to overcome threshold
-    st_running       	= 3,    // Stimulating
+    st_running        = 3,    // Stimulating
     st_stop           = 4,    // Done 1 seq, waiting for next
     st_end            = 5,    // Setting threshold
-    st_test           = 6,    // Run stimulation test
+    st_testM          = 6,    // Run stimulation test (manual)
+	st_testA_go		  = 7, 	  // Run stimulation test (automatic) -> apply current
+	st_testA_stop	  = 8,	  // Run stimulation test (automatic) -> stop stim for recovery
 }state_Type;
 
 // ------------------------------ Devices -----------------------------
@@ -172,10 +175,10 @@ private:
 	uint8_t packet;
 	int turn_on = 0; //Time if the device gets turned on in the middle of the process
 	bool smpt_port, smpt_check, smpt_next, smpt_end, smpt_get;
+	Smpt_ml_update ml_update;       // Struct for ml_update command
 
 public:
-    Smpt_ml_update ml_update;       // Struct for ml_update command
-    bool ready;
+    bool ready, active;
     Smpt_ml_channel_config stim;
     // From main:
     bool abort;
@@ -193,6 +196,7 @@ public:
 		smpt_get = false;
 		ready = false;
 		abort = false;
+		active = false;
 	}
 	// Destructor
 	//~RehaMove3() = delete;
@@ -264,10 +268,10 @@ public:
 		stim.period = 20;           //* Frequency: 50 Hz
 		// Set the stimulation pulse
 
-		stim.points[0].current = 2.0;
+		stim.points[0].current = 15.0;
 		stim.points[0].time = 200;
 		stim.points[1].time = 200;
-		stim.points[2].current = -2.0;
+		stim.points[2].current = -15.0;
 		stim.points[2].time = 200;
 		//printf("RehaMove3 message: Stimulation initial values -> current = %2.2f, ramp points = %d, ramp value = %d\n", stim.points[0].current, stim.number_of_points, stim.ramp);
 
@@ -279,25 +283,13 @@ public:
 
 		fill_ml_get_current_data(&device, &ml_get_current_data);
 		smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+		active = true;
 	};
 	void pause() {
-		// Option 1: setting current value = 0 and update it
-		// stim.number_of_points = 3;
-		// stim.ramp = 3;
-		// stim.period = 20;
-		// stim.points[0].current = 0;
-		// stim.points[0].time = 200;
-		// stim.points[1].time = 200;
-		// stim.points[2].current = -0;
-		// stim.points[2].time = 200;
-		//
-		// fill_ml_update(&device, &ml_update, stim);
-		// smpt_send_ml_update(&device, &ml_update);
-
-		// Option 2: using stop comand and restart it?
 		smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
 		fill_ml_init(&device, &ml_init);
 		smpt_send_ml_init(&device, &ml_init);
+		active = false;
 	};
 	void end() {
 		//  No need to repeat this, since the connectio was successfully stablished and
@@ -308,6 +300,7 @@ public:
 			smpt_check = smpt_check_serial_port(port_name_rm); // it must be available after closing
 		}
 		ready = false;
+		active = false;
 		if (smpt_check) { std::cout << "Reha Move3 message: Process finished.\n"; }
 	};
 };
@@ -365,8 +358,10 @@ public:
 			}
 		}
 		std::cout << "Device RehaIngest found." << endl;
+		ready = true;
 	};
 	void start() {
+		ready = false;
 		// Fourth step
 		// Clean the input buffer
 		while (smpt_new_packet_received(&device_ri))

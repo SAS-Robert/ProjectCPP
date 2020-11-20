@@ -47,9 +47,9 @@ Iir::Butterworth::LowPass<order2> m_f3;
 // - Most of these parameters are calculated from Matlab's original scripts
 const int samplingrate = 1000;
 
-const int orderButty = 4;
+const int orderButty = 8;
 double Low_Hz = 20;
-double High_Hz = 300;
+double High_Hz = 90;
 const double B_Fq = (High_Hz + Low_Hz) / 2;
 const double B_Fqw = (High_Hz - Low_Hz);
 Iir::Butterworth::BandPass<orderButty> Butty;
@@ -79,7 +79,13 @@ std::vector<double> B200_result;
 Iir::Butterworth::BandStop<orderB50_100> B250;
 std::vector<double> B250_result;
 
+// Lastest
+const int order_N100 = 8;
+const double N100_Fq = 100;
+double N100_ripple = 40;
 
+Iir::ChebyshevII::LowPass<order_N100> N100;
+std::vector<double> N100_result;
 
 // Global variables:
 double temp[30] = { 0 };
@@ -185,13 +191,13 @@ int main(int argc, char* argv[]) {
     B200.setup(samplingrate, B200_Fq, B50_100_Fqw);
     B250.setup(samplingrate, B250_Fq, B50_100_Fqw);
 
-    // string infileName = "example.txt";
+    N100.setup (samplingrate, N100_Fq, N100_ripple);
     // Load raw data: arm sessions
     // string infileName = "CA_filter_20201113_1503.txt";
     // string infileName = "CA_filter_20201113_1506.txt";
     // string infileName = "CA_filter_20201113_1509.txt";
-    // string infileName = "CA_filter_20201113_1512.txt";
-    string infileName = "CA_filter_20201113_1514.txt";
+    // string infileName = "CUL_leg_filter_20201104_1336.txt";
+    string infileName = "CUL_leg_filter_20201104_1330.txt";
 
     infile.open(infileName);
 
@@ -215,21 +221,23 @@ int main(int argc, char* argv[]) {
     double raw_value = 0;
 
     // Filter data
-    fileName = fileDir + infileName;//+date_s.c_str() + ".txt";
+    fileName = fileDir + "out_" + infileName;//+date_s.c_str() + ".txt";
     outFile.open(fileName);
 
     std::cout << "Filtering data. Sample amount: "<< channel_raw.size() << endl;
     for(unsigned int i=0; i<channel_raw.size(); i++){
-      raw_value = channel_raw[i];
+      raw_value = channel_raw[i]*1000;
       // SAS Filtering
       Butty_result.push_back(Butty.filter(raw_value));
       B50_result.push_back(B50.filter(Butty_result[i]));
       B100_result.push_back(B100.filter(B50_result[i]));
-      B150_result.push_back(B150.filter(B100_result[i]));
-      B200_result.push_back(B200.filter(B150_result[i]));
-      B250_result.push_back(B250.filter(B200_result[i]));
+      // B150_result.push_back(B150.filter(B100_result[i]));
+      // B200_result.push_back(B200.filter(B150_result[i]));
+      // B250_result.push_back(B250.filter(B200_result[i]));
+      // Lastest filtering
+      N100_result.push_back(N100.filter(B100_result[i]));
       // Saving data
-      outFile << raw_value << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] << "," << B150_result[i] << "," << B200_result[i] << "," << B250_result[i] << "\n";
+      outFile << raw_value << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] << "," << N100_result[i] << "\n";// << B250_result[i] << "\n";
 
     }
 

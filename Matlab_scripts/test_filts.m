@@ -1,5 +1,5 @@
-function [outData_t, outData_f] = test_filts(directory,type,name,order, bwidth)
-% type = '0' -> Raw data, 'C' -> SAS filters, 'M' -> use Matlab filters
+function [outData_t, outData_f] = test_filts(directory,name,order, bwidth)
+
 [amount, dummy ] = size(directory);
 
 srate = 1000;
@@ -8,7 +8,8 @@ temp_out_f = [];
 
 Fn = srate/2;
 Hphz = 20/Fn;
-Lphz = 300/Fn;
+%Lphz = 300/Fn;                             % Original
+Lphz = 90/Fn;                             % New
 [b,a] = butter(4,[Hphz,Lphz],'bandpass');
 
 % Matlab Butterworth bandstop example
@@ -17,33 +18,14 @@ Lphz = 300/Fn;
 
 Sp1Hz = (50-bwidth/2)/Fn;
 Sp2Hz = (50+bwidth/2)/Fn;
-[b50,a50] = butter(order,[Sp1Hz,Sp2Hz],'stop');
+[b50,a50] = butter(2,[Sp1Hz,Sp2Hz],'stop');
 
-Sp1Hz = (100-bwidth/2)/Fn;
-Sp2Hz = (100+bwidth/2)/Fn;
-[b100,a100] = butter(order,[Sp1Hz,Sp2Hz],'stop');
+Fn = srate/2;
+Lphz = (100)/Fn;     
+[bC100,aC100] = cheby2(8,25,Lphz);
 
-Stop50 = designfilt('bandstopfir', 'PassbandFrequency1', 47, 'StopbandFrequency1', 49, 'StopbandFrequency2', 51, 'PassbandFrequency2', 53, 'PassbandRipple1', 1, 'StopbandAttenuation', 80, 'PassbandRipple2', 1, 'SampleRate', srate);
-Stop100 = designfilt('bandstopfir', 'PassbandFrequency1', 80, 'StopbandFrequency1', 89, 'StopbandFrequency2', 110, 'PassbandFrequency2', 120, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', srate);
-Cheby50 = designfilt('bandstopiir', 'PassbandFrequency1', 47, 'StopbandFrequency1', 49, 'StopbandFrequency2', 51, 'PassbandFrequency2', 53, 'PassbandRipple1', 1, 'StopbandAttenuation', 80, 'PassbandRipple2', 1, 'SampleRate', srate, 'DesignMethod', 'cheby2');
-Cheby100 = designfilt('bandstopiir', 'PassbandFrequency1', 80, 'StopbandFrequency1', 89, 'StopbandFrequency2', 110, 'PassbandFrequency2', 120, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', srate, 'DesignMethod', 'cheby2');
+abC100 = designfilt('lowpassiir','FilterOrder',8, 'PassbandFrequency',90,'PassbandRipple',0.5, 'SampleRate',srate);
 
-% Cheby150 = designfilt('bandstopfir', 'PassbandFrequency1', 147, 'StopbandFrequency1', 149, 'StopbandFrequency2', 151, 'PassbandFrequency2', 153, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', srate, 'DesignMethod', 'cheby2');
-   % Cheby200 = designfilt('bandstopfir', 'PassbandFrequency1', 197, 'StopbandFrequency1', 199, 'StopbandFrequency2', 201, 'PassbandFrequency2', 203, 'PassbandRipple1', 1, 'StopbandAttenuation', 60, 'PassbandRipple2', 1, 'SampleRate', srate, 'DesignMethod', 'cheby2');
-
-% More butt filters -> After supervisor meeting
-Sp1Hz = (150-bwidth/2)/Fn;
-Sp2Hz = (150+bwidth/2)/Fn;
-[b150,a150] = butter(order,[Sp1Hz,Sp2Hz],'stop');
-
-Sp1Hz = (200-bwidth/2)/Fn;
-Sp2Hz = (200+bwidth/2)/Fn;
-[b200,a200] = butter(order,[Sp1Hz,Sp2Hz],'stop');
-   
-Sp1Hz = (250-bwidth/2)/Fn;
-Sp2Hz = (250+bwidth/2)/Fn;
-[b250,a250] = butter(order,[Sp1Hz,Sp2Hz],'stop');
-   
 for i=1:amount
 full_name = [directory(i).folder '\' directory(i).name]; %Just take the last one
 data = (load(full_name))';
@@ -55,24 +37,16 @@ C_Cheby100 = data(4,:);
 % Current filtering implemented in C:
 MatButty =filtfilt(b,a,C_raw);
 
-MatCheby50 = filtfilt(Cheby50,MatButty);
-MatCheby100 = filtfilt(Cheby100,MatCheby50);
-
 % Other filters
-% 1.
-MatStop50 = filtfilt(Stop50,MatButty);
-MatStop100 = filtfilt(Stop100,MatStop50);
 % 2.
-%MatCheby150 = filtfilt(Cheby150,MatStop100);
-%MatCheby200 = filtfilt(Cheby200,MatCheby150);
 % 3.
 BStop50 = filtfilt(b50,a50,MatButty);
-BStop100 = filtfilt(b100,a100,BStop50);
-BStop150 = filtfilt(b150,a150,BStop100);
-BStop200 = filtfilt(b200,a200,BStop150);
-BStop250 = filtfilt(b250,a250,BStop200);
+%4.
+Clow100 = filtfilt(abC100,BStop50);
+Cheby_low100 = filtfilt(bC100,aC100,BStop50);
 
-temp_plot = BStop250;       
+
+temp_plot = Cheby_low100;       
         
     t = zeros(1,length(temp_plot));
     for j = 1:length(t)

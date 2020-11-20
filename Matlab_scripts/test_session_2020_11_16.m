@@ -54,3 +54,20 @@ for k=1:length(set_upper_leg)
     name = ['Session 16th Nov, CA recording nr.' num2str(set_upper_leg(k))];
     data = plot_th3(files_dir,name,set_upper_leg(k),'C');    
 end
+
+%% Applying changes
+data_dir_session1 = dir([C_files_backup '/test/after lunch/CUL_leg_filter*.txt']);
+[amount dummy] = size(data_dir_session1);
+test_filts(data_dir_session1(2),'Chebyshev II as 100Hz-Notch',80,10);
+
+testFilt_add = 'C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\output\';
+test_dir = dir([testFilt_add 'out_CUL_leg_*']);
+[data_t data_f] = samples_analysis(test_dir(1),'C',1,'Testing C filters offline');
+data_dt = diff(data_t);
+
+t = [0:length(data_t)-1]*0.001;
+
+subplot(2,1,1)
+plot(t,data_t)
+subplot(2,1,2)
+plot(t(2:end),data_dt)
