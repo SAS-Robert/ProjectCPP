@@ -1,0 +1,3 @@
+-Recording 1: it was quite messy
+-Recording 2: it went better, but some repetitions were counted twice? 
+-Recording 3: after lunch. New electrodes placement. EMG is better, but the intends are not triggering because of the sensibility of the robot and IsMoving is 1

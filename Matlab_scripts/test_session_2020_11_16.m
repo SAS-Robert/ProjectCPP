@@ -71,3 +71,18 @@ subplot(2,1,1)
 plot(t,data_t)
 subplot(2,1,2)
 plot(t(2:end),data_dt)
+
+%% Session 23-11-2020
+% Files dir
+data_path = genpath('SAS/session_23Nov');
+addpath(data_path);
+% CA data
+data_dir_session6 = dir(['SAS/session_23Nov/CUL_lower_leg_filter*.txt']);
+[amount dummy] = size(data_dir_session6);
+files_dir = ['SAS/session_23Nov/CUL_lower_leg'];
+
+% individually 
+for k=1:amount
+    name = ['Session 23rd Nov, CUL lower leg recording nr.' num2str(k)];
+    data = plot_th3(files_dir,name,k,'C');    
+end

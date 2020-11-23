@@ -221,8 +221,8 @@ string time1_s;
 string time2_s;
 string time3_s;
 string time4_s;
-char folder[256] = "files\\";
-char Sname[256] = "subject1";
+char folder[256] = "session_23Nov\\";
+char Sname[256] = "CUL_lower_leg";
 // ---------------------------- Functions declaration  -----------------------------
 // Dummies
 bool dummy_tcp = false;
@@ -298,7 +298,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting connection with ROBERT and Touch Screen\n";
     ROBERT.display = true;               //Chosen not to show messages during messages exchange
     do {
-        ROBERT.start(robot_IP_e, robot_port);
+        ROBERT.start(robot_IP, robot_port);
     } while (ROBERT.error);
     ROBERT.display = false;
     if (dummy_tcp) {
@@ -327,7 +327,7 @@ int main(int argc, char* argv[]) {
     std::cout << "6. Programe will run until all repetitions are completed. To interrupt process, press 0.\n";
     std::cout << "===================================" << endl;
 
-    _getch();
+    //_getch();
 
     std::thread Interface(thread_connect);
 
@@ -906,8 +906,9 @@ void stimulation_set(RehaMove3_Req_Type& code) {
     // stim.points[2].current = -50;
     // stim.points[2].time = 200;
 
-    // Select increment 
-    if (state_process == st_testM) {
+    // Select increment
+    // if (state_process == st_testM) { // only with the manual stimulation
+    if ((state_process != st_testA_go) && (state_process != st_testA_stop)){
         Dcurr = Dcurr_man;
         Dramp = Dramp_man;
         Dnr = Dnr_points_man;
@@ -1010,6 +1011,7 @@ void thread_stimulation()
         if (!stimulator_device.ready) {
             stimulator_device.init();
             stim_status.ready = stimulator_device.ready;
+            printf("---> Now press either 2 for automatic stimulation calibration, or 3 for manual <--- \n");
         }          
         break;
 
@@ -1031,7 +1033,7 @@ void thread_stimulation()
         if (stimA_start_b && ROBERT.Reached && !stim_auto_done) {
             stimulator_device.pause();
             stim_auto_done = !stimulator_device.active;
-            printf("--- stim done ---");
+            printf("---\\ auto stim done \\---");
         }
 
         break;
@@ -1064,6 +1066,7 @@ void thread_stimulation()
           Move3_hmi = Move3_none;
           if(stim_done){
               std::cout << "RehaMove3 message: manual callibration done."<<endl;
+              std::cout << "--> Press 4 for set threshold <---" << endl;
           }
           else {
               std::cout << "RehaMove3 message: Stimulator stopped." << endl;
@@ -1158,12 +1161,11 @@ double process_data_iir(unsigned long long int v_size) {
         // Saving data
         fileFILTERS << recorder_emg1[i] << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] << "," << B150_result[i] << "," << B200_result[i] << "," << B250_result[i] << "\n";
         // Calculating mean of retified EMG
-        if (B100_result[i] > 0) {
-            temp = B250_result[i];
-        }
-        else {
+        temp = B250_result[i];
+        if (B100_result[i] < 0) {
             temp = -B250_result[i];
         }
+
         mean = mean + temp;
     }
     mean = mean / N_len;
@@ -1198,10 +1200,8 @@ double process_th(unsigned long long int v_size) {
         // Saving data
         fileFILTERS << recorder_emg1[i] << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] << "," << B150_result[i] << "," << B200_result[i] << "," << B250_result[i] << "\n";
         // Calculating mean of retified EMG
-        if (B100_result[i] > 0) {
-            temp = B250_result[i];
-        }
-        else {
+        temp = B250_result[i];
+        if (B100_result[i] < 0) {
             temp = -B250_result[i];
         }
         mean = mean + temp;
@@ -1212,10 +1212,8 @@ double process_th(unsigned long long int v_size) {
         temp = 0;
         for (i = processed; i < v_size; ++i)
         {
-            if (B250_result[i] > 0) {
-                temp = B250_result[i];
-            }
-            else {
+            temp = B250_result[i];
+            if (B250_result[i] < 0) {
                 temp = -B250_result[i];
             }
             sd += pow(temp - mean, 2);
