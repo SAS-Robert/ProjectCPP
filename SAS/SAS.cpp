@@ -110,10 +110,10 @@ RehaMove3_Req_Type Move3_hmi = Move3_none;
 RehaIngest_Req_Type Inge_key = Inge_none;
 RehaIngest_Req_Type Inge_hmi = Inge_none;
 
-char port_stim[5] = "COM6";
+char port_stim[5] = "COM4";
 RehaMove3 stimulator_device(port_stim);
 
-char port_rec[5] = "COM4";
+char port_rec[5] = "COM3";
 RehaIngest recorder_device(port_rec);
 
 // Other variables
@@ -221,8 +221,8 @@ string time1_s;
 string time2_s;
 string time3_s;
 string time4_s;
-char folder[256] = "session_23Nov\\";
-char Sname[256] = "CUL_lower_leg";
+char folder[256] = "files\\";
+char Sname[256] = "subject1_leg";
 // ---------------------------- Functions declaration  -----------------------------
 // Dummies
 bool dummy_tcp = false;
@@ -376,8 +376,8 @@ int main(int argc, char* argv[]) {
                 state_process = st_testA_stop;
                 tic();
             }
-            // Stimulation not strong enough: it moves, but it does not reach the end 
-            // in this case it re-starts the tic, but if at the end it does not Reach it, it'll set a longer break 
+            // Stimulation not strong enough: it moves, but it does not reach the end
+            // in this case it re-starts the tic, but if at the end it does not Reach it, it'll set a longer break
             if (!toc() && ROBERT.isMoving && !ROBERT.Reached && !stimA_start_b) {
                 tic();
                 stimA_start_b = true;
@@ -412,7 +412,7 @@ int main(int argc, char* argv[]) {
                 }
             }
             break;
-        
+
         case st_testA_stop:
 
             // Quit automatic calibration
@@ -815,8 +815,8 @@ void keyboard() {
             std::cout << "Start threshold." << endl;
         }
         break;
-    
-    
+
+
     case '0':
         MAIN_to_all.end = true;
         break;
@@ -914,7 +914,7 @@ void stimulation_set(RehaMove3_Req_Type& code) {
         Dnr = Dnr_points_man;
     }
     else {
-        // Automatic calibration values 
+        // Automatic calibration values
         if (next_val.points[0].current < 20) {
             Dcurr = Dcurr_aut_high;
         }
@@ -925,7 +925,7 @@ void stimulation_set(RehaMove3_Req_Type& code) {
             Dcurr = Dcurr_aut_low;
         }
     }
-    
+
 
     switch (code) {
         // User interface changes
@@ -947,7 +947,7 @@ void stimulation_set(RehaMove3_Req_Type& code) {
         break;
     }
 
-    // Automatic ramp values 
+    // Automatic ramp values
     if ((state_process == st_testA_go)||(state_process == st_testA_stop)) {
         if (next_val.points[0].current <= 20) {
             next_val.ramp = Dramp_aut_low;
@@ -1012,7 +1012,7 @@ void thread_stimulation()
             stimulator_device.init();
             stim_status.ready = stimulator_device.ready;
             printf("---> Now press either 2 for automatic stimulation calibration, or 3 for manual <--- \n");
-        }          
+        }
         break;
 
     // Stimulator calibration process
@@ -1039,7 +1039,7 @@ void thread_stimulation()
         break;
 
     case st_testA_stop:
-        // Stop stimulator and update values 
+        // Stop stimulator and update values
         if (stimulator_device.active) {
             stimulator_device.pause();
             Move3_cmd = Move3_incr;
@@ -1259,7 +1259,7 @@ void thread_recording()
           B50_result.clear();
           B100_result.clear();
           processed = 0;
-          
+
           std::cout << "Reha Ingest message: Starting recorder." << endl;
           recorder_device.init();
           recorder_device.start();

@@ -86,3 +86,29 @@ for k=1:amount
     name = ['Session 23rd Nov, CUL lower leg recording nr.' num2str(k)];
     data = plot_th3(files_dir,name,k,'C');    
 end
+
+%% Demo 26-11-2020
+% Files dir
+data_path = genpath('SAS/demo_26Nov');
+addpath(data_path);
+% CA data
+data_dir_session6 = dir(['SAS/demo_26Nov/CA_lower_leg1_filter*.txt']);
+[amount dummy] = size(data_dir_session6);
+files_dir = ['SAS/demo_26Nov/CA_lower_leg1'];
+
+% individually 
+for k=1:amount
+    name = ['Demo 26th Nov, CA lower leg(1) recording nr.' num2str(k)];
+    data = plot_th3(files_dir,name,k,'C');    
+end
+
+% V2 data
+data_dir_session6 = dir(['SAS/demo_26Nov/V2_upper_leg_filter*.txt']);
+[amount dummy] = size(data_dir_session6);
+files_dir = ['SAS/demo_26Nov/V2_upper_leg'];
+
+% individually 
+for k=1:amount
+    name = ['Demo 26th Nov, Volunteer 2 upper leg recording nr.' num2str(k)];
+    data = plot_th3(files_dir,name,k,'C');    
+end
