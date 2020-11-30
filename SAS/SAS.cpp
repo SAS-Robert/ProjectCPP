@@ -110,10 +110,10 @@ RehaMove3_Req_Type Move3_hmi = Move3_none;
 RehaIngest_Req_Type Inge_key = Inge_none;
 RehaIngest_Req_Type Inge_hmi = Inge_none;
 
-char port_stim[5] = "COM4";
+char port_stim[5] = "COM6";
 RehaMove3 stimulator_device(port_stim);
 
-char port_rec[5] = "COM3";
+char port_rec[5] = "COM4";
 RehaIngest recorder_device(port_rec);
 
 // Other variables
@@ -150,6 +150,7 @@ int TCP_rep = 20;
 ROB_Type screen_status;
 bool start_train = false;
 unsigned long long int sample_nr = 0;
+float gain_th = 0.0;
 // ------------------------- Stimulator calibration  ------------------------
 // Current and ramp increments
 // Manual mode = the user can only do 1 incremet at the time and with these values
@@ -240,7 +241,7 @@ bool toc();
 //bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, RehaIngest_Req_Type& recorder, ROB_Type& status, int& rep);
 void keyboard();
 void thread_connect();
-
+void thread_TCP();
 // Devices functions
 void stimulation_set(RehaMove3_Req_Type& code);
 static void thread_stimulation();
@@ -298,7 +299,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting connection with ROBERT and Touch Screen\n";
     ROBERT.display = true;               //Chosen not to show messages during messages exchange
     do {
-        ROBERT.start(robot_IP, robot_port);
+        ROBERT.start(robot_IP_e, robot_port);
     } while (ROBERT.error);
     ROBERT.display = false;
     if (dummy_tcp) {
@@ -330,6 +331,7 @@ int main(int argc, char* argv[]) {
     //_getch();
 
     std::thread Interface(thread_connect);
+    std::thread GUI(thread_TCP);
 
     MAIN_to_all.start = true;
 
@@ -533,6 +535,7 @@ int main(int argc, char* argv[]) {
     thread_stimulation();
     // Waiting for other thread to finish
     Interface.join();
+    GUI.join();
 
     fileFILTERS.close();
     fileVALUES.close();
@@ -613,7 +616,7 @@ bool toc() {
 }
 
 // ---------------------------- Functions interface  --------------------------
-/*
+
 bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, RehaIngest_Req_Type& recorder, ROB_Type& status, int& rep) {
     int length = strlen(message);
     char start_msg[7] = "SCREEN";
@@ -716,7 +719,7 @@ bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, RehaIngest_Req_Ty
 
     return valid_msg;
 }
-*/
+
 
 void keyboard() {
     int ch;
@@ -824,8 +827,6 @@ void keyboard() {
 }
 
 void thread_connect() {
-    bool decode_successful;
-
     while (!MAIN_to_all.end && (state_process != st_end)) {
         th2_st = std::chrono::steady_clock::now();
 
@@ -837,26 +838,54 @@ void thread_connect() {
         udp_cnt++;
         sprintf(ROBERT.message, "%d;STATUS", udp_cnt);
         ROBERT.get();
+
+
+        // Controlling thread cycle time
+        th2_fn = std::chrono::steady_clock::now();
+        th2_diff = th2_fn - th2_st;
+        th2_d = ((double)th2_diff.count()) + 0.015;
+        //if (th2_d < th2_cycle) {
+        //    th2_d = (th2_cycle - th2_d) * 1000;
+        //    th2_sleep = 1 + (int)th2_d;
+        //
+        //    Sleep(th2_sleep);
+        //}
+        Sleep(100);
+
+        time4_end = std::chrono::steady_clock::now();
+        time4_diff = time4_end - th2_st;
+        time4_v.push_back((double)time4_diff.count());
+    } // while loop
+} // thread
+
+void thread_TCP() {
+    bool decode_successful;
+    while (!MAIN_to_all.end && (state_process != st_end)) {
         // TCP Stuff
-        /*
+
         if (!SCREEN.finish && dummy_tcp) {
-            //printf(" -- checking... -- \n");
+            printf(" -- checking... -- \n");
+            // Receive 
             SCREEN.check();
+            decode_successful = TCP_decode(SCREEN.recvbuf, Move3_hmi, Inge_key, wololo, TCP_rep);
+            if (decode_successful) {
+                printf("TCP received: move_key = %d, ingest_key = %d, satus = %c, rep_nr = %d \n ", Move3_hmi, Inge_key, wololo, TCP_rep);
+            }
+            else {
+                printf("TCP received message not valid.\n");
+            }
+            // Send
+            memset(SCREEN.senbuf, '\0', 512);
+            sprintf(SCREEN.senbuf, "SAS;%2.1f;%1.1f;%1.1f;", stimulator_device.stim.points[0].current, stimulator_device.stim.ramp, gain_th);
+            SCREEN.stream();
+            /*
             // Receive
             if (SCREEN.new_message) {
                 decode_successful = TCP_decode(SCREEN.recvbuf, Move3_hmi, Inge_key, wololo, TCP_rep);
                 if (decode_successful) {
                     // Only update values  if the message was not "ENDTCP"
-                    if (!SCREEN.finish) {
-                        // switch(Inge_key){
-                        //   case Inge_decr:
-                        //       gain_th = gain_th + 0.1;
-                        //       break;
-                        //       case Inge_incr:
-                        //       gain_th = gain_th-0.1;
-                        //       break;
-                        // }
-                        if (SCREEN.display) { printf("TCP received: move_key = %d, ingest_key = %d, satus = %c, rep_nr = %d \n ", Move3_hmi, Inge_key, wololo, TCP_rep); }
+                    if (!SCREEN.finish && SCREEN.display) {
+                        printf("TCP received: move_key = %d, ingest_key = %d, satus = %c, rep_nr = %d \n ", Move3_hmi, Inge_key, wololo, TCP_rep);
                     }
                     // Send
                     memset(SCREEN.senbuf, '\0', 512);
@@ -867,26 +896,11 @@ void thread_connect() {
                     printf("TCP received message not valid.\n");
                 }
             }
-        }*/
-        // TCP Stuff
-        Sleep(10);
-
-        // Controlling thread cycle time
-        th2_fn = std::chrono::steady_clock::now();
-        th2_diff = th2_fn - th2_st;
-        th2_d = ((double)th2_diff.count()) + 0.015;
-        if (th2_d < th2_cycle) {
-            th2_d = (th2_cycle - th2_d) * 1000;
-            th2_sleep = 1 + (int)th2_d;
-
-            Sleep(th2_sleep);
-        }
-
-        time4_end = std::chrono::steady_clock::now();
-        time4_diff = time4_end - th2_st;
-        time4_v.push_back((double)time4_diff.count());
-    } // while loop
-} // thread
+            */
+        }// TCP Stuff
+        Sleep(100);
+    }
+}
 // ---------------------------- Functions devices  --------------------------
 
 void stimulation_set(RehaMove3_Req_Type& code) {

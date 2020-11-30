@@ -11,7 +11,7 @@ Separate FES from EMG
 
 Maximum threshold? -> Recording the patient doing a very strong push
 	-> Then set up the threshold in between
-Only resting EMG signal is bad to calibrate 
+Only resting EMG signal is bad to calibrate
 
 Adaptative threshold
 
@@ -20,3 +20,10 @@ eg.: FES in the knee and EMG in the gluteus/cuadriceps
 Necessary to check good locations for the electrodes.
 
 --> Look at girls' project references from Threshold
+
+//--------------------------------------------------------
+From TCP Testing
+-- checking... --
+TCP Data received: SCREEN;3;0;R;20;
+TCP received message not valid.
+TCP sending: SAS;15.0;0.0;0.0;

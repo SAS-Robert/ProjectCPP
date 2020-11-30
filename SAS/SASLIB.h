@@ -773,31 +773,13 @@ public:
     memset(recvbuf, '\0', BUFLEN);
     memset(senbuf, '\0', BUFLEN);
     new_message = false;
-    error = false;
-    FD_ZERO(&fds);
-    FD_SET(ClientSocket, &fds);
-    // Necessary to restart here the timer
-    n = select(ClientSocket, &fds, NULL, NULL, &timeout);
-    // Re-editar esto para que no muestre el mensaje
-    if ((n == 0) || (n == -1))
-    {
-      error = true;
-      if (n == 0 && display) { printf("TCP Timeout\n"); }
-      //Sleep(3000);
-    }
-    if (!error) {
+    // error = false;
+    // FD_ZERO(&fds);
+    // FD_SET(ClientSocket, &fds);
 		iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-  		if (iResult > 0) {
-  			if(display){printf("TCP Data received: %s\n", recvbuf);}
+  	if(display){printf("TCP Data received: %s\n", recvbuf);}
         new_message = true;
-  		}
-  		else if (iResult == 0 && display)
-  			printf("TCP timeout\n");
-  		else if(display) {
-  			printf("TCPrecv failed with error: %d\n", WSAGetLastError());
-			  error = true;
-  		}
-    }
+
     //Decode after this
 	} // void check
 
