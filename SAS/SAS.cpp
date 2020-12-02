@@ -111,10 +111,10 @@ RehaIngest_Req_Type Inge_key = Inge_none;
 RehaIngest_Req_Type Inge_hmi = Inge_none;
 User_Req_Type User_cmd = User_none;
 
-char port_stim[5] = "COM6";
+char port_stim[5] = "COM4";
 RehaMove3 stimulator_device(port_stim);
 
-char port_rec[5] = "COM4";
+char port_rec[5] = "COM3";
 RehaIngest recorder_device(port_rec);
 
 // Other variables
@@ -124,9 +124,9 @@ unsigned long long int processed = 0;
 unsigned long long int th_time = 3; // 3 seconds
 unsigned long long int th_nr = th_time * samplingrate; // amount of samples for threshold
 double th_discard = samplingrate * 1.1;                // discard first filtered samples from the threshold
-double th_discard_nr = 0;
+double th_discard_nr = 0, old_value = 0, old_nr = 0;
 int th_wait = 3, th_wait_cnt = 0;                                       // amount of mean sets before triggering
-
+unsigned int sample_lim = 50;
 // Dummies
 // Files handler to store recorded data
 ofstream fileRAW, fileFILTERS;
@@ -511,10 +511,10 @@ int main(int argc, char* argv[]) {
         Sleep(10);
 
         // Controlling thread cycle time
-        th1_fn = std::chrono::steady_clock::now();
-        th1_diff = th1_fn - th1_st;
-        th1_d = ((double)th1_diff.count()) + 0.015;
-        Sleep(40);
+        //th1_fn = std::chrono::steady_clock::now();
+        //th1_diff = th1_fn - th1_st;
+        //th1_d = ((double)th1_diff.count()) + 0.015;
+        //Sleep(10);
         // if ((th1_d < th2_cycle) && (state_process != st_init)) {
         //     th1_d = (th1_cycle - th1_d) * 1000;
         //     th1_sleep = 1 + (int)th1_d;
@@ -923,7 +923,7 @@ void thread_TCP() {
             sprintf(SCREEN.senbuf, "SAS;%2.1f;%d;%1.1f;", stimulator_device.stim.points[0].current, stimulator_device.stim.ramp, gain_th);
             SCREEN.stream();
         // TCP Stuff
-        Sleep(100);
+        Sleep(250);
     }
     // End of the Program if the screen has been closed
     if (SCREEN.finish && dummy_tcp) {
@@ -1201,7 +1201,7 @@ void thread_stimulation()
 double process_data_iir(unsigned long long int v_size) {
     time2_start = std::chrono::steady_clock::now();
 
-    double mean = 0, temp = 0, sd = 0;
+    double mean = 0, temp = 0, value = 0;
     unsigned long long int i = 0;
     unsigned long long int N_len = v_size - processed;
     // Filtering + calculate mean
@@ -1224,17 +1224,22 @@ double process_data_iir(unsigned long long int v_size) {
 
         mean = mean + temp;
     }
-    mean = mean / N_len;
+    // Complete value: taking into account the old mean
+    value = (old_value * old_nr + mean) / (old_nr + N_len);
     // Saving results
+    mean = mean / N_len;
     fileVALUES << mean << ", 0.0, " << processed << "," << v_size << "," << N_len << "\n";
-    // Update amount of processed data
+
+    // Update processed data parameters
     processed = i;
+    old_value = mean;
+    old_nr = N_len;
 
     time2_end = std::chrono::steady_clock::now();
     time2_diff = time2_end - time2_start;
     time2_v.push_back((double)time2_diff.count());
 
-    return mean;
+    return value;
 }
 
 double process_th(unsigned long long int v_size) {
@@ -1290,6 +1295,8 @@ double process_th(unsigned long long int v_size) {
     }
     // Update amount of processed data
     processed = i;
+    old_value = mean;
+    old_nr = N_len;
 
     time2_end = std::chrono::steady_clock::now();
     time2_diff = time2_end - time2_start;
@@ -1332,7 +1339,7 @@ void thread_recording()
         }
 
         sample_nr = recorder_emg1.size();
-        if (sample_nr - processed >= 100) {
+        if (sample_nr - processed >= sample_lim) {
             temp_value = process_th(sample_nr);
             if (sample_nr >= th_discard) {
                 rec_threshold = rec_threshold + temp_value;
@@ -1340,7 +1347,7 @@ void thread_recording()
             if (processed >= th_nr) {
                 rec_threshold = rec_threshold / (sample_nr - th_discard_nr);
                 //rec_threshold = 2.0;
-                std::cout << "Reha Ingest message: threshold = " << rec_threshold << endl;
+                std::cout << "Reha Ingest message: threshold = " << rec_threshold <<", old m = "<< old_value << ", old nr = "<< old_nr << endl;
                 rec_status.th = true;
             }
         }
@@ -1349,7 +1356,7 @@ void thread_recording()
     case st_wait:
         recorder_device.record();
         sample_nr = recorder_emg1.size();
-        if (sample_nr - processed >= 100) {
+        if (sample_nr - processed >= sample_lim) {
             mean = process_data_iir(sample_nr);
 
             st_wait_jump = !rec_status.start && !ROBERT.isMoving && ROBERT.valid_msg && start_train;
@@ -1377,7 +1384,7 @@ void thread_recording()
     case st_running:
         recorder_device.record();
         sample_nr = recorder_emg1.size();
-        if (sample_nr - processed >= 100) {
+        if (sample_nr - processed >= sample_lim) {
             mean = process_data_iir(sample_nr);
         }
         rec_status.ready = false;
@@ -1389,7 +1396,7 @@ void thread_recording()
         rec_fl2 = false;
         recorder_device.record();
         sample_nr = recorder_emg1.size();
-        if (sample_nr - processed >= 100) {
+        if (sample_nr - processed >= sample_lim) {
             mean = process_data_iir(sample_nr);
         }
         rec_status.ready = true;

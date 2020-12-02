@@ -1,3 +1,6 @@
+# Necessary to install from the windows terminal:
+#pip install Pillow
+#pip install image # in case the first one does not work
 from tkinter import *
 import tkinter as tk
 import socket
