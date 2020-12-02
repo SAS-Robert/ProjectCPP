@@ -109,6 +109,7 @@ RehaMove3_Req_Type Move3_cmd = Move3_none;
 RehaMove3_Req_Type Move3_hmi = Move3_none;
 RehaIngest_Req_Type Inge_key = Inge_none;
 RehaIngest_Req_Type Inge_hmi = Inge_none;
+User_Req_Type User_cmd = User_none;
 
 char port_stim[5] = "COM6";
 RehaMove3 stimulator_device(port_stim);
@@ -238,7 +239,7 @@ void tic();
 bool toc();
 
 // Interface functions
-//bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, RehaIngest_Req_Type& recorder, ROB_Type& status, int& rep);
+bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep);
 void keyboard();
 void thread_connect();
 void thread_TCP();
@@ -447,7 +448,12 @@ int main(int argc, char* argv[]) {
         // Normal SAS process
         case st_th:
             if (rec_status.th) {
-                printf("SAS PROGRAMME: Threshold saved. Waiting for stimulator to be triggered.\n");
+                if (dummy_tcp) {
+                    printf("SAS PROGRAMME: Threshold saved. Press start training button. Waiting for stimulator to be triggered.\n");
+                }
+                else {
+                    printf("SAS PROGRAMME: Threshold saved. Press 1 to start training. Waiting for stimulator to be triggered.\n");
+                }
                 std::cout << "\n===================================" << endl;
                 state_process = st_wait;
             }
@@ -592,7 +598,7 @@ int main(int argc, char* argv[]) {
 
 
     ROBERT.end();
-    //   if (dummy_tcp) { SCREEN.end(); }
+    if (dummy_tcp) { SCREEN.end(); }
 
     std::cout << "\n--------------------------\nHej Hej!\n--------------------------\n";
     // Flushing input and output buffers
@@ -617,7 +623,7 @@ bool toc() {
 
 // ---------------------------- Functions interface  --------------------------
 
-bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, RehaIngest_Req_Type& recorder, ROB_Type& status, int& rep) {
+bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep) {
     int length = strlen(message);
     char start_msg[7] = "SCREEN";
     char finish_msg[7] = "ENDTCP";
@@ -677,7 +683,7 @@ bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, RehaIngest_Req_Ty
     if (!check_end) {
         //Convert from char to int values
         int move_value = message[pos + 7] - '0';
-        int ingest_value = message[pos + 9] - '0';
+        int user_value = message[pos + 9] - '0';
 
         int get_status = message[pos + 11];
         unsigned long long int rep_nr = 0;
@@ -703,7 +709,7 @@ bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, RehaIngest_Req_Ty
         //Outputs
         if (valid_msg) {
             stimulator = (RehaMove3_Req_Type)move_value;
-            recorder = (RehaIngest_Req_Type)ingest_value;
+            user = (User_Req_Type)user_value;
             //status[0] = get_status;
             status = (ROB_Type)get_status;
             if (get_status == 'R') {
@@ -792,28 +798,28 @@ void keyboard() {
 
     // SAS programme
     case '1':
-        if (state_process == st_wait) {
+        if ((state_process == st_wait) && (!dummy_tcp)){
             start_train = true;
             fileLOGS << "5.0, " << processed << "\n";
             std::cout << "Start training pressed." << endl;
         }
         break;
     case '2':
-        if (state_process == st_init) {
+        if ((state_process == st_init)&&(!dummy_tcp)) {
             stimA_active = true;
             stimM_active = false;
             std::cout << "Automatic callibration selected." << endl;
         }
         break;
     case '3':
-        if (state_process == st_init) {
+        if ((state_process == st_init)&& (!dummy_tcp)) {
             stimA_active = false;
             stimM_active = true;
             std::cout << "Manual callibration selected." << endl;
         }
         break;
     case '4':
-        if (state_process == st_testM) {
+        if ((state_process == st_testM)&&(!dummy_tcp)){
             rec_status.req = true;
             std::cout << "Start threshold." << endl;
         }
@@ -860,45 +866,69 @@ void thread_connect() {
 
 void thread_TCP() {
     bool decode_successful;
-    while (!MAIN_to_all.end && (state_process != st_end)) {
-        // TCP Stuff
-
-        if (!SCREEN.finish && dummy_tcp) {
-            printf(" -- checking... -- \n");
-            // Receive 
+    while (!MAIN_to_all.end && (state_process != st_end) && !SCREEN.finish && dummy_tcp) {
+            // Receive
             SCREEN.check();
-            decode_successful = TCP_decode(SCREEN.recvbuf, Move3_hmi, Inge_key, wololo, TCP_rep);
+            decode_successful = TCP_decode(SCREEN.recvbuf, Move3_hmi, User_cmd, wololo, TCP_rep);
+            
             if (decode_successful) {
-                printf("TCP received: move_key = %d, ingest_key = %d, satus = %c, rep_nr = %d \n ", Move3_hmi, Inge_key, wololo, TCP_rep);
+                if (SCREEN.display) {
+                    printf("TCP received: move_key = %d, user_cmd = %d, satus = %c, rep_nr = %d \n ", Move3_hmi, User_cmd, wololo, TCP_rep);
+                }
+                // Actions related to the User_cmd
+                switch (User_cmd){
+                  case User_st:
+                      if (state_process == st_wait){
+                          start_train = true;
+                          fileLOGS << "5.0, " << processed << "\n";
+                          std::cout << "Start training pressed." << endl;
+                      }
+                      break;
+                  case User_CA:
+                      if (state_process == st_init) {
+                          stimA_active = true;
+                          stimM_active = false;
+                          std::cout << "Automatic callibration selected." << endl;
+                      }
+                      break;
+                  case User_CM:
+                      if (state_process == st_init) {
+                          stimA_active = false;
+                          stimM_active = true;
+                          std::cout << "Manual callibration selected." << endl;
+                      }
+                      break;
+                  case User_th:
+                      if (state_process == st_testM){
+                          rec_status.req = true;
+                          std::cout << "Start threshold." << endl;
+                      }
+                      break;
+                }
             }
-            else {
+            else if (!decode_successful && SCREEN.display){
                 printf("TCP received message not valid.\n");
+            }
+            // Wait for stimulator to update values before sending 
+            if (decode_successful && (Move3_hmi!=Move3_none)) {
+                bool update_values_TCP; 
+                bool update_state = (state_process == st_testM) || (state_process == st_wait) || (state_process == st_running);
+                do {
+                    Sleep(5);
+                    update_values_TCP = (Move3_hmi == Move3_decr) || (Move3_hmi == Move3_incr) || (Move3_hmi == Move3_ramp_more) || (Move3_hmi == Move3_ramp_less);
+                } while (update_values_TCP && update_state);
             }
             // Send
             memset(SCREEN.senbuf, '\0', 512);
-            sprintf(SCREEN.senbuf, "SAS;%2.1f;%1.1f;%1.1f;", stimulator_device.stim.points[0].current, stimulator_device.stim.ramp, gain_th);
+            sprintf(SCREEN.senbuf, "SAS;%2.1f;%d;%1.1f;", stimulator_device.stim.points[0].current, stimulator_device.stim.ramp, gain_th);
             SCREEN.stream();
-            /*
-            // Receive
-            if (SCREEN.new_message) {
-                decode_successful = TCP_decode(SCREEN.recvbuf, Move3_hmi, Inge_key, wololo, TCP_rep);
-                if (decode_successful) {
-                    // Only update values  if the message was not "ENDTCP"
-                    if (!SCREEN.finish && SCREEN.display) {
-                        printf("TCP received: move_key = %d, ingest_key = %d, satus = %c, rep_nr = %d \n ", Move3_hmi, Inge_key, wololo, TCP_rep);
-                    }
-                    // Send
-                    memset(SCREEN.senbuf, '\0', 512);
-                    sprintf(SCREEN.senbuf, "SAS;%2.1f;%1.1f;%1.1f;", stimulator_device.stim.points[0].current, stimulator_device.stim.ramp, gain_th);
-                    SCREEN.stream();
-                }
-                else if (!decode_successful && SCREEN.display) {
-                    printf("TCP received message not valid.\n");
-                }
-            }
-            */
-        }// TCP Stuff
+        // TCP Stuff
         Sleep(100);
+    }
+    // End of the Program if the screen has been closed
+    if (SCREEN.finish && dummy_tcp) {
+        printf("Screen App has been closed. SAS program will finish too.\n");
+        MAIN_to_all.end = true;
     }
 }
 // ---------------------------- Functions devices  --------------------------
@@ -1001,7 +1031,7 @@ void stimulation_set(RehaMove3_Req_Type& code) {
     }
 
     stimulator_device.stim = next_val;
-    if ((code != Move3_stop) && (code != Move3_start)) {
+    if ((code != Move3_stop) && (code != Move3_start) && (!dummy_tcp || SCREEN.display) ) {
         printf("RehaMove3 message: Stimulation update -> current = %2.2f, ramp points = %d, ramp value = %d\n", stimulator_device.stim.points[0].current, stimulator_device.stim.number_of_points, stimulator_device.stim.ramp);
         //%2.1f is the format to show a float number, 2.1 means 2 units and 1 decimal
     }
@@ -1025,7 +1055,13 @@ void thread_stimulation()
         if (!stimulator_device.ready) {
             stimulator_device.init();
             stim_status.ready = stimulator_device.ready;
-            printf("---> Now press either 2 for automatic stimulation calibration, or 3 for manual <--- \n");
+            if (dummy_tcp) {
+                printf("---> Now press either automatic or manual calibration <--- \n");
+            }
+            else {
+                printf("---> Now press either 2 for automatic stimulation calibration, or 3 for manual <--- \n");
+            }
+            
         }
         break;
 
@@ -1080,7 +1116,13 @@ void thread_stimulation()
           Move3_hmi = Move3_none;
           if(stim_done){
               std::cout << "RehaMove3 message: manual callibration done."<<endl;
-              std::cout << "--> Press 4 for set threshold <---" << endl;
+              if (dummy_tcp) {
+                  std::cout << "--> Press set threshold <---" << endl;
+              }
+              else {
+                  std::cout << "--> Press 4 for set threshold <---" << endl;
+              }
+              
           }
           else {
               std::cout << "RehaMove3 message: Stimulator stopped." << endl;

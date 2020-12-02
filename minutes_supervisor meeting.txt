@@ -1,9 +1,0 @@
-Raw + filtered EMG is too noisy
--> Improve raw signal 
--> Add filters on 150, 200 and 250 Hz
-
-Clean skin + preparation
-Add gain (1000)
-
--Rotate 90 degrees the electrodes
--Place ground on the knee

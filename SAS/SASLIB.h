@@ -134,7 +134,7 @@ typedef enum
     Move3_ramp_less	  = 4,    // Reduce ramp
     Move3_stop        = 5,    // Stop Stimulating
     Move3_start       = 6,    // Stimulate with initial values
-	Move3_done		  = 7, 		// Finish callibration
+		Move3_done		  = 7, 		// Finish callibration
 }RehaMove3_Req_Type;
 
 typedef enum
@@ -160,9 +160,19 @@ typedef enum
     st_stop           = 4,    // Done 1 seq, waiting for next
     st_end            = 5,    // Setting threshold
     st_testM          = 6,    // Run stimulation test (manual)
-	st_testA_go		  = 7, 	  // Run stimulation test (automatic) -> apply current
-	st_testA_stop	  = 8,	  // Run stimulation test (automatic) -> stop stim for recovery
+		st_testA_go		  = 7, 	  // Run stimulation test (automatic) -> apply current
+		st_testA_stop	  = 8,	  // Run stimulation test (automatic) -> stop stim for recovery
 }state_Type;
+
+typedef enum
+{
+    User_none      	  = 0,    // Nothing to do
+    User_CM       		= 1,    // Manual calibration
+    User_CA	        	= 2,    // Automatic calibration
+		User_X						= 3, 		// Quit calibration
+		User_th						= 4,		// Start threshold
+		User_st						= 5, 		// Start training
+}User_Req_Type;
 
 // ------------------------------ Devices -----------------------------
 // Stimulator
