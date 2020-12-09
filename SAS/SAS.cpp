@@ -114,7 +114,7 @@ User_Req_Type User_cmd = User_none;
 char port_stim[5] = "COM4";
 RehaMove3 stimulator_device(port_stim);
 
-char port_rec[5] = "COM3";
+char port_rec[5] = "COM5";
 RehaIngest recorder_device(port_rec);
 
 // Other variables
@@ -155,8 +155,9 @@ float gain_th = 0.0;
 // ------------------------- Stimulator calibration  ------------------------
 // Current and ramp increments
 // Manual mode = the user can only do 1 incremet at the time and with these values
-float Dcurr_man = 0.5;
+float Dcurr_man = 0.5, DHz_man = 1.0;
 uint8_t Dramp_man = 1, Dnr_points_man = 1;
+uint16_t Dwidth = 10;     // us increment
 // Automatic the increment vary depending on the current stimulation values,
 // to make the calibration faster
 float Dcurr_aut_low = 0.1, Dcurr_aut_med = 0.5, Dcurr_aut_high = 1;
@@ -165,13 +166,14 @@ uint8_t Dramp_aut_low = 3, Dramp_aut_med = 4, Dramp_aut_high = 5, Dnr_points_aut
 // State process variables
 bool stim_done = false, stim_userX = false, stim_auto_done = false;
 
-// Automatic callibration
-double stimA_cycle = 2000;                              // how long the stimulator is allowed to be active (ms)
+// Stimulation timing settings
+double stimA_cycle = 10.0;                              // how long the stimulator is allowed to be active (ms)
 std::chrono::duration<double> stimA_diff;
 auto stimA_start = std::chrono::steady_clock::now();
 auto stimA_end = std::chrono::steady_clock::now();
 bool stimA_start_b = false, stimA_end_b = false;
 bool stimA_active = false, stimM_active = false;
+bool stim_timing = false, stim_timeout = false;
 // ------------------------------ Timing -------------------
 // Threads cycles
 auto th1_st = std::chrono::steady_clock::now();
@@ -223,11 +225,11 @@ string time1_s;
 string time2_s;
 string time3_s;
 string time4_s;
-char folder[256] = "files\\";
+char folder[256] = "demo_07Dec\\";
 char Sname[256] = "subject1_leg";
 // ---------------------------- Functions declaration  -----------------------------
 // Dummies
-bool dummy_tcp = false;
+bool tcp_active = false;
 bool dummy_valid = false;
 // Various
 //Tic-toc time
@@ -281,7 +283,7 @@ int main(int argc, char* argv[]) {
         ch = _getch();
         ch = toupper(ch);
         if (ch == 'Y') {
-            dummy_tcp = true;
+            tcp_active = true;
         }
         dummy_valid = (ch == 'Y') || (ch == 'N');
         printf("%c ", ch);
@@ -300,10 +302,10 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting connection with ROBERT and Touch Screen\n";
     ROBERT.display = true;               //Chosen not to show messages during messages exchange
     do {
-        ROBERT.start(robot_IP_e, robot_port);
+        ROBERT.start(robot_IP, robot_port);
     } while (ROBERT.error);
     ROBERT.display = false;
-    if (dummy_tcp) {
+    if (tcp_active) {
         SCREEN.start(screen_port);
         SCREEN.waiting();
     }
@@ -312,13 +314,13 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "===================================" << endl;
-    if (dummy_tcp) {
+    if (tcp_active) {
         std::cout << "---> TCP/UDP controllers:\n-T = Show/hide TCP messages.\n-U = Show/hide UDP messages.\n\n";
     }
     else {
         std::cout << "---> UDP controllers:\n-U = Show/hide UDP messages.\n\n";
     }
-    if (!dummy_tcp) {
+    if (!tcp_active) {
         std::cout << "---> Process controllers:\n-G = Increase repetitions nr.\n-H = Decrease repetitions nr.\n\n\n";
     }
     std::cout << "--->Instructions: \n1. Press any key to start SAS program.\n";
@@ -335,6 +337,7 @@ int main(int argc, char* argv[]) {
     std::thread GUI(thread_TCP);
 
     MAIN_to_all.start = true;
+    MAIN_to_all.ready = true;
 
     printf("SAS PROGRAMME: starting up stimulator.\n");
 
@@ -359,7 +362,7 @@ int main(int argc, char* argv[]) {
                 printf("SAS PROGRAMME: Starting manual callibration...\n");
                 state_process = st_testM;
 
-                if (!dummy_tcp) {
+                if (!tcp_active) {
                     std::cout << "---> Stimulator controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
                     std::cout << "-Q = Stop stimulation.\n-E = Re-start stimulation.\n-X = end current calibration (manual or automatic).\n\n";
                     std::cout << "===================================" << endl;
@@ -395,7 +398,7 @@ int main(int argc, char* argv[]) {
             // Stimulation values OK: Reached End Point
             if (stim_auto_done && toc()) {
                 printf("SAS test: Reached End Point, %2.2f s. Switching to manual callibration.\n", toc_lim);
-                if (!dummy_tcp) {
+                if (!tcp_active) {
                     std::cout << "===================================" << endl;
                     std::cout << "---> Stimulator controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
                     std::cout << "-Q = Stop stimulation.\n-E = Re-start stimulation.\n-X = end current calibration (manual or automatic).\n\n";
@@ -407,7 +410,7 @@ int main(int argc, char* argv[]) {
             if (stim_userX && !stimulator_device.active) {
                 state_process = st_testM;
                 printf("SAS PROGRAMME: Quitting automatic callibration. Starting manual...\n");
-                if (!dummy_tcp) {
+                if (!tcp_active) {
                     std::cout << "===================================" << endl;
                     std::cout << "---> Stimulator controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
                     std::cout << "-Q = Stop stimulation.\n-E = Re-start stimulation.\n-X = end current calibration (manual or automatic).\n\n";
@@ -422,7 +425,7 @@ int main(int argc, char* argv[]) {
             if (stim_userX && !stimulator_device.active) {
                 state_process = st_testM;
                 printf("SAS PROGRAMME: Quitting automatic callibration. Starting manual...\n");
-                if (!dummy_tcp) {
+                if (!tcp_active) {
                     std::cout << "===================================" << endl;
                     std::cout << "---> Stimulator controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
                     std::cout << "-Q = Stop stimulation.\n-E = Re-start stimulation.\n-X = end current calibration (manual or automatic).\n\n";
@@ -448,7 +451,7 @@ int main(int argc, char* argv[]) {
         // Normal SAS process
         case st_th:
             if (rec_status.th) {
-                if (dummy_tcp) {
+                if (tcp_active) {
                     printf("SAS PROGRAMME: Threshold saved. Press start training button. Waiting for stimulator to be triggered.\n");
                 }
                 else {
@@ -494,7 +497,7 @@ int main(int argc, char* argv[]) {
 
         case st_stop:
             // Check nr of repetitions and devices
-            if (ROB_rep < TCP_rep && stim_status.ready && rec_status.ready && !ROBERT.Reached && !ROBERT.isMoving) {
+            if (ROB_rep < TCP_rep && stim_status.ready && rec_status.ready && !ROBERT.Reached && !ROBERT.isMoving && ROBERT.valid_msg) {
                 std::cout << "\n===================================" << endl;
                 std::cout << "SAS PROGRAMME: Starting next repetition" << endl;
                 state_process = st_wait;
@@ -509,6 +512,33 @@ int main(int argc, char* argv[]) {
         }// State machine
 
         Sleep(10);
+
+        // If there is an issue with the UDP, the program will go to "safer" states
+        if (ROBERT.error_lim && MAIN_to_all.ready) {
+            bool jump_cal = (state_process == st_testA_go) || (state_process == st_testA_stop);
+            bool jump_run = (state_process == st_running) || (state_process == st_wait);
+            bool wait_cal = (state_process == st_init) || (state_process == st_testM) || (state_process == st_th);
+
+            if (jump_cal) {
+                printf("SAS PROGRAMME: Connection to the robot lost. Switching to manual calibration.\n");
+                state_process = st_testM;
+            }
+            else if (jump_run) {
+                printf("SAS PROGRAMME: Connection to the robot lost. Stopping current repetition.\n");
+                state_process = st_stop;
+            }
+            else if (wait_cal) {
+                printf("SAS PROGRAMME: Connection to the robot lost. Process will stop after calibration and threshold set up.\n");
+            }
+            else {
+                printf("SAS PROGRAMME: Connection to the robot lost. Process will stop after calibration and threshold set up.\n");
+            }
+            MAIN_to_all.ready = false;
+        }
+        else if (!ROBERT.error_lim && !MAIN_to_all.ready) {
+            printf("SAS PROGRAMME: Connection to the robot restored.\n");
+            MAIN_to_all.ready = true;
+        }
 
         // Controlling thread cycle time
         //th1_fn = std::chrono::steady_clock::now();
@@ -598,7 +628,7 @@ int main(int argc, char* argv[]) {
 
 
     ROBERT.end();
-    if (dummy_tcp) { SCREEN.end(); }
+    if (tcp_active) { SCREEN.end(); }
 
     std::cout << "\n--------------------------\nHej Hej!\n--------------------------\n";
     // Flushing input and output buffers
@@ -736,10 +766,10 @@ void keyboard() {
     // TCP - UDP options
     case 'T':
         SCREEN.display = !SCREEN.display;
-        if (SCREEN.display && dummy_tcp) {
+        if (SCREEN.display && tcp_active) {
             printf("Showing TCP messages and status.\n");
         }
-        else if (dummy_tcp) {
+        else if (tcp_active) {
             printf("Not showing TCP messages and status.\n");
         }
         break;
@@ -754,7 +784,7 @@ void keyboard() {
         break;
     // Repetition options
     case 'G':
-        if (!dummy_tcp) {
+        if (!tcp_active) {
             TCP_rep++;
             if (TCP_rep >= 100) {
                 TCP_rep = 100;
@@ -763,7 +793,7 @@ void keyboard() {
         }
         break;
     case 'H':
-        if (!dummy_tcp) {
+        if (!tcp_active) {
             TCP_rep--;
             if (TCP_rep < ROB_rep) {
                 TCP_rep = ROB_rep + 1;
@@ -774,52 +804,52 @@ void keyboard() {
         break;
     // Stimulation options
     case 'A':
-       if (!dummy_tcp) { Move3_hmi = Move3_ramp_less; }
+       if (!tcp_active) { Move3_hmi = Move3_ramp_less; }
        break;
     case 'D':
-       if (!dummy_tcp) { Move3_hmi = Move3_ramp_more; }
+       if (!tcp_active) { Move3_hmi = Move3_ramp_more; }
        break;
     case 'S':
-        if (!dummy_tcp) { Move3_hmi = Move3_decr; }
+        if (!tcp_active) { Move3_hmi = Move3_decr; }
         break;
     case 'W':
-        if (!dummy_tcp) { Move3_hmi = Move3_incr; }
+        if (!tcp_active) { Move3_hmi = Move3_incr; }
         break;
     // Stimulator device
     case 'Q':
-        if (!dummy_tcp) { Move3_hmi = Move3_stop; }
+        Move3_hmi = Move3_stop;
         break;
     case 'E':
-        if (!dummy_tcp) { Move3_hmi = Move3_start; }
+        if (!tcp_active) { Move3_hmi = Move3_start; }
         break;
     case 'X':
-        if (!dummy_tcp) { Move3_hmi = Move3_done; }
+        if (!tcp_active) { Move3_hmi = Move3_done; }
         break;
 
     // SAS programme
     case '1':
-        if ((state_process == st_wait) && (!dummy_tcp)){
+        if ((state_process == st_wait) && (!tcp_active)){
             start_train = true;
             fileLOGS << "5.0, " << processed << "\n";
             std::cout << "Start training pressed." << endl;
         }
         break;
     case '2':
-        if ((state_process == st_init)&&(!dummy_tcp)) {
+        if ((state_process == st_init)&&(!tcp_active)) {
             stimA_active = true;
             stimM_active = false;
             std::cout << "Automatic callibration selected." << endl;
         }
         break;
     case '3':
-        if ((state_process == st_init)&& (!dummy_tcp)) {
+        if ((state_process == st_init)&& (!tcp_active)) {
             stimA_active = false;
             stimM_active = true;
             std::cout << "Manual callibration selected." << endl;
         }
         break;
     case '4':
-        if ((state_process == st_testM)&&(!dummy_tcp)){
+        if ((state_process == st_testM)&&(!tcp_active)){
             rec_status.req = true;
             std::cout << "Start threshold." << endl;
         }
@@ -845,11 +875,10 @@ void thread_connect() {
         sprintf(ROBERT.message, "%d;STATUS", udp_cnt);
         ROBERT.get();
 
-
         // Controlling thread cycle time
         th2_fn = std::chrono::steady_clock::now();
-        th2_diff = th2_fn - th2_st;
-        th2_d = ((double)th2_diff.count()) + 0.015;
+        stimA_diff = th2_fn - th2_st;
+        th2_d = ((double)stimA_diff.count());
         //if (th2_d < th2_cycle) {
         //    th2_d = (th2_cycle - th2_d) * 1000;
         //    th2_sleep = 1 + (int)th2_d;
@@ -866,11 +895,11 @@ void thread_connect() {
 
 void thread_TCP() {
     bool decode_successful;
-    while (!MAIN_to_all.end && (state_process != st_end) && !SCREEN.finish && dummy_tcp) {
+    while (!MAIN_to_all.end && (state_process != st_end) && !SCREEN.finish && tcp_active) {
             // Receive
             SCREEN.check();
             decode_successful = TCP_decode(SCREEN.recvbuf, Move3_hmi, User_cmd, wololo, TCP_rep);
-            
+
             if (decode_successful) {
                 if (SCREEN.display) {
                     printf("TCP received: move_key = %d, user_cmd = %d, satus = %c, rep_nr = %d \n ", Move3_hmi, User_cmd, wololo, TCP_rep);
@@ -909,24 +938,33 @@ void thread_TCP() {
             else if (!decode_successful && SCREEN.display){
                 printf("TCP received message not valid.\n");
             }
-            // Wait for stimulator to update values before sending 
+            // Wait for stimulator to update values before sending
             if (decode_successful && (Move3_hmi!=Move3_none)) {
-                bool update_values_TCP; 
+                bool update_values_TCP;
                 bool update_state = (state_process == st_testM) || (state_process == st_wait) || (state_process == st_running);
                 do {
                     Sleep(5);
                     update_values_TCP = (Move3_hmi == Move3_decr) || (Move3_hmi == Move3_incr) || (Move3_hmi == Move3_ramp_more) || (Move3_hmi == Move3_ramp_less);
                 } while (update_values_TCP && update_state);
             }
-            // Send
-            memset(SCREEN.senbuf, '\0', 512);
-            sprintf(SCREEN.senbuf, "SAS;%2.1f;%d;%1.1f;", stimulator_device.stim.points[0].current, stimulator_device.stim.ramp, gain_th);
-            SCREEN.stream();
+
+            if (!SCREEN.error_lim) {
+                // Send if something was received
+                memset(SCREEN.senbuf, '\0', 512);
+                sprintf(SCREEN.senbuf, "SAS;%2.1f;%d;%1.1f;", stimulator_device.stim.points[0].current, stimulator_device.stim.ramp, gain_th);
+                SCREEN.stream();
+            }
+            else {
+                tcp_active = false;
+                printf("SAS PROGRAMME: Connection to the screen lost. Switching to keyboard.\n");
+                break;
+            }
+
         // TCP Stuff
         Sleep(250);
     }
     // End of the Program if the screen has been closed
-    if (SCREEN.finish && dummy_tcp) {
+    if (SCREEN.finish && tcp_active) {
         printf("Screen App has been closed. SAS program will finish too.\n");
         MAIN_to_all.end = true;
     }
@@ -936,7 +974,7 @@ void thread_TCP() {
 void stimulation_set(RehaMove3_Req_Type& code) {
     Smpt_ml_channel_config next_val;
     next_val = stimulator_device.stim;
-    float Dcurr = 0.0;
+    float Dcurr = 0.0, DHz = 0.0;
     uint8_t Dramp = 0, Dnr = 0;
 
     // current_Val = real values on the stimulator
@@ -956,6 +994,7 @@ void stimulation_set(RehaMove3_Req_Type& code) {
         Dcurr = Dcurr_man;
         Dramp = Dramp_man;
         Dnr = Dnr_points_man;
+        DHz = DHz_man;
     }
     else {
         // Automatic calibration values
@@ -1031,7 +1070,7 @@ void stimulation_set(RehaMove3_Req_Type& code) {
     }
 
     stimulator_device.stim = next_val;
-    if ((code != Move3_stop) && (code != Move3_start) && (!dummy_tcp || SCREEN.display) ) {
+    if ((code != Move3_stop) && (code != Move3_start) && (!tcp_active || SCREEN.display) ) {
         printf("RehaMove3 message: Stimulation update -> current = %2.2f, ramp points = %d, ramp value = %d\n", stimulator_device.stim.points[0].current, stimulator_device.stim.number_of_points, stimulator_device.stim.ramp);
         //%2.1f is the format to show a float number, 2.1 means 2 units and 1 decimal
     }
@@ -1049,19 +1088,20 @@ void thread_stimulation()
 {
     // Local Variables
     bool Move3_user_req = false;
+
     switch (state_process) {
     case st_init:
         // initialization
         if (!stimulator_device.ready) {
             stimulator_device.init();
             stim_status.ready = stimulator_device.ready;
-            if (dummy_tcp) {
+            if (tcp_active) {
                 printf("---> Now press either automatic or manual calibration <--- \n");
             }
             else {
                 printf("---> Now press either 2 for automatic stimulation calibration, or 3 for manual <--- \n");
             }
-            
+
         }
         break;
 
@@ -1110,26 +1150,26 @@ void thread_stimulation()
             stimulation_set(Move3_hmi);
         }
 
-        if(((Move3_hmi == Move3_stop) && stimulator_device.active) || (Move3_hmi == Move3_done)){
+        if(((Move3_hmi == Move3_stop || stim_timeout) && stimulator_device.active) || (Move3_hmi == Move3_done)){
           stimulator_device.pause();
           stim_done = !stimulator_device.active && (Move3_hmi == Move3_done);
           Move3_hmi = Move3_none;
           if(stim_done){
               std::cout << "RehaMove3 message: manual callibration done."<<endl;
-              if (dummy_tcp) {
+              if (tcp_active) {
                   std::cout << "--> Press set threshold <---" << endl;
               }
               else {
                   std::cout << "--> Press 4 for set threshold <---" << endl;
               }
-              
+
           }
           else {
               std::cout << "RehaMove3 message: Stimulator stopped." << endl;
           }
         }
 
-        if (stimulator_device.active || (Move3_hmi == Move3_start)){
+        if ((stimulator_device.active || Move3_hmi == Move3_start) && !stim_timeout){
           stimulator_device.update();
         }
         break;
@@ -1150,13 +1190,13 @@ void thread_stimulation()
             stim_fl1 = false;
         }
 
-        if ((Move3_hmi == Move3_stop)&& stimulator_device.active) {
+        if ((Move3_hmi == Move3_stop || stim_timeout)&& stimulator_device.active) {
             stimulator_device.pause();
             std::cout << "RehaMove3 message: Stimulator stopped." << endl;
             stim_fl1 = true;
             Move3_hmi = Move3_none;
         }
-        if (!stim_fl1) {
+        if (!stim_fl1 && !stim_timeout) {
             stimulator_device.update();
         }
         // things to do only once
@@ -1195,6 +1235,25 @@ void thread_stimulation()
         }
         break;
     } // switch case
+
+    // Stimulation time control
+    if (!stim_timing && stimulator_device.active) {
+        stimA_start = std::chrono::steady_clock::now();
+        stim_timing = true;
+        //printf("RehaMove3 message: Stimulation time counting.\n");
+    }
+    if (stim_timing && stimulator_device.active && !stim_timeout) {
+        stimA_end = std::chrono::steady_clock::now();
+        stimA_diff = stimA_end - stimA_start;
+        stim_timeout = ((double)stimA_diff.count()) >= stimA_cycle;
+        if (stim_timeout) {
+            printf("RehaMove3 message: Stimulation timeout.\n");
+        }
+    }
+    if (!stimulator_device.active && stim_timing) {
+        stim_timing = false;
+        stim_timeout = false;
+    }
 
 } //void thread_ml_stimulation
 //================================================

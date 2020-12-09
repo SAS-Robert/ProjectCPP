@@ -134,7 +134,11 @@ typedef enum
     Move3_ramp_less	  = 4,    // Reduce ramp
     Move3_stop        = 5,    // Stop Stimulating
     Move3_start       = 6,    // Stimulate with initial values
-		Move3_done		  = 7, 		// Finish callibration
+		Move3_done		  	= 7, 		// Finish callibration
+		Move3_Hz_mr				= 8, 		// Increase frequency
+		Move3_Hz_ls				= 9, 		// Decrease Frequency
+		Move3_us_mr				= 10, 	// Increase pulse width
+		Move3_us_ls				= 11,		// Decrease pulse width
 }RehaMove3_Req_Type;
 
 typedef enum
@@ -160,18 +164,18 @@ typedef enum
     st_stop           = 4,    // Done 1 seq, waiting for next
     st_end            = 5,    // Setting threshold
     st_testM          = 6,    // Run stimulation test (manual)
-		st_testA_go		  = 7, 	  // Run stimulation test (automatic) -> apply current
-		st_testA_stop	  = 8,	  // Run stimulation test (automatic) -> stop stim for recovery
+	st_testA_go		  = 7, 	  // Run stimulation test (automatic) -> apply current
+	st_testA_stop	  = 8,	  // Run stimulation test (automatic) -> stop stim for recovery
 }state_Type;
 
 typedef enum
 {
-    User_none      	  = 0,    // Nothing to do
-    User_CM       		= 1,    // Manual calibration
+    User_none	   	  = 0,    // Nothing to do
+    User_CM	    		= 1,    // Manual calibration
     User_CA	        	= 2,    // Automatic calibration
-		User_X						= 3, 		// Quit calibration
-		User_th						= 4,		// Start threshold
-		User_st						= 5, 		// Start training
+	User_X				= 3, 		// Quit calibration
+	User_th				= 4,		// Start threshold
+	User_st				= 5, 		// Start training
 }User_Req_Type;
 
 // ------------------------------ Devices -----------------------------
@@ -459,7 +463,8 @@ public:
 	char buf[BUFLEN];
 	char message[BUFLEN];
 	struct timeval timeout;
-	bool error = false;
+	bool error = false, error_lim = false;
+	int error_cnt = 0;
 	bool display = true;
 	// Robot variables
 	bool isMoving = false;
@@ -512,6 +517,7 @@ public:
 		{
 			if(display){printf("sendto() failed with error code : %d", WSAGetLastError());}
 			error = true;
+			error_cnt++;
 		}
 		// Wait until timeout or data received.
     FD_ZERO(&fds);
@@ -523,16 +529,26 @@ public:
 			if(n==0){printf("Timeout\n");}
 			else { printf("Error while receiving.\n"); }
 			error = true;
+			error_cnt++;
 		}
+
 		if (!error) {
 			int length = sizeof(SERVERc);
 			recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*)&si_other, &slen);
-	  // Decode message here
-     valid_msg = UDP_decode(buf, isMoving, Reached);
-     if(display && valid_msg){ std::cout<<"UDP Received: isMoving="<<isMoving<<",Reached="<<Reached<<endl;}
-     if(display && !valid_msg){ std::cout<<"UDP message not valid"<<endl;}
-     //error = !error;
+			// Decode message here
+			valid_msg = UDP_decode(buf, isMoving, Reached);
+			if(valid_msg){
+				error_cnt = 0;
+				if(display){ std::cout << "UDP Received: isMoving=" << isMoving << ",Reached=" << Reached << endl; }
+			}
+			else{
+				if(display){ std::cout << "UDP message not valid" << endl; }
+				//error = true;
+				error_cnt++;
+			}
+			//error = !error;
 		}
+		error_lim = error_cnt >= 10;
 	};
 	void end() {
 		closesocket(s);
@@ -689,6 +705,8 @@ public:
 	bool error = false, new_message = false, finish = false;
 	bool display = false;
 	struct timeval timeout;
+	int error_cnt = 0;
+	bool error_lim = false;
   // Functions
 	void start(char* S_port) {
 		strcpy(PORTc, S_port);
@@ -783,13 +801,21 @@ public:
     memset(recvbuf, '\0', BUFLEN);
     memset(senbuf, '\0', BUFLEN);
     new_message = false;
-    // error = false;
+    error = false;
     // FD_ZERO(&fds);
     // FD_SET(ClientSocket, &fds);
-		iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-  	if(display){printf("TCP Data received: %s\n", recvbuf);}
-        new_message = true;
-
+	iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
+  	if(iResult>0){
+		new_message = true;
+		if (display) { printf("TCP Data received: %s\n", recvbuf); }
+		error_cnt = 0;
+	}
+	else {
+		error = true;
+		error_cnt++;
+		if (display) { printf("TCP error.\n"); }
+	}
+	error_lim = error_cnt >= 5;
     //Decode after this
 	} // void check
 
@@ -798,9 +824,10 @@ public:
 			//strcpy(senbuf, "SAS;10.4;3;2.5;"); // New format
 			if(display){ printf("TCP sending: %s\n", senbuf); }
 			iSendResult = send(ClientSocket, senbuf, iResult, 0);
-			if (iSendResult == SOCKET_ERROR && display) {
-				printf("TCP send failed with error: %d\n", WSAGetLastError());
+			if (iSendResult == SOCKET_ERROR) {
 				finish = true;
+				if (display) { printf("TCP send failed with error: %d\n", WSAGetLastError()); }
+
 			}
 	} // void stream
 
