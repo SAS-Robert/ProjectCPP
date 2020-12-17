@@ -47,9 +47,9 @@ Iir::Butterworth::LowPass<order2> m_f3;
 // - Most of these parameters are calculated from Matlab's original scripts
 const int samplingrate = 1000;
 
-const int orderButty = 8;
+const int orderButty = 4;
 double Low_Hz = 20;
-double High_Hz = 90;
+double High_Hz = 300;
 const double B_Fq = (High_Hz + Low_Hz) / 2;
 const double B_Fqw = (High_Hz - Low_Hz);
 Iir::Butterworth::BandPass<orderButty> Butty;
@@ -196,8 +196,8 @@ int main(int argc, char* argv[]) {
     // string infileName = "CA_filter_20201113_1503.txt";
     // string infileName = "CA_filter_20201113_1506.txt";
     // string infileName = "CA_filter_20201113_1509.txt";
-    // string infileName = "CUL_leg_filter_20201104_1336.txt";
-    string infileName = "CUL_leg_filter_20201104_1330.txt";
+    string infileName = "CUL_leg_filter_20201104_1336.txt";
+    // string infileName = "CUL_leg_filter_20201104_1330.txt";
 
     infile.open(infileName);
 
@@ -231,13 +231,13 @@ int main(int argc, char* argv[]) {
       Butty_result.push_back(Butty.filter(raw_value));
       B50_result.push_back(B50.filter(Butty_result[i]));
       B100_result.push_back(B100.filter(B50_result[i]));
-      // B150_result.push_back(B150.filter(B100_result[i]));
-      // B200_result.push_back(B200.filter(B150_result[i]));
-      // B250_result.push_back(B250.filter(B200_result[i]));
+      B150_result.push_back(B150.filter(B100_result[i]));
+      B200_result.push_back(B200.filter(B150_result[i]));
+      B250_result.push_back(B250.filter(B200_result[i]));
       // Lastest filtering
-      N100_result.push_back(N100.filter(B100_result[i]));
+      // N100_result.push_back(N100.filter(B100_result[i]));
       // Saving data
-      outFile << raw_value << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] << "," << N100_result[i] << "\n";// << B250_result[i] << "\n";
+      outFile << raw_value << "," << Butty_result[i] << "," << B50_result[i] << "," << B100_result[i] << "," << B150_result[i] << "," << B200_result[i] << "," << B250_result[i] << "\n";
 
     }
 

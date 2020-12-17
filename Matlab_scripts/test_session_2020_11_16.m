@@ -89,18 +89,21 @@ end
 
 %% Demo 26-11-2020
 % Files dir
-data_path = genpath('SAS/demo_26Nov');
+data_path = genpath([C_files_backup '/demo_26Nov']);
 addpath(data_path);
 % CA data
-data_dir_session6 = dir(['SAS/demo_26Nov/CA_lower_leg1_filter*.txt']);
+data_dir_session6 = dir([C_files_backup '/demo_26Nov/CA_lower_leg1_filter*.txt']);
 [amount dummy] = size(data_dir_session6);
-files_dir = ['SAS/demo_26Nov/CA_lower_leg1'];
+files_dir = [C_files_backup '/demo_26Nov/CA_lower_leg1'];
 
 % individually 
 for k=1:amount
     name = ['Demo 26th Nov, CA lower leg(1) recording nr.' num2str(k)];
     data = plot_th3(files_dir,name,k,'C');    
 end
+
+[s6raw_t, s6raw_f] = samples_analysis(data_dir_session6(end),'C',0,'Recorded raw data');
+[s6c_t, s6c_f] = samples_analysis(data_dir_session6(end),'C',1,'SAS filtered data');
 
 % V2 data
 data_dir_session6 = dir(['SAS/demo_26Nov/V2_upper_leg_filter*.txt']);

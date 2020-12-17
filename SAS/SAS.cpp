@@ -124,9 +124,11 @@ unsigned long long int processed = 0;
 unsigned long long int th_time = 3; // 3 seconds
 unsigned long long int th_nr = th_time * samplingrate; // amount of samples for threshold
 double th_discard = samplingrate * 1.1;                // discard first filtered samples from the threshold
-double th_discard_nr = 0, old_value = 0, old_nr = 0;
+double th_discard_nr = 0;
+double old_value[5] = {0, 0, 0, 0, 0};
+unsigned long long int old_nr[5] = { 0, 0, 0, 0, 0 };
 int th_wait = 3, th_wait_cnt = 0;                                       // amount of mean sets before triggering
-unsigned int sample_lim = 50;
+unsigned int sample_lim = 27;
 // Dummies
 // Files handler to store recorded data
 ofstream fileRAW, fileFILTERS;
@@ -167,7 +169,7 @@ uint8_t Dramp_aut_low = 3, Dramp_aut_med = 4, Dramp_aut_high = 5, Dnr_points_aut
 bool stim_done = false, stim_userX = false, stim_auto_done = false;
 
 // Stimulation timing settings
-double stimA_cycle = 10.0;                              // how long the stimulator is allowed to be active (ms)
+double stimA_cycle = 8.0;                              // how long the stimulator is allowed to be active (seconds)
 std::chrono::duration<double> stimA_diff;
 auto stimA_start = std::chrono::steady_clock::now();
 auto stimA_end = std::chrono::steady_clock::now();
@@ -179,7 +181,7 @@ bool stim_timing = false, stim_timeout = false;
 auto th1_st = std::chrono::steady_clock::now();
 auto th1_fn = std::chrono::steady_clock::now();
 std::chrono::duration<double> th1_diff;
-const double th1_cycle = 0.1;
+const double th1_cycle = 0.03;
 double th1_d = 0;
 int th1_sleep = 1;
 auto th2_st = std::chrono::steady_clock::now();
@@ -225,12 +227,12 @@ string time1_s;
 string time2_s;
 string time3_s;
 string time4_s;
-char folder[256] = "demo_07Dec\\";
-char Sname[256] = "subject1_leg";
+char folder[256] = "test_15Dec\\";
+char Sname[256] = "subject1";
 // ---------------------------- Functions declaration  -----------------------------
 // Dummies
-bool tcp_active = false;
-bool dummy_valid = false;
+bool tcp_active = true;
+
 // Various
 //Tic-toc time
 auto tstart = std::chrono::steady_clock::now();
@@ -274,22 +276,6 @@ int main(int argc, char* argv[]) {
     B150.setup(samplingrate, B150_Fq, B50_100_Fqw);
     B200.setup(samplingrate, B200_Fq, B50_100_Fqw);
     B250.setup(samplingrate, B250_Fq, B50_100_Fqw);
-    // other dummy stuff
-
-    int ch;
-    dummy_valid = false;
-    printf("Do you wanna use the TCP connection to the Touch Panel? [Y/N]: ");
-    while (!dummy_valid) {
-        ch = _getch();
-        ch = toupper(ch);
-        if (ch == 'Y') {
-            tcp_active = true;
-        }
-        dummy_valid = (ch == 'Y') || (ch == 'N');
-        printf("%c ", ch);
-    }
-
-    dummy_valid = false;
 
     // Flushing input and output buffers
     cout.flush();
@@ -305,13 +291,9 @@ int main(int argc, char* argv[]) {
         ROBERT.start(robot_IP, robot_port);
     } while (ROBERT.error);
     ROBERT.display = false;
-    if (tcp_active) {
-        SCREEN.start(screen_port);
-        SCREEN.waiting();
-    }
-    else {
-        printf("TCP Connection skipped. Using keyboard instead.\n\n");
-    }
+
+    SCREEN.start(screen_port);
+    SCREEN.waiting();
 
     std::cout << "===================================" << endl;
     if (tcp_active) {
@@ -386,14 +368,15 @@ int main(int argc, char* argv[]) {
             // in this case it re-starts the tic, but if at the end it does not Reach it, it'll set a longer break
             if (!toc() && ROBERT.isMoving && !ROBERT.Reached && !stimA_start_b) {
                 tic();
+                toc_lim = 2;
                 stimA_start_b = true;
-                printf("SAS test: Movement detected, %2.2f s.\n", toc_lim);
+                printf("SAS test: Movement detected, added %2.2f s.\n", toc_lim);
             }
             if (stimA_start_b && !ROBERT.Reached && toc()) {
                 printf("SAS test: Stopping movement and break of %2.2f s\n", toc_lim);
                 state_process = st_testA_stop;
                 tic();
-                toc_lim = 10;
+                toc_lim = 5;
             }
             // Stimulation values OK: Reached End Point
             if (stim_auto_done && toc()) {
@@ -511,8 +494,6 @@ int main(int argc, char* argv[]) {
             break;
         }// State machine
 
-        Sleep(10);
-
         // If there is an issue with the UDP, the program will go to "safer" states
         if (ROBERT.error_lim && MAIN_to_all.ready) {
             bool jump_cal = (state_process == st_testA_go) || (state_process == st_testA_stop);
@@ -541,20 +522,19 @@ int main(int argc, char* argv[]) {
         }
 
         // Controlling thread cycle time
-        //th1_fn = std::chrono::steady_clock::now();
-        //th1_diff = th1_fn - th1_st;
-        //th1_d = ((double)th1_diff.count()) + 0.015;
+        th1_fn = std::chrono::steady_clock::now();
+        th1_diff = th1_fn - th1_st;
+        th1_d = ((double)th1_diff.count()) + 0.0015;
         //Sleep(10);
-        // if ((th1_d < th2_cycle) && (state_process != st_init)) {
-        //     th1_d = (th1_cycle - th1_d) * 1000;
-        //     th1_sleep = 1 + (int)th1_d;
-        //
-        //     Sleep(th1_sleep);
-        // }
-        // else {
-        //     Sleep(10);
-        //     th1_sleep = 0;
-        // }
+        if ((th1_d < th1_cycle) && (state_process >= st_wait) && (state_process <= st_stop)) {
+            th1_d = (th1_cycle - th1_d) * 1000;
+            th1_sleep = 1 + (int)th1_d;
+            Sleep(th1_sleep);
+        }
+        else {
+             Sleep(10);
+             th1_sleep = 0;
+         }
 
         time3_end = std::chrono::steady_clock::now();
         if (state_process != st_init) {
@@ -976,20 +956,11 @@ void stimulation_set(RehaMove3_Req_Type& code) {
     next_val = stimulator_device.stim;
     float Dcurr = 0.0, DHz = 0.0;
     uint8_t Dramp = 0, Dnr = 0;
-
     // current_Val = real values on the stimulator
     // next_val = values that are going to be assigned
-    // code = from the keyboard
-
-    /* Set the stimulation pulse */
-    // stim.points[0].current = 50;
-    // stim.points[0].time = 200;
-    // stim.points[1].time = 100;
-    // stim.points[2].current = -50;
-    // stim.points[2].time = 200;
+    // code = command (what to change)
 
     // Select increment
-    // if (state_process == st_testM) { // only with the manual stimulation
     if ((state_process != st_testA_go) && (state_process != st_testA_stop)){
         Dcurr = Dcurr_man;
         Dramp = Dramp_man;
@@ -1284,15 +1255,19 @@ double process_data_iir(unsigned long long int v_size) {
         mean = mean + temp;
     }
     // Complete value: taking into account the old mean
-    value = (old_value * old_nr + mean) / (old_nr + N_len);
+    value = ((old_value[0]* old_nr[0])+ (old_value[1] * old_nr[1]) + mean) / (old_nr[0]+ old_nr[1] + N_len);
     // Saving results
     mean = mean / N_len;
     fileVALUES << mean << ", 0.0, " << processed << "," << v_size << "," << N_len << "\n";
 
     // Update processed data parameters
     processed = i;
-    old_value = mean;
-    old_nr = N_len;
+    for (int i = 1; i < 5; i++) {
+        old_value[i] = old_value[i - 1];
+        old_nr[i] = old_nr[i - 1];
+    }
+    old_value[0] = mean;
+    old_nr[0] = N_len;
 
     time2_end = std::chrono::steady_clock::now();
     time2_diff = time2_end - time2_start;
@@ -1354,8 +1329,12 @@ double process_th(unsigned long long int v_size) {
     }
     // Update amount of processed data
     processed = i;
-    old_value = mean;
-    old_nr = N_len;
+    for (int i = 1; i < 5; i++) {
+        old_value[i] = old_value[i-1];
+        old_nr[i] = old_nr[i-1];
+    }
+    old_value[0] = mean;
+    old_nr[0] = N_len;
 
     time2_end = std::chrono::steady_clock::now();
     time2_diff = time2_end - time2_start;
@@ -1406,7 +1385,7 @@ void thread_recording()
             if (processed >= th_nr) {
                 rec_threshold = rec_threshold / (sample_nr - th_discard_nr);
                 //rec_threshold = 2.0;
-                std::cout << "Reha Ingest message: threshold = " << rec_threshold <<", old m = "<< old_value << ", old nr = "<< old_nr << endl;
+                std::cout << "Reha Ingest message: threshold = " << rec_threshold <<", old m = "<< old_value[0] << ", old nr = "<< old_nr[0] << endl;
                 rec_status.th = true;
             }
         }

@@ -132,7 +132,7 @@ if(plot_type=='C')
 
     title('Retified-Filtered data and mean values');
     xlim([0 t(end)]);
-    ylim([0 max(c_t(3000:end))+0.0002]);
+    ylim([0 max(c_t(3000:end))+max(c_t(3000:end))*0.2]);
     xlabel('t (s)');
     ylabel('v (V)');
     
@@ -243,7 +243,8 @@ elseif(plot_type=='T')
 
     title('Comparsion between old and new mean values');
     xlim([0 t(end)]);
-    ylim([0 max(y_t)+0.0002]);
+    temp_max = max(y_t(1000:end));
+    ylim([0 temp_max+0.2*temp_max]);
     legend('Old resting mean', 'Old mean', 'Old threshold', 'New resting mean', 'New mean', 'New threshold')
     xlabel('t (s)');
     ylabel('v (V)');
