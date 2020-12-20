@@ -81,7 +81,7 @@ files1=dir([C_files_backup '/test_session_09Nov/CUL_time1_*']);
 
 for k=1:amount
     fprintf(['Time perfomance on 9th Nov recording nr' num2str(k) '\n']);
-    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name]);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [1 2]);
     fprintf('\n');
 end
 
@@ -100,9 +100,11 @@ end
 files1=dir([C_files_backup '/session_13Nov/CUL_time1_*']);
 [amount, dummy ] = size(files1);
 for k=1:amount
-    fprintf(['CUL Time perfomance on 13th Nov recording nr' num2str(k) '\n']);
-    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name]);
-    fprintf('\n');
+    %fprintf(['CUL Time perfomance on 13th Nov recording nr' num2str(k) '\n']);
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [1 2]);
+    fprintf('\\hline\n');
 end
 % CA
 files1=dir([C_files_backup '/session_13Nov/CA_time1_*']);
@@ -125,12 +127,20 @@ end
 % CA
 files1=dir([C_files_backup '/session_16Nov/CA_leg_time1_*']);
 [amount, dummy ] = size(files1);
+% times 1 and 2 (triggering and processing time)
 for k=1:amount
-    fprintf(['Time perfomance on 16th Nov recording nr' num2str(k) '\n']);
-    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name]);
-    fprintf('\n');
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
 end
-
+% times 3 and 4 (thread 1 and thread 2)
+for k=1:amount
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [3 4], [100 150]);
+    fprintf('\\hline\n');
+end
 %% Session 18th Nov
 % CA (well, technically unknown)
 files1=dir([C_files_backup '/demo_18Nov/subject1_time1_*']);
@@ -169,11 +179,100 @@ for k=1:amount
     fprintf('\n');
 end
 
-%% Test session 9th Dec
-files1=dir([SASshared '\CA_lower_leg_time1_*.txt']);
+%% For the report
+% Session 3 10th Nov
+
+% Session 4 13th Nov
+files1=dir([C_files_backup '/session_13Nov/CUL_time1_*']);
+[amount1, dummy ] = size(files1);
+files2=dir([C_files_backup '/session_13Nov/JW_time1_*']);
+[amount2, dummy ] = size(files2);
+files3=dir([C_files_backup '/session_13Nov/CA_time1_*']);
+[amount3, dummy ] = size(files3);
+
+% times 1 and 2
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount1
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
+end
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount2
+    fprintf('%%Recording %i\n', (k+amount1));
+    fprintf('%i & ', (k+amount1));
+    [value_av,value_max,val_samples] = timing_eval([files2(k).folder '\' files2(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
+end
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount3
+    fprintf('%%Recording %i\n', (k+amount1+amount2));
+    fprintf('%i & ', (k+amount1+amount2));
+    [value_av,value_max,val_samples] = timing_eval([files3(k).folder '\' files3(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
+end
+
+% times 3 and 4 (thread 1 and thread 2)
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount1
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [3 4], [100 150]);
+    fprintf('\\hline\n');
+end
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount2
+    fprintf('%%Recording %i\n', (k+amount1));
+    fprintf('%i & ', (k+amount1));
+    [value_av,value_max,val_samples] = timing_eval([files2(k).folder '\' files2(k).name], [3 4], [100 150]);
+    fprintf('\\hline\n');
+end
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount3
+    fprintf('%%Recording %i\n', (k+amount1+amount2));
+    fprintf('%i & ', (k+amount1+amount2));
+    [value_av,value_max,val_samples] = timing_eval([files3(k).folder '\' files3(k).name], [3 4], [100 150]);
+    fprintf('\\hline\n');
+end
+
+% Session 5 16th Nov
+files1=dir([C_files_backup '/session_16Nov/CA_leg_time1_*']);
+[amount, dummy ] = size(files1);
+% recording 10 and 11 not valid
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_sd,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
+end
+% times 3 and 4 (thread 1 and thread 2)
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [3 4], [100 150]);
+    fprintf('\\hline\n');
+end
+
+% Session 6 9th December
+files1=dir(['C:\Users\Carolina\Desktop\Internship\Software\C_files_backup\test_09Dec\' 'CA_upper_leg_time1_*.txt']);
 [amount, dummy ] = size(files1);
 
-for k=1:amount
-    ['Time perfomance on 9th Dec recording nr' num2str(k)]
-    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name])
+% recording 10 and 11 not valid
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:7
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_sd,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
+end
+% times 3 and 4 (thread 1 and thread 2)
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:9
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [3 4], [33 125]);
+    fprintf('\\hline\n');
 end

@@ -1,2 +1,0 @@
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\x64\Debug\TestFilters.exe
-C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\TestFilters\x64\Debug\TestFilters.pdb

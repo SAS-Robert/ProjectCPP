@@ -1,6 +1,18 @@
 function data = plot_th(files_dir,name,pos,plot_type)
-%UNTITLED2 Summary of this function goes here
-%   Detailed explanation goes here
+%(--- First version ---)
+% Plots the data from a single EMG recording in three formats:
+%1. Top-left: raw vs. filtered data in time domain.
+%2. Top-right: raw vs. filtered data in frequency domain.
+%3. Bottom: rectified data adn its average.
+% Options available:
+% - files_dir: string with the address and name of the files.
+% - name: title of the figure with the plots.
+% - plot_type: what type of filtering is going to be done:
+%plot_type = 'C' -> SAS program filters (from the recording).
+%plot_type = 'T' -> Test Matlab filters. This is to compare how
+%new/modified filters would affect the original data.
+%
+% NOTE: use only on recorded data from 1st to 9th November. 
 
 % getting filtered EMG 
 data_dir=dir([files_dir '_filter_*']);

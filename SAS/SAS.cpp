@@ -111,10 +111,10 @@ RehaIngest_Req_Type Inge_key = Inge_none;
 RehaIngest_Req_Type Inge_hmi = Inge_none;
 User_Req_Type User_cmd = User_none;
 
-char port_stim[5] = "COM4";
+char port_stim[5] = "COM6";
 RehaMove3 stimulator_device(port_stim);
 
-char port_rec[5] = "COM5";
+char port_rec[5] = "COM4";
 RehaIngest recorder_device(port_rec);
 
 // Other variables
@@ -127,14 +127,16 @@ double th_discard = samplingrate * 1.1;                // discard first filtered
 double th_discard_nr = 0;
 double old_value[5] = {0, 0, 0, 0, 0};
 unsigned long long int old_nr[5] = { 0, 0, 0, 0, 0 };
-int th_wait = 3, th_wait_cnt = 0;                                       // amount of mean sets before triggering
+int th_wait = 20, th_wait_cnt = 0;                                       // amount of mean sets before triggering
 unsigned int sample_lim = 27;
 // Dummies
 // Files handler to store recorded data
 ofstream fileRAW, fileFILTERS;
 ofstream fileVALUES, fileLOGS;
 string SASName4, SASName5, th_s;
-
+// Flex window testing:
+ofstream fileMEAN;
+string meanName;
 // ------------------------- UDP / TCP  ------------------------
 char robot_IP_e[15] = "127.0.0.1";
 char robot_IP[15] = "172.31.1.147";
@@ -227,8 +229,8 @@ string time1_s;
 string time2_s;
 string time3_s;
 string time4_s;
-char folder[256] = "test_15Dec\\";
-char Sname[256] = "subject1";
+char folder[256] = "files\\";
+char Sname[256] = "subject";
 // ---------------------------- Functions declaration  -----------------------------
 // Dummies
 bool tcp_active = true;
@@ -249,11 +251,11 @@ void thread_connect();
 void thread_TCP();
 // Devices functions
 void stimulation_set(RehaMove3_Req_Type& code);
-static void thread_stimulation();
+static void SAS_stimulating();
 
 static double process_data_iir(unsigned long long int N_len);
 static double process_th(unsigned long long int N_len);
-static void thread_recording();
+static void SAS_recording();
 
 // ------------------------------ Main  -----------------------------
 int main(int argc, char* argv[]) {
@@ -269,6 +271,8 @@ int main(int argc, char* argv[]) {
     th_s = file_dir + folder + Sname + "_th_" + date_s.c_str() + ".txt";
     string LOGS_s = file_dir + folder + Sname + "_log_" + date_s.c_str() + ".txt";
     fileLOGS.open(LOGS_s);
+    // Flex window testing
+    meanName = file_dir + folder + Sname + "_mean_" + date_s.c_str() + ".txt";
     // Start filters
     Butty.setup(samplingrate, B_Fq, B_Fqw);
     B50.setup(samplingrate, B50_Fq, B50_100_Fqw);
@@ -288,7 +292,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting connection with ROBERT and Touch Screen\n";
     ROBERT.display = true;               //Chosen not to show messages during messages exchange
     do {
-        ROBERT.start(robot_IP, robot_port);
+        ROBERT.start(robot_IP_e, robot_port);
     } while (ROBERT.error);
     ROBERT.display = false;
 
@@ -327,8 +331,8 @@ int main(int argc, char* argv[]) {
 
     while (!MAIN_to_all.end && (state_process != st_end)) {
         th1_st = std::chrono::steady_clock::now();
-        thread_recording();
-        thread_stimulation();
+        SAS_recording();
+        //SAS_stimulating();
 
         switch (state_process) {
         case st_init:
@@ -494,6 +498,7 @@ int main(int argc, char* argv[]) {
             break;
         }// State machine
 
+        SAS_stimulating();
         // If there is an issue with the UDP, the program will go to "safer" states
         if (ROBERT.error_lim && MAIN_to_all.ready) {
             bool jump_cal = (state_process == st_testA_go) || (state_process == st_testA_stop);
@@ -532,7 +537,7 @@ int main(int argc, char* argv[]) {
             Sleep(th1_sleep);
         }
         else {
-             Sleep(10);
+             Sleep(5);
              th1_sleep = 0;
          }
 
@@ -547,14 +552,15 @@ int main(int argc, char* argv[]) {
 
     // Finish devices
     state_process = st_end;
-    thread_recording();
-    thread_stimulation();
+    SAS_recording();
+    SAS_stimulating();
     // Waiting for other thread to finish
     Interface.join();
     GUI.join();
 
     fileFILTERS.close();
     fileVALUES.close();
+    fileMEAN.close();
 
     fileLOGS.close();
     // Safe here the time samples on a file
@@ -1055,7 +1061,7 @@ void stimulation_set(RehaMove3_Req_Type& code) {
     Move3_hmi = Move3_none;
 }
 
-void thread_stimulation()
+void SAS_stimulating()
 {
     // Local Variables
     bool Move3_user_req = false;
@@ -1232,6 +1238,7 @@ double process_data_iir(unsigned long long int v_size) {
     time2_start = std::chrono::steady_clock::now();
 
     double mean = 0, temp = 0, value = 0;
+    double flex_num = 0.0, flex_den = 0.0;
     unsigned long long int i = 0;
     unsigned long long int N_len = v_size - processed;
     // Filtering + calculate mean
@@ -1254,12 +1261,18 @@ double process_data_iir(unsigned long long int v_size) {
 
         mean = mean + temp;
     }
-    // Complete value: taking into account the old mean
-    value = ((old_value[0]* old_nr[0])+ (old_value[1] * old_nr[1]) + mean) / (old_nr[0]+ old_nr[1] + N_len);
     // Saving results
     mean = mean / N_len;
+
+    // Complete value: taking into account the old mean
+    flex_num = ((old_value[0] * old_nr[0]) + (old_value[1] * old_nr[1]) + (mean*N_len));
+    flex_den = (old_nr[0] + old_nr[1] + N_len);
+    value = (flex_num) / (flex_den);
+
     fileVALUES << mean << ", 0.0, " << processed << "," << v_size << "," << N_len << "\n";
 
+    // Flex window testing
+    fileMEAN << mean << ", " << N_len << ", " << old_value[0] << ", " << old_nr[0] << ", " << old_value[1] << ", " << old_nr[1] << ", " << value << ", " << flex_num << ", " << flex_den <<  "\n";
     // Update processed data parameters
     processed = i;
     for (int i = 1; i < 5; i++) {
@@ -1343,7 +1356,7 @@ double process_th(unsigned long long int v_size) {
     return value;
 }
 
-void thread_recording()
+void SAS_recording()
 {
     int iterator = 0;
     //
@@ -1374,6 +1387,7 @@ void thread_recording()
         {
             fileFILTERS.open(filter_s);
             fileVALUES.open(th_s);
+            fileMEAN.open(meanName);
         }
 
         sample_nr = recorder_emg1.size();

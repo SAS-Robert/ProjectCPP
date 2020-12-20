@@ -63,6 +63,8 @@ data = (load(full_name))';
 
     plot_nr = plot_nr+1;
     subplot(amount,2,plot_nr)
+    hold on
+    grid on
     plot(t,temp_plot)
     xlim([0 t(1,length(t))])
     title(['Time domain EMG ' num2str(i)], 'Interpreter','none'); 
@@ -71,6 +73,8 @@ data = (load(full_name))';
 
     plot_nr = plot_nr+1;
     subplot(amount,2,plot_nr)
+    hold on
+    grid on
     plot_f = fftEMG(temp_plot,['Frequency domain EMG ' num2str(i)],srate);
     xlim([0 500])
     if(use_filter==1)

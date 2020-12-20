@@ -1,5 +1,15 @@
 function [outData_t, outData_f] = analysis(directory,type,name)
-% type = '0' -> Raw data, 'C' -> SAS filters, 'M' -> use Matlab filters
+% This function plots all the data from a single session, in both time and
+% frequency domain.
+%- directory: input dir variable with the files and folder(s) location.
+%- type: what type of plotting would be done out of the data:
+% type = 0 -> Raw data, 'C' -> SAS filters, 'M' -> use Matlab filters
+%- name: string with the name of the figure.
+%e.g.:
+% subject_dir=dir([C_files_backup '/files/CUL_arm_raw_*']);
+% [RawData_t, RawData_f] = analysis(subject_dir,0,'Raw EMG data');
+% [FiltData_t, FiltData_f] = analysis(subject_dir,'C','Recorded filtered EMG data');
+
 [amount, dummy ] = size(directory);
 plot_nr = 0;
 srate = 1000;

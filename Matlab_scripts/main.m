@@ -163,20 +163,21 @@ peak2_f = fftEMG(peak2,['Frequency domain EMG 2'],srate);
 %% Session 4 - 13th Nov
 data_path = genpath('SAS/session_13Nov');
 addpath(data_path);
+session4_backUp = [C_files_backup '/session_13Nov/'];
 % CUL data
-data_dir_session4 = dir(['SAS/session_13Nov/CUL_filter*.txt']);
+data_dir_session4 = dir([session4_backUp 'CUL_filter*.txt']);
 [amount dummy] = size(data_dir_session4);
 [s4raw_t, s4raw_f] = samples_analysis(data_dir_session4,'C',0,'Recorded raw data');
 [s4c_t, s4c_f] = samples_analysis(data_dir_session4,'C',1,'SAS filtered data');
 
-files_dir = ['SAS/session_13Nov/CUL'];
+files_dir = [session4_backUp '/CUL'];
 for k=1:amount
     name = ['Session 13th Nov, CUL recording nr.' num2str(k)];
     data = plot_th3(files_dir,name,k,'C');    
 end
 
 % JW data 
-data_dir_session4 = dir(['SAS/session_13Nov/JW_filter*.txt']);
+data_dir_session4 = dir([session4_backUp 'JW_filter*.txt']);
 [amount dummy] = size(data_dir_session4);
 files_dir = ['SAS/session_13Nov/JW'];
 for k=1:amount
@@ -199,6 +200,12 @@ end
 [s4raw_t, s4raw_f] = samples_analysis(data_dir_session4,'C',0,'Recorded raw data');
 [s4c_t, s4c_f] = samples_analysis(data_dir_session4,'C',1,'SAS filtered data');
 
+
+% Original files?
+files_dir = [session4_backUp 'CA'];
+k = 3;
+    name = ['Session 13th Nov, CA recording nr.' num2str(k)];
+    data = plot_th3(files_dir,name,k,'C'); 
 %% Remarks: session 4 peaks and transition time
 [s4c_t, s4c_f] = samples_analysis(data_dir_session4(end),'C',1,'SAS filtered data');% peak 1 
 srate = 1000;
@@ -221,8 +228,21 @@ figure('Name','Spectogram on EMG')
 spectrogram(s4c_t)
 
 %% Session 5 - 16th Nov 
-% Testing new and old device on the desk (without stimulator)
+% Testing electrodes placement:
+session5_backUp = [C_files_backup '/session_16Nov/'];
+% all data
+data_dir_session5 = dir([session5_backUp 'CA_leg_filter*.txt']);
 
+% Comparing how different the filtering looks on the lower leg
+samples_analysis(data_dir_session5([1 3 6]),'C',1,'SAS filtered data');
+
+% Comparing how different the filtering looks on the upper leg
+samples_analysis(data_dir_session5([8 11]),'C',1,'SAS filtered data');
+
+files_dir = [session5_backUp 'CA_leg'];
+k = 3;
+    name = ['Session 13th Nov, CA recording nr.' num2str(k)];
+    data = plot_th3(files_dir,name,k,'C'); 
 
 %% Testing different filters on Matlab
 % This is useful to tune filters and choose what would suit better
@@ -272,3 +292,49 @@ for k=2:4
 %    data = plot_th(test_dir_string,name,k,'C');    
     data = plot_th(test_dir_string,name,k,'T');    
 end
+
+
+%% Only th
+% Session 3
+files_dir = [C_files_backup '/test_session_10Nov/CUL'];
+pos = [1:3];
+set_name = {'Retified-Filtered data and mean values - Recording 1';
+            'Retified-Filtered data and mean values - Recording 2';
+            'Retified-Filtered data and mean values - Recording 3';
+               'Session 10th Nov false end-trajectories'};
+data = only_th(files_dir,set_name,pos);
+
+% Session 4
+% CUL
+session4_backUp = [C_files_backup '/session_13Nov/'];
+files_dir = [session4_backUp '/CUL'];
+% the complete disaster toguether
+pos = [1:7];
+set_name = {'Retified-Filtered data and mean values - Recording 1';
+            'Retified-Filtered data and mean values - Recording 2';
+            'Retified-Filtered data and mean values - Recording 3';
+            'Retified-Filtered data and mean values - Recording 4';
+            'Retified-Filtered data and mean values - Recording 5';
+            'Retified-Filtered data and mean values - Recording 6';
+            'Retified-Filtered data and mean values - Recording 7';
+               'Session 13th Nov different thresholds approach'};
+data = only_th(files_dir,set_name,pos);
+
+% only the relevant ones
+pos = [2 4 5];
+set_name = {'Recording 2: threshold = mean*2.5';
+            'Recording 4: threshold = mean + sd/2';
+            'Recording 5: threshold = mean + sd/3';
+            'Session 13th Nov different thresholds approach'};
+data = only_th(files_dir,set_name,pos);
+
+% JW
+session4_backUp = [C_files_backup '/session_13Nov/'];
+files_dir = [session4_backUp '/JW'];
+% all of it
+pos = [1:3];
+set_name = {'Recording 8: threshold = mean + sd/4';
+            'Recording 9: threshold = mean + sd/4';
+            'Recording 10: threshold = mean + sd/4';
+            'Session 13th Nov same threshold'};
+data = only_th(files_dir,set_name,pos);

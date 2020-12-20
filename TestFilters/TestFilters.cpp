@@ -196,7 +196,9 @@ int main(int argc, char* argv[]) {
     // string infileName = "CA_filter_20201113_1503.txt";
     // string infileName = "CA_filter_20201113_1506.txt";
     // string infileName = "CA_filter_20201113_1509.txt";
-    string infileName = "CUL_leg_filter_20201104_1336.txt";
+    // string infileName = "CA_filter_20201113_1512.txt";
+    string infileName = "CA_filter_20201113_1514.txt";
+    // string infileName = "CUL_leg_filter_20201104_1336.txt";
     // string infileName = "CUL_leg_filter_20201104_1330.txt";
 
     infile.open(infileName);
@@ -220,13 +222,13 @@ int main(int argc, char* argv[]) {
     //std::cout << "Values format: "<<values[0]<<"," << values[1]<<"," << values[2]<<"," << values[3]<<"," << values[4]<< endl;
     double raw_value = 0;
 
-    // Filter data
-    fileName = fileDir + "out_" + infileName;//+date_s.c_str() + ".txt";
+    // Filter data  + "out_"
+    fileName = fileDir + infileName;//+date_s.c_str() + ".txt";
     outFile.open(fileName);
 
     std::cout << "Filtering data. Sample amount: "<< channel_raw.size() << endl;
     for(unsigned int i=0; i<channel_raw.size(); i++){
-      raw_value = channel_raw[i]*1000;
+      raw_value = channel_raw[i];
       // SAS Filtering
       Butty_result.push_back(Butty.filter(raw_value));
       B50_result.push_back(B50.filter(Butty_result[i]));

@@ -1,6 +1,14 @@
 function data = only_th(files_dir,name,pos)
-%UNTITLED2 Summary of this function goes here
-%   Detailed explanation goes here
+%- files_dir = location and name of the files.
+%- name = tile of each individual plot and figure title.
+%- pos = array with the concrete elements to be plot from the directory.
+% Example:
+% files_dir = [C_files_backup '/test_session_10Nov/CUL'];
+% pos = [1 3];  % we specifically wanna see only these 2 recordings
+% name = {'Recording nr.1';
+%         'Recording nr.3';
+%         'Some recordings from session 10th Nov'};
+% data = only_th(files_dir,name,pos);
 
 % getting array size
 [dummy amount] = size(pos);
@@ -92,7 +100,8 @@ for i_loop=1:amount
     %title(['Retified-Filtered data and mean values EMG ' num2str(pos(i_loop))]);
     title(char(name(i_loop)));
     xlim([0 t(end)]);
-    ylim([0 max(c_t(3000:end))+0.0002]);
+    %ylim([0 max(c_t(3000:end))+0.2*max(c_t(3000:end))]);
+    ylim([0 1.1*0.0001]);
     xlabel('t (s)');
     ylabel('v (V)');
     
@@ -114,11 +123,13 @@ for i_loop=1:amount
                 ka = 1;
             case 3
                 log_plot = 'm-';    % magenta circle = end of repetition (with stimulator)
-                plot_mc = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) 0.02], log_plot);
+                y_plot_temp = max(c_t(3000:end))+0.2*max(c_t(3000:end));
+                plot_mc = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) y_plot_temp], log_plot);
                 mc = 1;
             case 4
                 log_plot = '-';    % gx green X = start repetition
-                plot_gx = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) 0.02], log_plot, 'Color', [0.4660 0.6740 0.1880]);
+                y_plot_temp = max(c_t(3000:end))+0.2*max(c_t(3000:end));
+                plot_gx = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) y_plot_temp], log_plot, 'Color', [0.4660 0.6740 0.1880]);
                 gx = 1;
             case 5
                 log_plot = 'g^';    % Start training pressed

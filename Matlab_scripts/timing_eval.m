@@ -1,11 +1,11 @@
-function [value_av,value_max,val_samples] = timing_eval(name)
+function [value_av,value_sd,val_samples] = timing_eval(name, pos, goal)
 
 %
 st_th = 1; st_wait = 2; st_running = 3; st_stop = 4; % different states 
 
 % start outputs:
 temp_av = [];
-temp_max = [];
+temp_sd = [];
 temp_samples = [];
     
 for k=1:4
@@ -36,28 +36,52 @@ for k=1:4
     end
     % calculate values 
     t_m = mean(t_t);
-    t_max = max(t_t);
+    t_sd = std(t_t);
     
     % accumulate outputs:
     temp_av = [temp_av t_m];
-    temp_max = [temp_max t_max];
+    temp_sd = [temp_sd t_sd];
     temp_samples = [temp_samples length(t_t)];
 end
-%full_name = strrep(full_name,'_time1_','_time2_'); 
-value_av = temp_av;
-value_max = temp_max;
-val_samples = temp_samples;
+% Conversion to ms
+value_av = temp_av*1000;
+value_av(1) = value_av(1)/10;
+value_sd = temp_sd*1000;       
+val_samples = temp_samples; 
+% Printing into a format to show on the screen
+%fprintf('average = [');
+% fprintf(' %i,',value_av);
+% %fprintf(']\n');
+% 
+% %fprintf('max = [');
+% fprintf(' %i,',value_max);
+% %fprintf(']\n');
+% 
+% %fprintf('samples = [');
+% fprintf(' %i,',temp_samples);
+%fprintf(']\n');
 
-fprintf('average = [');
-fprintf(' %i,',value_av);
-fprintf(']\n');
+% Printing into a format for a .tex table file
+for k=1:length(pos)    
+    fprintf('%i & ',temp_samples(pos(k)));
+    if (abs(value_av(pos(k)))> (abs(goal(k)) + 0.1*abs(goal(k))) )
+        fprintf('\\cellcolor{red!25}');
+    else
+        fprintf('\\cellcolor{green!10}');
+    end
+    fprintf('%f & ',value_av(pos(k)));
+    
+    if (abs(value_sd(pos(k)))> (0.3*abs(goal(k))) )
+        fprintf('\\cellcolor{yellow!25}');
+    end
+    if (k==pos(end))||(pos(k)==4)
+        fprintf('%f \\\\',value_sd(pos(k)));
+    else
+        fprintf('%f & ',value_sd(pos(k)));
+    end
+    fprintf('\n');
+end
+    %fprintf('----------\n');
 
-fprintf('max = [');
-fprintf(' %i,',value_max);
-fprintf(']\n');
-
-fprintf('samples = [');
-fprintf(' %i,',temp_samples);
-fprintf(']\n');
 end
 

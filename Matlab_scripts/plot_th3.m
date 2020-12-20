@@ -1,6 +1,20 @@
 function data = plot_th3(files_dir,name,pos,plot_type)
-%UNTITLED2 Summary of this function goes here
-%   Detailed explanation goes here
+%(--- Third version ---)
+% Plots the data from a single EMG recording in three formats:
+%1. Top-left: raw vs. filtered data in time domain.
+%2. Top-right: raw vs. filtered data in frequency domain.
+%3. Bottom: rectified data adn its average.
+% Options available:
+% - files_dir: string with the address and name of the files.
+% - name: title of the figure with the plots.
+% - plot_type: what type of filtering is going to be done:
+%plot_type = 'C' -> SAS program filters (from the recording).
+%plot_type = 'T' -> Test Matlab filters. This is to compare how
+%new/modified filters would affect the original data.
+%
+% NOTE: use on data from 13th November. The bottom plotting also includes
+% program logs, such as repetitions start/end, stimulation triggers, etc.
+
 
 % getting filtered EMG 
 data_dir=dir([files_dir '_filter_*']);
@@ -153,12 +167,14 @@ if(plot_type=='C')
                 plot_ka = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
                 ka = 1;
             case 3
-                log_plot = 'm-';    % magenta circle = end of repetition (with stimulator)
-                plot_mc = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) 0.02], log_plot);
+                log_plot = 'm-';    % magenta line = end of repetition (with stimulator)
+                y_plot_temp = max(c_t(3000:end))+0.2*max(c_t(3000:end));
+                plot_mc = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) y_plot_temp], log_plot);
                 mc = 1;
             case 4
                 log_plot = '-';    % gx green X = start repetition
-                plot_gx = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) 0.02], log_plot, 'Color', [0.4660 0.6740 0.1880]);
+                y_plot_temp = max(c_t(3000:end))+0.2*max(c_t(3000:end));
+                plot_gx = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) y_plot_temp], log_plot, 'Color', [0.4660 0.6740 0.1880]);
                 gx = 1;
             case 5
                 log_plot = 'g^';    % Start training pressed
