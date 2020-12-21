@@ -245,7 +245,6 @@ void tic();
 bool toc();
 
 // Interface functions
-bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep);
 void keyboard();
 void thread_connect();
 void thread_TCP();
@@ -358,10 +357,6 @@ int main(int argc, char* argv[]) {
 
         // Stimulation calibration process
         case st_testA_go:
-            // if (stim_status.ready && stim_auto_done) {
-            //     printf("SAS PROGRAMME: Switching to manual callibration...\n");
-            //     state_process = st_testM;
-            // }
             // Stimulation too weak: nothing happens
             if (toc() && !ROBERT.isMoving && !stim_auto_done) {
                 printf("SAS test: nothing happened, %2.2f s.\n", toc_lim);
@@ -639,110 +634,6 @@ bool toc() {
 
 // ---------------------------- Functions interface  --------------------------
 
-bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep) {
-    int length = strlen(message);
-    char start_msg[7] = "SCREEN";
-    char finish_msg[7] = "ENDTCP";
-    char delim_msg = 59;  // ASCII Semicolon ; code
-    char end_msg = 59;
-    bool valid_msg = false;
-
-    int comp = 0, pos = 0, pos_cont = 0, j = 0;
-    bool comp_b = false, valid1 = false, valid2 = false, valid3 = false, charac = false, delimt = false;
-    bool check_end = false;
-    //Looking for beginning of the message:
-    while ((j < length) && !valid_msg) {
-        // Beginning of the string found
-        if (((message[j] == start_msg[0]) || (message[j] == finish_msg[0])) && (pos_cont <= 1)) { //start_msg[0]){
-            comp_b = true;
-            pos_cont = 0;
-            comp = 0;
-            pos = j;
-            if (message[j] == finish_msg[0]) {
-                check_end = true;
-            }
-        }
-        // If the beginning is found, start storing the "SCREEN" identifier
-        if ((comp_b) && (pos_cont < 7)) {
-            if (!check_end) {
-                comp = comp + (message[j] - start_msg[j - pos]);
-            }
-            else {
-                comp = comp + (message[j] - finish_msg[j - pos]);
-            }
-            pos_cont++;
-        }
-        // After 6 iteractions, verify that the identifier was found, then compare fields
-        if ((pos_cont >= 6) && (comp == 0)) {
-            if (!check_end) {
-                // Checking delimiters
-                delimt = (message[pos + 6] == delim_msg) && (message[pos + 8] == delim_msg) && (message[pos + 10] == delim_msg);
-                // Checking commands
-                valid1 = (message[pos + 7] >= '0') || (message[pos + 7] <= '9');
-                valid2 = (message[pos + 9] >= '0') || (message[pos + 9] <= '9');
-                // Checking rep value
-                charac = (message[pos + 11] >= 'A') && (message[pos + 11] <= 'Z');
-                valid_msg = (comp == 0) && delimt && valid1 && valid2 && charac;
-                //printf("RESULT: delimiters = %d, valid cmd = %d %d, valid rep = %d, MSG = %d. ", delimt, valid1, valid2, charac, valid_msg);
-            }
-            else {
-                valid_msg = (comp == 0);
-            }
-        }
-        else if (pos_cont >= 6) {
-            comp_b = false; // If not found_set up back
-            check_end = false;
-        }
-        j++;
-    }
-
-    if (!check_end) {
-        //Convert from char to int values
-        int move_value = message[pos + 7] - '0';
-        int user_value = message[pos + 9] - '0';
-
-        int get_status = message[pos + 11];
-        unsigned long long int rep_nr = 0;
-
-        if (get_status == 'R') { // Only necessary to decode the rep number if R
-            int rep_unit100 = message[pos + 12] - '0';
-            int rep_unit10 = message[pos + 13] - '0';
-
-            if (message[pos + 13] == delim_msg) {
-                rep_nr = rep_unit100;
-            }
-            else if (message[pos + 14] == delim_msg) {
-                rep_nr = rep_unit100 * 10 + rep_unit10;
-            }
-            else {
-                int rep_unit1 = message[pos + 14] - '0';
-                rep_nr = rep_unit100 * 100 + rep_unit10 * 10 + rep_unit1;
-            }
-            valid_msg = valid_msg && (rep_nr >= 0) && (rep_nr <= 999); // Check values
-            //printf("funct result: move_key = %d, ingest_key = %d, rep_nr = %d.\n ", move_value, ingest_value, rep_nr);
-        }
-
-        //Outputs
-        if (valid_msg) {
-            stimulator = (RehaMove3_Req_Type)move_value;
-            user = (User_Req_Type)user_value;
-            //status[0] = get_status;
-            status = (ROB_Type)get_status;
-            if (get_status == 'R') {
-                rep = rep_nr;
-            }
-        }
-    } // !check_end
-    else {
-        if (valid_msg) {
-            SCREEN.finish = true;
-        }
-    }
-
-    return valid_msg;
-}
-
-
 void keyboard() {
     int ch;
     ch = _getch();
@@ -865,12 +756,6 @@ void thread_connect() {
         th2_fn = std::chrono::steady_clock::now();
         stimA_diff = th2_fn - th2_st;
         th2_d = ((double)stimA_diff.count());
-        //if (th2_d < th2_cycle) {
-        //    th2_d = (th2_cycle - th2_d) * 1000;
-        //    th2_sleep = 1 + (int)th2_d;
-        //
-        //    Sleep(th2_sleep);
-        //}
         Sleep(100);
 
         time4_end = std::chrono::steady_clock::now();
@@ -884,7 +769,7 @@ void thread_TCP() {
     while (!MAIN_to_all.end && (state_process != st_end) && !SCREEN.finish && tcp_active) {
             // Receive
             SCREEN.check();
-            decode_successful = TCP_decode(SCREEN.recvbuf, Move3_hmi, User_cmd, wololo, TCP_rep);
+            decode_successful = TCP_decode(SCREEN.recvbuf, Move3_hmi, User_cmd, wololo, TCP_rep, SCREEN.finish);
 
             if (decode_successful) {
                 if (SCREEN.display) {
@@ -1051,11 +936,6 @@ void stimulation_set(RehaMove3_Req_Type& code) {
         printf("RehaMove3 message: Stimulation update -> current = %2.2f, ramp points = %d, ramp value = %d\n", stimulator_device.stim.points[0].current, stimulator_device.stim.number_of_points, stimulator_device.stim.ramp);
         //%2.1f is the format to show a float number, 2.1 means 2 units and 1 decimal
     }
-    // else if (code == Move3_stop){
-    //   printf("RehaMove3 message: Stimulation stopped\n");
-    // }else{
-    //   printf("RehaMove3 message: Stimulation values set to initial values (but not sent to device, chiiiiiiiill )\n");
-    // }
     code = Move3_none;
     Move3_cmd = Move3_none;
     Move3_hmi = Move3_none;
@@ -1185,7 +1065,6 @@ void SAS_stimulating()
             stim_fl2 = true;
             stim_status.ready = false;
         }
-        //  stimulator_device.update();
 
         break;
 
@@ -1196,8 +1075,6 @@ void SAS_stimulating()
             fileLOGS << "6.0, " << processed << "\n";
         }
         else {
-            // Move3_cmd = Move3_start;
-              // stimulation_set(Move3_cmd);
             stim_fl0 = false;
             stim_fl1 = false;
             stim_fl2 = false;
@@ -1217,7 +1094,6 @@ void SAS_stimulating()
     if (!stim_timing && stimulator_device.active) {
         stimA_start = std::chrono::steady_clock::now();
         stim_timing = true;
-        //printf("RehaMove3 message: Stimulation time counting.\n");
     }
     if (stim_timing && stimulator_device.active && !stim_timeout) {
         stimA_end = std::chrono::steady_clock::now();
@@ -1359,7 +1235,6 @@ double process_th(unsigned long long int v_size) {
 void SAS_recording()
 {
     int iterator = 0;
-    //
     double mean = 0, temp_value = 0;
     double static value = 0, value_cnt = 0;
     bool st_wait_jump = false;
@@ -1398,7 +1273,6 @@ void SAS_recording()
             }
             if (processed >= th_nr) {
                 rec_threshold = rec_threshold / (sample_nr - th_discard_nr);
-                //rec_threshold = 2.0;
                 std::cout << "Reha Ingest message: threshold = " << rec_threshold <<", old m = "<< old_value[0] << ", old nr = "<< old_nr[0] << endl;
                 rec_status.th = true;
             }

@@ -40,90 +40,6 @@ using namespace std;
 //
 static std::vector<double> recorder_emg1;
 
-// ------------------------------ Function hearders -----------------------------
-void generate_date(char* outStr);
-void get_dir(int argc, char *argv[], string& Outdir);
-bool UDP_decode(char* message, bool& value1, bool& value2);
-string convertToString(char* a, int size);
-
-void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init);
-void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_ml_channel_config values);
-void fill_ml_get_current_data(Smpt_device* const device, Smpt_ml_get_current_data* const ml_get_current_data);
-void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init);
-void fill_dl_power_module(Smpt_device* const device, Smpt_dl_power_module* const dl_power_module);
-void handleInitAckReceived(Smpt_device* const device, const Smpt_ack& ack);
-void handlePowerModuleAckReceived(Smpt_device* const device, const Smpt_ack& ack);
-void handleStopAckReceived(Smpt_device* const device, const Smpt_ack& ack);
-
-// Modified from original Hasomeds examples:
-static void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack)
-{
-	Smpt_dl_send_live_data live_data;
-	float values[5] = { 0 };
-	smpt_get_dl_send_live_data(device, &live_data);
-
-	for (int i = 0; i < live_data.n_channels; i++)
-	{
-		values[i] = live_data.electrode_samples[i].value;
-	}
-	values[4] = (float)live_data.time_offset;
-
-	//value[0] : channel 1, bioimpedance measurement
-	//value[1] : channel 2, emg 1 measurement
-	//value[2] : channel 3, emg 2
-	//value[3] : channel 4, analog signal.
-	//value[4] : time_ofset between last sample and actual sample
-	recorder_emg1.push_back((double)values[1]);
-	//recorder_time.push_back((double)values[4]);
-}
-
-static bool handle_dl_packet_global(Smpt_device* const device)
-{
-	Smpt_ack ack;
-	smpt_last_ack(device, &ack);
-	Smpt_Cmd cmd = (Smpt_Cmd)ack.command_number;
-	bool output = false;
-
-	switch (cmd)
-	{
-	case Smpt_Cmd_Dl_Power_Module_Ack:
-	{
-		handlePowerModuleAckReceived(device, ack);
-		break;
-	}
-	case Smpt_Cmd_Dl_Get_Ack:
-	{
-		//handleGetAckReceived(ack);
-		break;
-	}
-	case Smpt_Cmd_Dl_Init_Ack:
-	{
-		handleInitAckReceived(device, ack);
-		break;
-	}
-	case Smpt_Cmd_Dl_Start_Ack:
-	{
-		//handleStartAckReceived(ack);
-		break;
-	}
-	case Smpt_Cmd_Dl_Stop_Ack:
-	{
-		handleStopAckReceived(device, ack);
-		break;
-	}
-	case Smpt_Cmd_Dl_Send_Live_Data:
-	{
-		handleSendLiveDataReceived(device, ack);
-		output = true;
-		break;
-	}
-	default:
-	{
-		break;
-	}
-	}
-	return output;
-}
 // ---------------------- Variables for process control ---------------------
 typedef enum
 {
@@ -178,6 +94,89 @@ typedef enum
 	User_st				= 5, 		// Start training
 }User_Req_Type;
 
+// ------------------------------ Function hearders -----------------------------
+void generate_date(char* outStr);
+void get_dir(int argc, char* argv[], string& Outdir);
+string convertToString(char* a, int size);
+bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished);
+bool UDP_decode(char* message, bool& value1, bool& value2);
+
+void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init);
+void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_ml_channel_config values);
+void fill_ml_get_current_data(Smpt_device* const device, Smpt_ml_get_current_data* const ml_get_current_data);
+void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init);
+void fill_dl_power_module(Smpt_device* const device, Smpt_dl_power_module* const dl_power_module);
+void handleInitAckReceived(Smpt_device* const device, const Smpt_ack& ack);
+void handlePowerModuleAckReceived(Smpt_device* const device, const Smpt_ack& ack);
+void handleStopAckReceived(Smpt_device* const device, const Smpt_ack& ack);
+
+// Modified from original Hasomeds examples:
+static void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack)
+{
+	Smpt_dl_send_live_data live_data;
+	float values[5] = { 0 };
+	smpt_get_dl_send_live_data(device, &live_data);
+
+	for (int i = 0; i < live_data.n_channels; i++)
+	{
+		values[i] = live_data.electrode_samples[i].value;
+	}
+	values[4] = (float)live_data.time_offset;
+
+	//value[0] : channel 1, bioimpedance measurement
+	//value[1] : channel 2, emg 1 measurement
+	//value[2] : channel 3, emg 2
+	//value[3] : channel 4, analog signal.
+	//value[4] : time_ofset between last sample and actual sample
+	recorder_emg1.push_back((double)values[1]);
+}
+
+static bool handle_dl_packet_global(Smpt_device* const device)
+{
+	Smpt_ack ack;
+	smpt_last_ack(device, &ack);
+	Smpt_Cmd cmd = (Smpt_Cmd)ack.command_number;
+	bool output = false;
+
+	switch (cmd)
+	{
+	case Smpt_Cmd_Dl_Power_Module_Ack:
+	{
+		handlePowerModuleAckReceived(device, ack);
+		break;
+	}
+	case Smpt_Cmd_Dl_Get_Ack:
+	{
+		break;
+	}
+	case Smpt_Cmd_Dl_Init_Ack:
+	{
+		handleInitAckReceived(device, ack);
+		break;
+	}
+	case Smpt_Cmd_Dl_Start_Ack:
+	{
+		break;
+	}
+	case Smpt_Cmd_Dl_Stop_Ack:
+	{
+		handleStopAckReceived(device, ack);
+		break;
+	}
+	case Smpt_Cmd_Dl_Send_Live_Data:
+	{
+		handleSendLiveDataReceived(device, ack);
+		output = true;
+		break;
+	}
+	default:
+	{
+		break;
+	}
+	}
+	return output;
+}
+
 // ------------------------------ Devices -----------------------------
 // Stimulator
 class RehaMove3 {
@@ -212,8 +211,6 @@ public:
 		abort = false;
 		active = false;
 	}
-	// Destructor
-	//~RehaMove3() = delete;
   // Functions
 	void init() {
 		// Stimulation values
@@ -242,7 +239,6 @@ public:
 			fill_ml_get_current_data(&device, &ml_get_current_data);
 			// This last command check if it's received all the data requested
 			smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
-			//std::cout << "Before while: get="<<smpt_get << endl;
 
 			// smpt_next = go to next step -> Process running
 			smpt_next = smpt_check && smpt_port && smpt_get;
@@ -272,7 +268,6 @@ public:
 			smpt_port = false;
 			fill_ml_init(&device, &ml_init);
 			smpt_send_ml_init(&device, &ml_init);
-			//std::cout << "Reha Move3 message: Device ready.\n";
 			ready = true;
 		}
 
@@ -287,7 +282,6 @@ public:
 		stim.points[1].time = 200;
 		stim.points[2].current = -15.0;
 		stim.points[2].time = 200;
-		//printf("RehaMove3 message: Stimulation initial values -> current = %2.2f, ramp points = %d, ramp value = %d\n", stim.points[0].current, stim.number_of_points, stim.ramp);
 
 		printf("Device RehaMove3 ready.\n");
 	};
@@ -306,7 +300,7 @@ public:
 		active = false;
 	};
 	void end() {
-		//  No need to repeat this, since the connectio was successfully stablished and
+		//  No need to repeat this, since the connection was successfully stablished and
 		// in case something went wrong, it'd get fixed on the next step
 		smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
 		if (!smpt_port) {
@@ -426,11 +420,6 @@ public:
 				data_start = true;
 
 			}
-			// if (data_start && !data_printed) {
-			// 	std::cout << "Reha Ingest message: Recording data.\n";
-			// 	data_printed = true;
-			// }
-
 		}
 	};
 	void end() {
@@ -523,11 +512,10 @@ public:
     FD_ZERO(&fds);
     FD_SET(s, &fds);
 		n = select(s, &fds, NULL, NULL, &timeout);
-		// Re-editar esto para que no muestre el mensaje
 		if ((n == 0) || (n == -1))
 		{
-			if(n==0){printf("Timeout\n");}
-			else { printf("Error while receiving.\n"); }
+			if(n==0 && display){printf("Timeout\n");}
+			else if(display) { printf("Error while receiving.\n"); }
 			error = true;
 			error_cnt++;
 		}
@@ -543,10 +531,8 @@ public:
 			}
 			else{
 				if(display){ std::cout << "UDP message not valid" << endl; }
-				//error = true;
 				error_cnt++;
 			}
-			//error = !error;
 		}
 		error_lim = error_cnt >= 10;
 	};
@@ -636,10 +622,9 @@ public:
 		// Wait until timeout or data received.
 		if (display) { printf("TCP Waiting repsonse\n"); }
 		n = select(ConnectSocket, &fds, NULL, NULL, &tv);
-		// Re-editar esto para que no muestre el mensaje
 		if ((n == 0) || (n == -1))
 		{
-			if (n == 0) { printf("TCP Timeout\n"); }
+			if (n == 0 && display) { printf("TCP Timeout\n"); }
 			error = true;
 			Sleep(3000);
 		}
@@ -774,7 +759,7 @@ public:
 			WSACleanup();
 			error = true;
 		}
-		else { //if (display)
+		else { 
 			printf("TCP Listening started on port %s. Waiting for a client.\n", PORTc);
 		}
 		// Accept a client socket
@@ -802,8 +787,6 @@ public:
     memset(senbuf, '\0', BUFLEN);
     new_message = false;
     error = false;
-    // FD_ZERO(&fds);
-    // FD_SET(ClientSocket, &fds);
 	iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
   	if(iResult>0){
 		new_message = true;
@@ -821,7 +804,6 @@ public:
 
 	void stream() {
 			iSendResult = 0;
-			//strcpy(senbuf, "SAS;10.4;3;2.5;"); // New format
 			if(display){ printf("TCP sending: %s\n", senbuf); }
 			iSendResult = send(ClientSocket, senbuf, iResult, 0);
 			if (iSendResult == SOCKET_ERROR) {

@@ -1,6 +1,23 @@
 function [value_av,value_sd,val_samples] = timing_eval(name, pos, goal)
-
+% It evaluates the average, standard deviation of the different time
+% measurements of a single recording.
+% - name: srting with full name directory + name + '_time1_' + whatever time.
+% - pos: select time to give results from (1 to 4).
+% - goal: ideal time that the results aim to achieve. If any of the results
+% differ too much from the goal, it will be printed with a red/yellow
+% color.
 %
+%e.g.:
+% location_name =
+% 'C:\Users\Carolina\Desktop\Internship\Software\C_files_backup\test_09Dec\';
+% file_name = 'CA_upper_leg_time1_20201209_1700.txt';
+% full_name = [location_name file_name];
+% timing = [1:4];           % results from all measurements
+% goal = [10 10 33 150];    % [ideal_t1 ideal_t2 ideal_t3 ideal_t4];
+% [value_av,value_sd,val_samples] = timing_eval(full_name, timing, goal);
+%
+% NOTE: The results are printed on the command screen in a LaTeX format.
+
 st_th = 1; st_wait = 2; st_running = 3; st_stop = 4; % different states 
 
 % start outputs:

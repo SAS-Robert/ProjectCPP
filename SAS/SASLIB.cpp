@@ -46,7 +46,6 @@ string convertToString(char* a, int size)
 void get_dir(int argc, char *argv[], string& Outdir){
   //Gets the current directory of the programme, but for files
   std::stringstream sst(argv[0]);
-  //char delimeter='/'; //for Linux
   char delimeter='\\'; //for Windows
   std::string part, full="", part_prev="";
   while (std::getline(sst, part, delimeter))
@@ -87,7 +86,6 @@ bool UDP_decode(char* message, bool& value1, bool& value2)
   for(int j=0; j<=3; j++){
     comp_t = comp_t + message[j]-b_true[j];
     comp_f = comp_f + message[j]-b_false[j];
-    //printf(" %c->%dT,%dF \\", message[j],comp_t, comp_f);
   }
   if((comp_t==0)||(comp_f==0)){
     valid1 = true;
@@ -118,12 +116,109 @@ bool UDP_decode(char* message, bool& value1, bool& value2)
   if (valid_msg){
     value1 = b_v1;
     value2 = b_v2;
-    //printf("UDP interpretation: isMoving = %d, Reached = %d\n", b_v1, b_v2);
   }
-//  else{
-//    printf("UDP message not valid\n");
-//  }
   return valid_msg;
+}
+
+bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished) {
+    int length = strlen(message);
+    char start_msg[7] = "SCREEN";
+    char finish_msg[7] = "ENDTCP";
+    char delim_msg = 59;  // ASCII Semicolon ; code
+    char end_msg = 59;
+    bool valid_msg = false;
+
+    int comp = 0, pos = 0, pos_cont = 0, j = 0;
+    bool comp_b = false, valid1 = false, valid2 = false, valid3 = false, charac = false, delimt = false;
+    bool check_end = false;
+    //Looking for beginning of the message:
+    while ((j < length) && !valid_msg) {
+        // Beginning of the string found
+        if (((message[j] == start_msg[0]) || (message[j] == finish_msg[0])) && (pos_cont <= 1)) { //start_msg[0]){
+            comp_b = true;
+            pos_cont = 0;
+            comp = 0;
+            pos = j;
+            if (message[j] == finish_msg[0]) {
+                check_end = true;
+            }
+        }
+        // If the beginning is found, start storing the "SCREEN" identifier
+        if ((comp_b) && (pos_cont < 7)) {
+            if (!check_end) {
+                comp = comp + (message[j] - start_msg[j - pos]);
+            }
+            else {
+                comp = comp + (message[j] - finish_msg[j - pos]);
+            }
+            pos_cont++;
+        }
+        // After 6 iteractions, verify that the identifier was found, then compare fields
+        if ((pos_cont >= 6) && (comp == 0)) {
+            if (!check_end) {
+                // Checking delimiters
+                delimt = (message[pos + 6] == delim_msg) && (message[pos + 8] == delim_msg) && (message[pos + 10] == delim_msg);
+                // Checking commands
+                valid1 = (message[pos + 7] >= '0') || (message[pos + 7] <= '9');
+                valid2 = (message[pos + 9] >= '0') || (message[pos + 9] <= '9');
+                // Checking rep value
+                charac = (message[pos + 11] >= 'A') && (message[pos + 11] <= 'Z');
+                valid_msg = (comp == 0) && delimt && valid1 && valid2 && charac;
+            }
+            else {
+                valid_msg = (comp == 0);
+            }
+        }
+        else if (pos_cont >= 6) {
+            comp_b = false; // If not found_set up back
+            check_end = false;
+        }
+        j++;
+    }
+
+    if (!check_end) {
+        //Convert from char to int values
+        int move_value = message[pos + 7] - '0';
+        int user_value = message[pos + 9] - '0';
+
+        int get_status = message[pos + 11];
+        unsigned long long int rep_nr = 0;
+
+        if (get_status == 'R') { // Only necessary to decode the rep number if R
+            int rep_unit100 = message[pos + 12] - '0';
+            int rep_unit10 = message[pos + 13] - '0';
+
+            if (message[pos + 13] == delim_msg) {
+                rep_nr = rep_unit100;
+            }
+            else if (message[pos + 14] == delim_msg) {
+                rep_nr = rep_unit100 * 10 + rep_unit10;
+            }
+            else {
+                int rep_unit1 = message[pos + 14] - '0';
+                rep_nr = rep_unit100 * 100 + rep_unit10 * 10 + rep_unit1;
+            }
+            valid_msg = valid_msg && (rep_nr >= 0) && (rep_nr <= 999); // Check values
+        }
+
+        //Outputs
+        if (valid_msg) {
+            stimulator = (RehaMove3_Req_Type)move_value;
+            user = (User_Req_Type)user_value;
+            //status[0] = get_status;
+            status = (ROB_Type)get_status;
+            if (get_status == 'R') {
+                rep = rep_nr;
+            }
+        }
+    } // !check_end
+    else {
+        if (valid_msg) {
+            finished = true;
+        }
+    }
+
+    return valid_msg;
 }
 //=========================== Hasomed fcn ===============================
 void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init)
@@ -148,23 +243,6 @@ void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, 
     ml_update->channel_config[Smpt_Channel_Red].points[1].time = values.points[1].time;
     ml_update->channel_config[Smpt_Channel_Red].points[2].current = values.points[2].current;
     ml_update->channel_config[Smpt_Channel_Red].points[2].time = values.points[2].time;
-
-    // Original code
-    // ml_update->channel_config[Smpt_Channel_Red].number_of_points = 3;  /* Set the number of points */
-    // ml_update->channel_config[Smpt_Channel_Red].ramp = 3;              /* Three lower pre-pulses   */
-    // ml_update->channel_config[Smpt_Channel_Red].period = 20;           /* Frequency: 50 Hz */
-    //
-    // /* Set the stimulation pulse */
-    // /* First point, current: 20 mA, positive, pulse width: 200 �s */
-    // ml_update->channel_config[Smpt_Channel_Red].points[0].current = 50;
-    // ml_update->channel_config[Smpt_Channel_Red].points[0].time = 200;
-    //
-    // /* Second point, pause 100 �s */
-    // ml_update->channel_config[Smpt_Channel_Red].points[1].time = 100;
-    //
-    // /* Third point, current: -20 mA, negative, pulse width: 200 �s */
-    // ml_update->channel_config[Smpt_Channel_Red].points[2].current = -50;
-    // ml_update->channel_config[Smpt_Channel_Red].points[2].time = 200;
 }
 
 void fill_ml_get_current_data(Smpt_device* const device, Smpt_ml_get_current_data* const ml_get_current_data)
@@ -187,12 +265,8 @@ void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init)
 
     dl_init->gain_ch1 = Smpt_Dl_Init_Gain_Ch1_20x;
     dl_init->live_data_mode_flag = true;
-    // Issue here: it does not matter the value, it does not respond
+    // Currently there are no pre-filtering options available
     dl_init->filter = Smpt_Dl_Dsp_Filter_off;    /* = 0 no filter is activated*/
-    // dl_init->filter = Smpt_Dl_Dsp_Filter_001;    /* = 1 predefined Filter casade or block for this notation*/
-    // dl_init->filter = Smpt_Dl_Dsp_Filter_002;    /* = 2 predefined Filter casade or block for this notation*/
-    // dl_init->filter = Smpt_Dl_Dsp_Filter_003;    /* = 3 predefined Filter casade or block for this notation*/
-    // dl_init->filter = Smpt_Dl_Dsp_Filter_Last;   /* = 3
 }
 
 void fill_dl_power_module(Smpt_device* const device, Smpt_dl_power_module* const dl_power_module)

@@ -294,7 +294,7 @@ for k=2:4
 end
 
 
-%% Only th
+%% Only th for the report
 % Session 3
 files_dir = [C_files_backup '/test_session_10Nov/CUL'];
 pos = [1:3];
@@ -338,3 +338,181 @@ set_name = {'Recording 8: threshold = mean + sd/4';
             'Recording 10: threshold = mean + sd/4';
             'Session 13th Nov same threshold'};
 data = only_th(files_dir,set_name,pos);
+
+%% ===================== Others demo and data =====================
+%% Demo 18th November
+subject1_name = [data_address '/subject1'];
+subject1_dir=dir([subject1_name '_filter*']);
+[amount dummy] = size(subject1_dir);
+% Only raw and filtered EMG data
+[emg_raw_t1, emg_raw_f] = samples_analysis(subject1_dir,'C',0,'Raw data EMG demo 1');
+[emg_f_t1, emg_f_f] = samples_analysis(subject1_dir,'C',1,'SAS filtered EMG demo 1');
+
+% - Individually 
+% Time domain + Frequency domain + mean in a single figure 
+% set1 = upper leg.  set 2 = lower leg
+set1 = [1:3];
+for k=1:length(set1)
+    name = ['Demo 18th Nov, upper leg recording nr.' num2str(set1(k))];
+    data = plot_th3(subject1_name,name,set1(k),'C');    
+end
+
+set2 = 4;
+name = ['Demo 18th Nov, lower leg recording nr.' num2str(set2)];
+data = plot_th3(subject1_name,name,set2,'C');  
+
+% - Multiple toguether
+set_com = [1:3];
+set_com_name = {'Lower leg recording 1';
+                'Lower leg recording 2';
+                'Lower leg recording 3';
+               'Demo 18th Nov, lowe leg recording'};
+data = only_th(subject1_name,set_com_name,set_com);
+
+%% Session 23-11-2020
+% I do not remember what we wanted to do in this session or why
+% Files dir
+data_path = genpath('SAS/session_23Nov');
+addpath(data_path);
+% CA data
+data_dir_session6 = dir(['SAS/session_23Nov/CUL_lower_leg_filter*.txt']);
+[amount dummy] = size(data_dir_session6);
+files_dir = ['SAS/session_23Nov/CUL_lower_leg'];
+
+% individually 
+for k=1:amount
+    name = ['Session 23rd Nov, CUL lower leg recording nr.' num2str(k)];
+    data = plot_th3(files_dir,name,k,'C');    
+end
+
+%% Demo 26-11-2020 -> This was with the FOCUS group = clinical people
+% Files dir
+data_path = genpath([C_files_backup '/demo_26Nov']);
+addpath(data_path);
+% CA data
+data_dir_session6 = dir([C_files_backup '/demo_26Nov/CA_lower_leg1_filter*.txt']);
+[amount dummy] = size(data_dir_session6);
+files_dir = [C_files_backup '/demo_26Nov/CA_lower_leg1'];
+
+% individually 
+for k=1:amount
+    name = ['Demo 26th Nov, CA lower leg(1) recording nr.' num2str(k)];
+    data = plot_th3(files_dir,name,k,'C');    
+end
+
+[s6raw_t, s6raw_f] = samples_analysis(data_dir_session6(end),'C',0,'Recorded raw data');
+[s6c_t, s6c_f] = samples_analysis(data_dir_session6(end),'C',1,'SAS filtered data');
+
+% V2 data
+data_dir_session6 = dir(['SAS/demo_26Nov/V2_upper_leg_filter*.txt']);
+[amount dummy] = size(data_dir_session6);
+files_dir = ['SAS/demo_26Nov/V2_upper_leg'];
+
+% individually 
+for k=1:amount
+    name = ['Demo 26th Nov, Volunteer 2 upper leg recording nr.' num2str(k)];
+    data = plot_th3(files_dir,name,k,'C');    
+end
+
+%% ===================== Timing perfomance evaluation =====================
+% Time analysis perfomance 
+% -time 1 = from when threshold has been passed until the stimulator starts (FES_cnt)
+% -time 2 = filtering perfomance (EMG_tic)
+% -time 3 = thread 1 process perfomance: state machine + recorder + stimulator time
+% -time 4 = thread 2 interface perfomance: keyboard + UDP + TCP time
+
+% Session 4 13th Nov
+files1=dir([C_files_backup '/session_13Nov/CUL_time1_*']);
+[amount1, dummy ] = size(files1);
+files2=dir([C_files_backup '/session_13Nov/JW_time1_*']);
+[amount2, dummy ] = size(files2);
+files3=dir([C_files_backup '/session_13Nov/CA_time1_*']);
+[amount3, dummy ] = size(files3);
+
+% times 1 and 2
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount1
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
+end
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount2
+    fprintf('%%Recording %i\n', (k+amount1));
+    fprintf('%i & ', (k+amount1));
+    [value_av,value_max,val_samples] = timing_eval([files2(k).folder '\' files2(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
+end
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount3
+    fprintf('%%Recording %i\n', (k+amount1+amount2));
+    fprintf('%i & ', (k+amount1+amount2));
+    [value_av,value_max,val_samples] = timing_eval([files3(k).folder '\' files3(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
+end
+
+% times 3 and 4 (thread 1 and thread 2)
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount1
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [3 4], [100 150]);
+    fprintf('\\hline\n');
+end
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount2
+    fprintf('%%Recording %i\n', (k+amount1));
+    fprintf('%i & ', (k+amount1));
+    [value_av,value_max,val_samples] = timing_eval([files2(k).folder '\' files2(k).name], [3 4], [100 150]);
+    fprintf('\\hline\n');
+end
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount3
+    fprintf('%%Recording %i\n', (k+amount1+amount2));
+    fprintf('%i & ', (k+amount1+amount2));
+    [value_av,value_max,val_samples] = timing_eval([files3(k).folder '\' files3(k).name], [3 4], [100 150]);
+    fprintf('\\hline\n');
+end
+
+% Session 5 16th Nov
+files1=dir([C_files_backup '/session_16Nov/CA_leg_time1_*']);
+[amount, dummy ] = size(files1);
+% recording 10 and 11 not valid
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_sd,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
+end
+% times 3 and 4 (thread 1 and thread 2)
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:amount
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [3 4], [100 150]);
+    fprintf('\\hline\n');
+end
+
+% Session 6 9th December
+files1=dir(['C:\Users\Carolina\Desktop\Internship\Software\C_files_backup\test_09Dec\' 'CA_upper_leg_time1_*.txt']);
+[amount, dummy ] = size(files1);
+
+% recording 10 and 11 not valid
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:7
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_sd,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [1 2], [10 10]);
+    fprintf('\\hline\n');
+end
+% times 3 and 4 (thread 1 and thread 2)
+fprintf('%%MATLAB GENERATED DATA\n');
+for k=1:9
+    fprintf('%%Recording %i\n', k);
+    fprintf('%i & ', k);
+    [value_av,value_max,val_samples] = timing_eval([files1(k).folder '\' files1(k).name], [3 4], [33 125]);
+    fprintf('\\hline\n');
+end
+

@@ -1,4 +1,5 @@
 %% Testing the flexible window:
+% Use this only in further development in case is needed.
 path = pwd;
 % Add source directories
 data_path = genpath('SAS/files');
