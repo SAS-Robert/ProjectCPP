@@ -120,7 +120,10 @@ bool UDP_decode(char* message, bool& value1, bool& value2)
   return valid_msg;
 }
 
-bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished) {
+// Old
+// bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished) {
+// New 
+bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished, Smpt_Channel& sel_ch) {
     int length = strlen(message);
     char start_msg[7] = "SCREEN";
     char finish_msg[7] = "ENDTCP";
@@ -161,9 +164,10 @@ bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& us
                 // Checking commands
                 valid1 = (message[pos + 7] >= '0') || (message[pos + 7] <= '9');
                 valid2 = (message[pos + 9] >= '0') || (message[pos + 9] <= '9');
+                valid3 = (message[pos + 15] >= '0') || (message[pos + 15] <= '3');
                 // Checking rep value
                 charac = (message[pos + 11] >= 'A') && (message[pos + 11] <= 'Z');
-                valid_msg = (comp == 0) && delimt && valid1 && valid2 && charac;
+                valid_msg = (comp == 0) && delimt && valid1 && valid2 && charac && valid3;
             }
             else {
                 valid_msg = (comp == 0);
@@ -180,6 +184,7 @@ bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& us
         //Convert from char to int values
         int move_value = message[pos + 7] - '0';
         int user_value = message[pos + 9] - '0';
+        int ch_value = message[pos + 15] - '0';
 
         int get_status = message[pos + 11];
         unsigned long long int rep_nr = 0;
@@ -205,7 +210,7 @@ bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& us
         if (valid_msg) {
             stimulator = (RehaMove3_Req_Type)move_value;
             user = (User_Req_Type)user_value;
-            //status[0] = get_status;
+            sel_ch = (Smpt_Channel)ch_value;
             status = (ROB_Type)get_status;
             if (get_status == 'R') {
                 rep = rep_nr;
@@ -228,22 +233,46 @@ void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init)
     ml_init->packet_number = smpt_packet_number_generator_next(device);
 }
 
-void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_ml_channel_config values)
+//New
+void fill_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update, Smpt_Channel sel_ch, bool enable,Smpt_ml_channel_config values)
+//void fill_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update, Smpt_ml_channel_config values)
 {
     /* Clear ml_update and set the data */
     smpt_clear_ml_update(ml_update);
-    ml_update->enable_channel[Smpt_Channel_Red] = true;  /* Enable channel red */
+    //Smpt_Channel sel_ch = Smpt_Channel_Red;
+    //ml_update->enable_channel[sel_ch] = true; /* Enable channel red */
+    ml_update->enable_channel[sel_ch] = enable;
     ml_update->packet_number = smpt_packet_number_generator_next(device);
 
-    ml_update->channel_config[Smpt_Channel_Red].number_of_points = values.number_of_points;
-    ml_update->channel_config[Smpt_Channel_Red].ramp = values.ramp;
-    ml_update->channel_config[Smpt_Channel_Red].period = values.period;
-    ml_update->channel_config[Smpt_Channel_Red].points[0].current = values.points[0].current;
-    ml_update->channel_config[Smpt_Channel_Red].points[0].time = values.points[0].time;
-    ml_update->channel_config[Smpt_Channel_Red].points[1].time = values.points[1].time;
-    ml_update->channel_config[Smpt_Channel_Red].points[2].current = values.points[2].current;
-    ml_update->channel_config[Smpt_Channel_Red].points[2].time = values.points[2].time;
+    ml_update->channel_config[sel_ch].number_of_points = values.number_of_points;
+    ml_update->channel_config[sel_ch].ramp = values.ramp;
+    ml_update->channel_config[sel_ch].period = values.period;
+    ml_update->channel_config[sel_ch].points[0].current = values.points[0].current;
+    ml_update->channel_config[sel_ch].points[0].time = values.points[0].time;
+    ml_update->channel_config[sel_ch].points[1].time = values.points[1].time;
+    ml_update->channel_config[sel_ch].points[2].current = values.points[2].current;
+    ml_update->channel_config[sel_ch].points[2].time = values.points[2].time;
 }
+
+//New
+void enable_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update, Smpt_Channel sel_ch, bool enable)
+{
+    // Clear ml_update and set the data
+    smpt_clear_ml_update(ml_update);
+    //Smpt_Channel sel_ch = Smpt_Channel_Red;
+    ml_update->enable_channel[sel_ch] = enable;
+    ml_update->packet_number = smpt_packet_number_generator_next(device);
+
+    ml_update->channel_config[sel_ch].number_of_points = 3;
+    ml_update->channel_config[sel_ch].ramp = 3;
+    ml_update->channel_config[sel_ch].period = 20;
+    ml_update->channel_config[sel_ch].points[0].current = 0.0;
+    ml_update->channel_config[sel_ch].points[0].time = 200;
+    ml_update->channel_config[sel_ch].points[1].time = 200;
+    ml_update->channel_config[sel_ch].points[2].current = 0.0;
+    ml_update->channel_config[sel_ch].points[2].time = 200;
+}
+
 
 void fill_ml_get_current_data(Smpt_device* const device, Smpt_ml_get_current_data* const ml_get_current_data)
 {

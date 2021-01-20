@@ -43,19 +43,20 @@ static std::vector<double> recorder_emg1;
 // ---------------------- Variables for process control ---------------------
 typedef enum
 {
-    Move3_none        = 0,    // Nothing to do
-    Move3_incr     	  = 1,    // Increment current
-    Move3_decr        = 2,    // Reduce current
-    Move3_ramp_more   = 3,    // Increase ramp
-    Move3_ramp_less	  = 4,    // Reduce ramp
-    Move3_stop        = 5,    // Stop Stimulating
-    Move3_start       = 6,    // Stimulate with initial values
-		Move3_done		  	= 7, 		// Finish callibration
-		Move3_Hz_mr				= 8, 		// Increase frequency
-		Move3_Hz_ls				= 9, 		// Decrease Frequency
-		Move3_us_mr				= 10, 	// Increase pulse width
-		Move3_us_ls				= 11,		// Decrease pulse width
-}RehaMove3_Req_Type;
+	Move3_none = 0,		 // Nothing to do
+	Move3_incr = 1,		 // Increment current
+	Move3_decr = 2,		 // Reduce current
+	Move3_ramp_more = 3, // Increase ramp
+	Move3_ramp_less = 4, // Reduce ramp
+	Move3_stop = 5,		 // Stop Stimulating
+	Move3_start = 6,	 // Stimulate with initial values
+	Move3_done = 7,		 // Finish callibration
+	Move3_en_ch = 8,	 //Enable/disable channel
+	Move3_Hz_mr = 9,	 // Increase frequency
+	Move3_Hz_ls = 10,	 // Decrease Frequency
+	Move3_us_mr = 11,	 // Increase pulse width
+	Move3_us_ls = 12,	 // Decrease pulse width
+} RehaMove3_Req_Type;
 
 typedef enum
 {
@@ -98,18 +99,21 @@ typedef enum
 void generate_date(char* outStr);
 void get_dir(int argc, char* argv[], string& Outdir);
 string convertToString(char* a, int size);
-bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished);
+bool TCP_decode(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished, Smpt_Channel& sel_ch);
 bool UDP_decode(char* message, bool& value1, bool& value2);
 
 void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init);
-void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_ml_channel_config values);
-void fill_ml_get_current_data(Smpt_device* const device, Smpt_ml_get_current_data* const ml_get_current_data);
+//void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_ml_channel_config values);
+
+void fill_ml_get_current_data(Smpt_device *const device, Smpt_ml_get_current_data *const ml_get_current_data);
 void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init);
 void fill_dl_power_module(Smpt_device* const device, Smpt_dl_power_module* const dl_power_module);
 void handleInitAckReceived(Smpt_device* const device, const Smpt_ack& ack);
 void handlePowerModuleAckReceived(Smpt_device* const device, const Smpt_ack& ack);
 void handleStopAckReceived(Smpt_device* const device, const Smpt_ack& ack);
 
+void fill_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update, Smpt_Channel sel_ch, bool enable, Smpt_ml_channel_config values);
+void enable_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update, Smpt_Channel sel_ch, bool enable);
 // Modified from original Hasomeds examples:
 static void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack)
 {
@@ -192,9 +196,11 @@ private:
 
 public:
     bool ready, active;
-    Smpt_ml_channel_config stim;
-    // From main:
-    bool abort;
+    //Smpt_ml_channel_config stim;
+	Smpt_ml_channel_config stim[4]; // New
+	bool stim_act[4] = {true, false, false, false};
+	// From main:
+	bool abort;
 
 	// Constructor
 	RehaMove3(char* port) {
@@ -213,16 +219,18 @@ public:
 	}
   // Functions
 	void init() {
+// Old
 		// Stimulation values
-		stim.number_of_points = 3;  //* Set the number of points
-		stim.ramp = 3;              //* Three lower pre-pulses
-		stim.period = 20;           //* Frequency: 50 Hz
+		stim[Smpt_Channel_Red].number_of_points = 3;  // Set the number of points
+		stim[Smpt_Channel_Red].ramp = 3;              // Three lower pre-pulses
+		stim[Smpt_Channel_Red].period = 20;           // Frequency: 50 Hz
 		// Set the stimulation pulse
-		stim.points[0].current = 0;
-		stim.points[0].time = 200;
-		stim.points[1].time = 200;
-		stim.points[2].current = 0;
-		stim.points[2].time = 200;
+		stim[Smpt_Channel_Red].points[0].current = 0;
+		stim[Smpt_Channel_Red].points[0].time = 200;
+		stim[Smpt_Channel_Red].points[1].time = 200;
+		stim[Smpt_Channel_Red].points[2].current = 0;
+		stim[Smpt_Channel_Red].points[2].time = 200;
+		
 		// Start Process
 		printf("Reha Move3 message: Initializing device on port %s... ", port_name_rm);//<<port_name_rm<<endl;
 		while (!smpt_next) {
@@ -231,10 +239,11 @@ public:
 			// Request ID Data
 			packet = smpt_packet_number_generator_next(&device);
 			smpt_send_get_device_id(&device, packet);
-			//
-			fill_ml_init(&device, &ml_init);
+			
+			fill_ml_init(&device, &ml_init); 
 			smpt_send_ml_init(&device, &ml_init);
-			fill_ml_update(&device, &ml_update, stim);
+			fill_ml_update(&device, &ml_update, Smpt_Channel_Red, stim_act[Smpt_Channel_Red], stim[Smpt_Channel_Red]); // <- comment out this one
+			//enable_ml_update(&device, &ml_update, Smpt_Channel_Red, true); //New
 			smpt_send_ml_update(&device, &ml_update);
 			fill_ml_get_current_data(&device, &ml_get_current_data);
 			// This last command check if it's received all the data requested
@@ -270,29 +279,67 @@ public:
 			smpt_send_ml_init(&device, &ml_init);
 			ready = true;
 		}
-
-		// Update values
+// Old
+/*		// Update values
 		stim.number_of_points = 3;  //* Set the number of points
 		stim.ramp = 3;              //* Three lower pre-pulses
 		stim.period = 20;           //* Frequency: 50 Hz
 		// Set the stimulation pulse
-
 		stim.points[0].current = 15.0;
 		stim.points[0].time = 200;
 		stim.points[1].time = 200;
 		stim.points[2].current = -15.0;
 		stim.points[2].time = 200;
+*/
+		// New
+
+		for(int k =0; k<4; k++){
+			stim[k].number_of_points = 3;  //* Set the number of points
+			stim[k].ramp = 3;              //* Three lower pre-pulses
+			stim[k].period = 20;           //* Frequency: 50 Hz
+			// Set the stimulation pulse
+			stim[k].points[0].current = 15.0;
+			stim[k].points[0].time = 200;
+			stim[k].points[1].time = 200;
+			stim[k].points[2].current = -15.0;
+			stim[k].points[2].time = 200;
+		}
 
 		printf("Device RehaMove3 ready.\n");
 	};
 	void update() {
-		fill_ml_update(&device, &ml_update, stim);
+		fill_ml_update(&device, &ml_update, Smpt_Channel_Red, stim_act[Smpt_Channel_Red], stim[Smpt_Channel_Red]);
 		smpt_send_ml_update(&device, &ml_update);
 
 		fill_ml_get_current_data(&device, &ml_get_current_data);
 		smpt_send_ml_get_current_data(&device, &ml_get_current_data);
-		active = true;
+		active = stim_act[Smpt_Channel_Red];
 	};
+	 //New
+	void update2(Smpt_Channel sel_ch) {
+		fill_ml_update(&device, &ml_update, sel_ch, stim_act[sel_ch], stim[sel_ch]);
+		smpt_send_ml_update(&device, &ml_update);
+
+		fill_ml_get_current_data(&device, &ml_get_current_data);
+		smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+		active = stim_act[Smpt_Channel_Red] || stim_act[Smpt_Channel_Blue] || stim_act[Smpt_Channel_Black] || stim_act[Smpt_Channel_White];
+	};
+	
+	void enable(Smpt_Channel sel_ch, bool enable){
+		// enable = true, channel is active, enable = false, channel is disabled
+		//enable_ml_update(&device, &ml_update, sel_ch, enable);
+		//smpt_send_ml_update(&device, &ml_update);
+
+		//fill_ml_get_current_data(&device, &ml_get_current_data);
+		//smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+		stim_act[sel_ch] = enable;
+
+		if (enable){
+			printf("Chanel %i is enabled\n", sel_ch);
+		}else{
+			printf("Chanel %i is not enabled\n", sel_ch);
+		}
+	}
 	void pause() {
 		smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
 		fill_ml_init(&device, &ml_init);

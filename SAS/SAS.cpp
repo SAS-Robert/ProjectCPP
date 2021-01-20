@@ -111,7 +111,7 @@ RehaIngest_Req_Type Inge_key = Inge_none;
 RehaIngest_Req_Type Inge_hmi = Inge_none;
 User_Req_Type User_cmd = User_none;
 
-char port_stim[5] = "COM6";
+char port_stim[5] = "COM5";
 RehaMove3 stimulator_device(port_stim);
 
 char port_rec[5] = "COM4";
@@ -155,7 +155,6 @@ int TCP_rep = 20;
 ROB_Type screen_status;
 bool start_train = false;
 unsigned long long int sample_nr = 0;
-float gain_th = 0.0;
 // ------------------------- Stimulator calibration  ------------------------
 // Current and ramp increments
 // Manual mode = the user can only do 1 incremet at the time and with these values
@@ -166,9 +165,12 @@ uint16_t Dwidth = 10;     // us increment
 // to make the calibration faster
 float Dcurr_aut_low = 0.1, Dcurr_aut_med = 0.5, Dcurr_aut_high = 1;
 uint8_t Dramp_aut_low = 3, Dramp_aut_med = 4, Dramp_aut_high = 5, Dnr_points_auto = 1;
-
+// New
+int calCycle_nr = 0, calCycle_lim = 5;
+Smpt_Channel hmi_channel = Smpt_Channel_Red;
 // State process variables
-bool stim_done = false, stim_userX = false, stim_auto_done = false;
+bool stim_done = false,
+stim_userX = false, stim_auto_done = false;
 
 // Stimulation timing settings
 double stimA_cycle = 8.0;                              // how long the stimulator is allowed to be active (seconds)
@@ -249,7 +251,7 @@ void keyboard();
 void thread_connect();
 void thread_TCP();
 // Devices functions
-void stimulation_set(RehaMove3_Req_Type& code);
+void stimulation_set(RehaMove3_Req_Type& code, Smpt_Channel sel_ch);
 static void SAS_stimulating();
 
 static double process_data_iir(unsigned long long int N_len);
@@ -362,20 +364,22 @@ int main(int argc, char* argv[]) {
                 printf("SAS test: nothing happened, %2.2f s.\n", toc_lim);
                 state_process = st_testA_stop;
                 tic();
+                calCycle_nr++; // New for testing
             }
             // Stimulation not strong enough: it moves, but it does not reach the end
             // in this case it re-starts the tic, but if at the end it does not Reach it, it'll set a longer break
             if (!toc() && ROBERT.isMoving && !ROBERT.Reached && !stimA_start_b) {
-                tic();
-                toc_lim = 2;
+                //tic();
+                toc_lim = 7;
                 stimA_start_b = true;
                 printf("SAS test: Movement detected, added %2.2f s.\n", toc_lim);
             }
             if (stimA_start_b && !ROBERT.Reached && toc()) {
                 printf("SAS test: Stopping movement and break of %2.2f s\n", toc_lim);
                 state_process = st_testA_stop;
+                toc_lim = 10;
                 tic();
-                toc_lim = 5;
+                calCycle_nr++; // New for testing
             }
             // Stimulation values OK: Reached End Point
             if (stim_auto_done && toc()) {
@@ -402,12 +406,24 @@ int main(int argc, char* argv[]) {
             break;
 
         case st_testA_stop:
-
             // Quit automatic calibration
             if (stim_userX && !stimulator_device.active) {
                 state_process = st_testM;
                 printf("SAS PROGRAMME: Quitting automatic callibration. Starting manual...\n");
                 if (!tcp_active) {
+                    std::cout << "===================================" << endl;
+                    std::cout << "---> Stimulator controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
+                    std::cout << "-Q = Stop stimulation.\n-E = Re-start stimulation.\n-X = end current calibration (manual or automatic).\n\n";
+                    std::cout << "===================================" << endl;
+                }
+            }
+            // Abort automatic calibration if it has run for too long
+            else if ((calCycle_nr >= calCycle_lim) || (stimulator_device.stim[Smpt_Channel_Red].points[0].current>=40))
+            {
+                state_process = st_testM;
+                printf("SAS PROGRAMME: Automatic callibration failed. Switching to manual...\n");
+                if (!tcp_active)
+                {
                     std::cout << "===================================" << endl;
                     std::cout << "---> Stimulator controllers:\n-A = Reduce Ramp.\n-D = Increase ramp.\n-W = Increase current.\n-S = Decrease current.\n";
                     std::cout << "-Q = Stop stimulation.\n-E = Re-start stimulation.\n-X = end current calibration (manual or automatic).\n\n";
@@ -702,6 +718,37 @@ void keyboard() {
     case 'X':
         if (!tcp_active) { Move3_hmi = Move3_done; }
         break;
+    //New
+    // Stimulation channels
+    case 'V':
+        if (!tcp_active) {
+            hmi_channel = Smpt_Channel_Red;
+            printf("Stimulator: red channel Selected.\n");
+        }
+        break;
+    case 'B':
+        if (!tcp_active) {
+            hmi_channel = Smpt_Channel_Blue;
+            printf("Stimulator: blue channel Selected.\n");
+        }
+        break;
+    case 'N':
+        if (!tcp_active) {
+            hmi_channel = Smpt_Channel_Black;
+            printf("Stimulator: black channel Selected.\n");
+        }
+        break;
+    case 'M':
+        if (!tcp_active) {
+            hmi_channel = Smpt_Channel_White;
+            printf("Stimulator: white channel Selected.\n");
+        }
+        break;
+    case 'R':
+        if (!tcp_active) {
+            Move3_hmi = Move3_en_ch;
+        }
+        break;
 
     // SAS programme
     case '1':
@@ -769,11 +816,11 @@ void thread_TCP() {
     while (!MAIN_to_all.end && (state_process != st_end) && !SCREEN.finish && tcp_active) {
             // Receive
             SCREEN.check();
-            decode_successful = TCP_decode(SCREEN.recvbuf, Move3_hmi, User_cmd, wololo, TCP_rep, SCREEN.finish);
+            decode_successful = TCP_decode(SCREEN.recvbuf, Move3_hmi, User_cmd, wololo, TCP_rep, SCREEN.finish, hmi_channel);
 
             if (decode_successful) {
                 if (SCREEN.display) {
-                    printf("TCP received: move_key = %d, user_cmd = %d, satus = %c, rep_nr = %d \n ", Move3_hmi, User_cmd, wololo, TCP_rep);
+                    printf("TCP received: move_key = %d, user_cmd = %d, satus = %c, rep_nr = %d, sel_ch = %d \n ", Move3_hmi, User_cmd, wololo, TCP_rep, hmi_channel);
                 }
                 // Actions related to the User_cmd
                 switch (User_cmd){
@@ -822,7 +869,7 @@ void thread_TCP() {
             if (!SCREEN.error_lim) {
                 // Send if something was received
                 memset(SCREEN.senbuf, '\0', 512);
-                sprintf(SCREEN.senbuf, "SAS;%2.1f;%d;%1.1f;", stimulator_device.stim.points[0].current, stimulator_device.stim.ramp, gain_th);
+                sprintf(SCREEN.senbuf, "SAS;%2.1f;%d;%d;", stimulator_device.stim[hmi_channel].points[0].current, stimulator_device.stim[hmi_channel].ramp, stimulator_device.stim_act[hmi_channel]);
                 SCREEN.stream();
             }
             else {
@@ -841,10 +888,11 @@ void thread_TCP() {
     }
 }
 // ---------------------------- Functions devices  --------------------------
-
-void stimulation_set(RehaMove3_Req_Type& code) {
+//New
+void stimulation_set(RehaMove3_Req_Type& code, Smpt_Channel sel_ch){
     Smpt_ml_channel_config next_val;
-    next_val = stimulator_device.stim;
+    next_val = stimulator_device.stim[sel_ch];              // New
+    //next_val = stimulator_device.stim[Smpt_Channel_Red]; // Old 
     float Dcurr = 0.0, DHz = 0.0;
     uint8_t Dramp = 0, Dnr = 0;
     // current_Val = real values on the stimulator
@@ -930,10 +978,10 @@ void stimulation_set(RehaMove3_Req_Type& code) {
         next_val.points[0].current = 1;
         next_val.points[2].current = 1;
     }
-
-    stimulator_device.stim = next_val;
+    stimulator_device.stim[sel_ch] = next_val;              // New
+    // stimulator_device.stim[Smpt_Channel_Red] = next_val; // Old 
     if ((code != Move3_stop) && (code != Move3_start) && (!tcp_active || SCREEN.display) ) {
-        printf("RehaMove3 message: Stimulation update -> current = %2.2f, ramp points = %d, ramp value = %d\n", stimulator_device.stim.points[0].current, stimulator_device.stim.number_of_points, stimulator_device.stim.ramp);
+        printf("RehaMove3 message: Stimulation update -> current = %2.2f, ramp points = %d, ramp value = %d\n", stimulator_device.stim[sel_ch].points[0].current, stimulator_device.stim[sel_ch].number_of_points, stimulator_device.stim[sel_ch].ramp);
         //%2.1f is the format to show a float number, 2.1 means 2 units and 1 decimal
     }
     code = Move3_none;
@@ -974,6 +1022,7 @@ void SAS_stimulating()
         }
         if ((Move3_hmi != Move3_stop)&&!stim_auto_done) {
             stimulator_device.update();
+            //stimulator_device.update(Smpt_Channel_Red);
         }
 
         // If movement has been previously detected and the end point is reached
@@ -991,7 +1040,7 @@ void SAS_stimulating()
             stimulator_device.pause();
             Move3_cmd = Move3_incr;
             // if keep going?
-            stimulation_set(Move3_cmd);
+            stimulation_set(Move3_cmd, Smpt_Channel_Red);
         }
         if ((Move3_hmi == Move3_done) && !stim_userX){
             stimulator_device.pause();
@@ -1001,11 +1050,19 @@ void SAS_stimulating()
         break;
 
     case st_testM:
-        Move3_user_req =(Move3_hmi!=Move3_none) && (Move3_hmi!=Move3_stop) && (Move3_hmi!= Move3_done) && (Move3_hmi!=Move3_start);
+        Move3_user_req = (Move3_hmi != Move3_none) && (Move3_hmi != Move3_stop) && (Move3_hmi != Move3_done) && (Move3_hmi != Move3_start) && (Move3_hmi != Move3_en_ch);
         // do stuff
-        if (Move3_user_req){
-            stimulation_set(Move3_hmi);
+        if ((Move3_user_req)){
+            stimulation_set(Move3_hmi, hmi_channel);
+         }
+
+        //New stuff 
+        if (Move3_hmi == Move3_en_ch)
+        {
+            stimulator_device.enable(hmi_channel, !stimulator_device.stim_act[hmi_channel]);
+            Move3_hmi = Move3_none;
         }
+
 
         if(((Move3_hmi == Move3_stop || stim_timeout) && stimulator_device.active) || (Move3_hmi == Move3_done)){
           stimulator_device.pause();
@@ -1026,9 +1083,10 @@ void SAS_stimulating()
           }
         }
 
-        if ((stimulator_device.active || Move3_hmi == Move3_start) && !stim_timeout){
-          stimulator_device.update();
-        }
+       if ((stimulator_device.active || Move3_hmi == Move3_start) && !stim_timeout){
+          stimulator_device.update2(hmi_channel);
+          //stimulator_device.update(Smpt_Channel_Red);
+       }
         break;
 
     // Normal SAS process
@@ -1036,14 +1094,14 @@ void SAS_stimulating()
         stim_fl3 = false;
         // do stuff
         if (Move3_hmi != Move3_none) {
-            stimulation_set(Move3_hmi);
+            stimulation_set(Move3_hmi, Smpt_Channel_Red);
         }
         break;
 
     case st_running:
         // do stuff
         if ((Move3_hmi != Move3_none) && (Move3_hmi != Move3_stop)) {
-            stimulation_set(Move3_hmi);
+            stimulation_set(Move3_hmi, Smpt_Channel_Red);
             stim_fl1 = false;
         }
 
@@ -1055,6 +1113,7 @@ void SAS_stimulating()
         }
         if (!stim_fl1 && !stim_timeout) {
             stimulator_device.update();
+            //stimulator_device.update(Smpt_Channel_Red);
         }
         // things to do only once
         if (!stim_fl2) {
