@@ -7,17 +7,17 @@ Owned by: Life Science Robotics & Aalborg University
 SAS Project Devices project using CPP language.
 This repository contains the following directories:
 
-* HMI: GUI which connects to TCP to the SAS program.
-* SAS: Sense-and-Stimulation C++ application. It connects through UDP protocol to Robert and through serial protocols to both RehaMove3 and RehaIngest.
+* HMI: GUI for the SAS application.
+* SASApp: Sense-and-Stimulation C++ application.
 * Matlab_scripts: contains all .m scripts and functions for processing data and filter testing.
-* TestFilters: C++ application for offline filtering and testing.
+* Complementary programmes: extra C++ apps with emulators and offline C-filtering.
 
 
 ### Requirements ###
 
-For the SAS and TestFilters programs:
+For the C++ applications:
 * Visual Studio version 2019 or later.
-* Installed COM drivers for Hasomed products. Available in the SAS Dropbox shared folder.
+* Specific for SASApp: installed COM drivers from Hasomed. Available in the SAS Dropbox shared folder.
 
 
 For testing and analysis:
@@ -27,8 +27,8 @@ For testing and analysis:
 
 For running the GUI:
 * Official Python3 distribution:
-[a link](https://www.python.org/download/releases/3.0/)
-* Extra packages for Python: pillow and image.
+[main webpage](https://www.python.org/download/releases/3.0/) or the Python App from Microsoft Store
+* In case of downloading, install the following extra packages for Python: pillow and image.
 ```
 pip install Pillow
 pip install image
@@ -36,14 +36,14 @@ pip install image
 
 Others:
 * Coding recommendation: use a text editor, like Atom, Sublime Text, or Visual Code.
-* Repository management: recommended to use SourceTree (only for Windows).
+* Repository management: recommended to use SourceTree (only for Windows), GitKraken (Ubuntu), or Visual Code + Git management extension.
 
 ### Notes ###
 
-Getting Started: follow the HowTo guide from Hasomed_examples repository. Only change: set on the configuration -> x86 Debug and Release.
-[a link](https://github.com/SAS-Robert/Hasomed_examples)
+Getting Started: follow the HowTo guide from Hasomed_examples repository.
+[Link to repository](https://github.com/SAS-Robert/Hasomed_examples)
 
-Development: recommended to read the report of this project for all the details.
+Development: recommended to read the report and documentation of this project for all the details.
 
 -----------------------------------------------
 ### Authors ###

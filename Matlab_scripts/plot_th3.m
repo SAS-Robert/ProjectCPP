@@ -83,7 +83,7 @@ th_value = mean(r_th_val) * ones(1, length(y_t));
 
 % accessing log directory and variables
 %log_dir=dir([files_dir '_log_*']);
-full_name = strrep(full_name,'_th_','_log_');%[log_dir(pos).folder '\' log_dir(pos).name]; %Just take the last one
+full_name = strrep(full_name,'_th_','_log_');
 data = (load(full_name))';
 log_type = data(1,:);
 log_val = data(2,:);

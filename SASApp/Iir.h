@@ -36,20 +36,20 @@
 #define IIR_H
 
 //
-// Include this file in your application to get everything
+// Non-used filter types have been commented
 //
 
 #include "iir/Common.h"
-
+/*
 #include "iir/Biquad.h"
 #include "iir/Cascade.h"
 #include "iir/PoleFilter.h"
 #include "iir/State.h"
-
-#include "iir/Butterworth.h"
 #include "iir/ChebyshevI.h"
 #include "iir/ChebyshevII.h"
 #include "iir/Custom.h"
 #include "iir/RBJ.h"
+*/
+#include "iir/Butterworth.h"
 
 #endif

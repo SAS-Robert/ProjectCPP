@@ -1,5 +1,11 @@
 function [outData_t, outData_f] = samples_analysis(directory,type,use_filter,name)
-% Explanation here 
+% Plots the time and frequency domain of a EMG recording.
+% - directory: dir with the folder and data file name.
+% - type:
+%        'H' = data file using Hasomed format (from their C++ example apps).
+%        'C' = data file using SAS format (from SAS/SASApp C++ solution).
+% - use_filter: plot either raw ('0') or filtered ('1') EMG.
+% - name: name for the plotting.
 
 [amount, dummy ] = size(directory);
 plot_nr = 0;

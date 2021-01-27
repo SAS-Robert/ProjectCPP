@@ -13,43 +13,40 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Hasomed">
-      <UniqueIdentifier>{73c8b48b-e558-4c52-9964-fb7543429ca7}</UniqueIdentifier>
+    <Filter Include="Header Files\Filter_iir">
+      <UniqueIdentifier>{e77e48b4-2856-4014-8f82-5962b863fe27}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SAS.cpp">
+    <ClCompile Include="SASApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SASLIB.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="iir\State.cpp">
-      <Filter>Header Files\Hasomed</Filter>
+      <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
     <ClCompile Include="iir\RBJ.cpp">
-      <Filter>Header Files\Hasomed</Filter>
+      <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
     <ClCompile Include="iir\PoleFilter.cpp">
-      <Filter>Header Files\Hasomed</Filter>
+      <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
     <ClCompile Include="iir\Custom.cpp">
-      <Filter>Header Files\Hasomed</Filter>
+      <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
     <ClCompile Include="iir\ChebyshevII.cpp">
-      <Filter>Header Files\Hasomed</Filter>
+      <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
     <ClCompile Include="iir\ChebyshevI.cpp">
-      <Filter>Header Files\Hasomed</Filter>
+      <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
     <ClCompile Include="iir\Cascade.cpp">
-      <Filter>Header Files\Hasomed</Filter>
+      <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
     <ClCompile Include="iir\Butterworth.cpp">
-      <Filter>Header Files\Hasomed</Filter>
+      <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
     <ClCompile Include="iir\Biquad.cpp">
-      <Filter>Header Files\Hasomed</Filter>
+      <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

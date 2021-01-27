@@ -1,7 +1,7 @@
 %% Load data files
 path = pwd;
 % Add source directories
-data_path = genpath('SAS/files');
+data_path = genpath('SASApp/files');
 fcn_path = genpath('Matlab_scripts');
 addpath(data_path);
 addpath(fcn_path);
@@ -516,3 +516,17 @@ for k=1:9
     fprintf('\\hline\n');
 end
 
+
+%% Testing new app
+% Ploting 
+SASApp_folder = 'C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\files\';
+data_name = 'subject_filter';
+data_dir = dir([SASApp_folder data_name '*.txt']);
+samples_analysis(data_dir(end-1:end),'C',0,'SAS raw data');
+samples_analysis(data_dir(end-1:end),'C',1,'SAS filtered data');
+
+[amount a] = size(data_dir);
+for k=(amount-1):amount
+    name_plot = ['Recording 27th Jan, nr.', num2str(k)];
+    plot_th3([SASApp_folder 'subject'],name_plot,k,'C');  
+end
