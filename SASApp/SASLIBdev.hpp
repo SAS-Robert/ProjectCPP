@@ -297,10 +297,10 @@ public:
             stim[k].ramp = 3;             //* Three lower pre-pulses
             stim[k].period = 20;          //* Frequency: 50 Hz
             // Set the stimulation pulse
-            stim[k].points[0].current = 15.0;
+            stim[k].points[0].current = 5.0;
             stim[k].points[0].time = 200;
             stim[k].points[1].time = 200;
-            stim[k].points[2].current = -15.0;
+            stim[k].points[2].current = -5.0;
             stim[k].points[2].time = 200;
         }
 

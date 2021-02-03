@@ -21,7 +21,6 @@ using namespace std;
 // - Sampling rate
 // - Central frequency (Hz)
 // - Frequency width (Hz)
-// - Most of these parameters are calculated from Matlab's original scripts
 const int samplingrate = 1000;
 const int amplification = 1000;
 

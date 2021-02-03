@@ -64,14 +64,17 @@ bool rec_ready = false;
 
 RehaMove3_Req_Type Move3_cmd = Move3_none;
 RehaMove3_Req_Type Move3_hmi = Move3_none;
+RehaMove3_Req_Type Move3_key = Move3_none;
 RehaIngest_Req_Type Inge_key = Inge_none;
 RehaIngest_Req_Type Inge_hmi = Inge_none;
 User_Req_Type User_cmd = User_none;
 
-char port_stim[5] = "COM6";
+char port_stim[5] = "COM6";   // Laptop
+// char port_stim[5] = "COM4";     // Robot
 RehaMove3 stimulator_device(port_stim);
 
-char port_rec[5] = "COM4";
+//char port_rec[5] = "COM4";    // Laptop
+char port_rec[5] = "COM5";      // Robot
 RehaIngest recorder_device(port_rec);
 
 // Other variables
@@ -111,10 +114,10 @@ uint8_t Dramp_man = 1, Dnr_points_man = 1;
 uint16_t Dwidth = 10; // us increment
 // Automatic the increment vary depending on the current stimulation values,
 // to make the calibration faster
-float Dcurr_aut_low = 0.1, Dcurr_aut_med = 0.5, Dcurr_aut_high = 1;
+float Dcurr_aut_low = 0.5, Dcurr_aut_med = 0.5, Dcurr_aut_high = 1;
 uint8_t Dramp_aut_low = 3, Dramp_aut_med = 4, Dramp_aut_high = 5, Dnr_points_auto = 1;
 // New
-int calCycle_nr = 0, calCycle_lim = 5;
+int calCycle_nr = 0, calCycle_lim = 40;
 Smpt_Channel hmi_channel = Smpt_Channel_Red;
 // State process variables
 bool stim_done = false,
@@ -281,9 +284,10 @@ int main(int argc, char *argv[])
         // Stimulation calibration process
         case st_testA_go:
             // Stimulation too weak: nothing happens
-            if (toc() && !ROBERT.isMoving && !stim_auto_done)
+            if (toc() && !stimA_start_b && !stim_auto_done)
             {
-                printf("SAS test: nothing happened, %2.2f s.\n", toc_lim);
+                toc_lim = 5;
+                printf("SAS test: Endpoint not reached, break of %2.2f s.\n", toc_lim);
                 state_process = st_testA_stop;
                 tic();
                 calCycle_nr++; // New for testing
@@ -292,12 +296,11 @@ int main(int argc, char *argv[])
             // in this case it re-starts the tic, but if at the end it does not Reach it, it'll set a longer break
             if (!toc() && ROBERT.isMoving && !ROBERT.Reached && !stimA_start_b)
             {
-                //tic();
                 toc_lim = 7;
                 stimA_start_b = true;
-                printf("SAS test: Movement detected, added %2.2f s.\n", toc_lim);
+                printf("SAS test: Movement detected, stimulation total time will be set to %2.2f s.\n", toc_lim);
             }
-            if (stimA_start_b && !ROBERT.Reached && toc())
+            if (toc() && stimA_start_b && !ROBERT.Reached)
             {
                 printf("SAS test: Stopping movement and break of %2.2f s\n", toc_lim);
                 state_process = st_testA_stop;
@@ -351,7 +354,7 @@ int main(int argc, char *argv[])
             else if ((calCycle_nr >= calCycle_lim) || (stimulator_device.stim[Smpt_Channel_Red].points[0].current >= 40))
             {
                 state_process = st_testM;
-                printf("SAS PROGRAMME: Automatic callibration failed. Switching to manual...\n");
+                printf("SAS PROGRAMME: Automatic callibration failed after %d cycles of %d limit cycles. Switching to manual...\n", calCycle_nr, calCycle_lim);
                 if (!tcp_active)
                 {
                     std::cout << "===================================" << endl;
@@ -365,7 +368,7 @@ int main(int argc, char *argv[])
                 state_process = st_testA_go;
                 toc_lim = 5;
                 tic();
-                printf("SAS test: Starting next cycle %2.2f s.\n", toc_lim);
+                printf("SAS test: Finish cycle nr.%d. Starting next cycle with a stim time of %2.2f s.\n", calCycle_nr, toc_lim);
             }
             break;
 
@@ -667,7 +670,7 @@ void keyboard()
         break;
     // Stimulator device
     case 'Q':
-        Move3_hmi = Move3_stop;
+        Move3_key = Move3_stop;
         break;
     case 'E':
         if (!tcp_active)
@@ -676,10 +679,7 @@ void keyboard()
         }
         break;
     case 'X':
-        if (!tcp_active)
-        {
-            Move3_hmi = Move3_done;
-        }
+        Move3_key = Move3_done;
         break;
     //New
     // Stimulation channels
@@ -989,6 +989,7 @@ void stimulation_set(RehaMove3_Req_Type &code, Smpt_Channel sel_ch)
     code = Move3_none;
     Move3_cmd = Move3_none;
     Move3_hmi = Move3_none;
+    Move3_key = Move3_none;
 }
 
 void SAS_stimulating()
@@ -1017,17 +1018,18 @@ void SAS_stimulating()
 
     // Stimulator calibration process
     case st_testA_go:
-        if (((Move3_hmi == Move3_stop) && stimulator_device.active) || (Move3_hmi == Move3_done))
+        if (((Move3_hmi == Move3_stop || Move3_key == Move3_stop) && stimulator_device.active) || (Move3_hmi == Move3_done || Move3_key == Move3_done))
         {
             stimulator_device.pause();
-            if (Move3_hmi == Move3_done)
+            if (Move3_hmi == Move3_done || Move3_key == Move3_done)
             {
                 stim_userX = true; // Request to quit
             }
 
             Move3_hmi = Move3_none;
+            Move3_key = Move3_none;
         }
-        if ((Move3_hmi != Move3_stop) && !stim_auto_done)
+        if ((Move3_hmi != Move3_stop && Move3_key != Move3_stop) && !stim_auto_done)
         {
             stimulator_device.update();
             //stimulator_device.update(Smpt_Channel_Red);
@@ -1052,34 +1054,37 @@ void SAS_stimulating()
             // if keep going?
             stimulation_set(Move3_cmd, Smpt_Channel_Red);
         }
-        if ((Move3_hmi == Move3_done) && !stim_userX)
+        if ((Move3_hmi == Move3_done || Move3_key == Move3_done) && !stim_userX)
         {
             stimulator_device.pause();
             stim_userX = true; // Request to quit
             Move3_hmi = Move3_none;
+            Move3_key = Move3_none;
         }
         break;
 
     case st_testM:
-        Move3_user_req = (Move3_hmi != Move3_none) && (Move3_hmi != Move3_stop) && (Move3_hmi != Move3_done) && (Move3_hmi != Move3_start) && (Move3_hmi != Move3_en_ch);
-        // do stuff
+        Move3_user_req = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_hmi != Move3_none) && (Move3_hmi != Move3_stop) && (Move3_hmi != Move3_done) && (Move3_hmi != Move3_start) && (Move3_hmi != Move3_en_ch);
+        //Update stimulation parameters if a key associated with parameters has been pressed
         if ((Move3_user_req))
         {
             stimulation_set(Move3_hmi, hmi_channel);
         }
 
-        //New stuff
+        // Enable / disable channels. By default, only red channel is avaliable.
         if (Move3_hmi == Move3_en_ch)
         {
             stimulator_device.enable(hmi_channel, !stimulator_device.stim_act[hmi_channel]);
             Move3_hmi = Move3_none;
         }
 
-        if (((Move3_hmi == Move3_stop || stim_timeout) && stimulator_device.active) || (Move3_hmi == Move3_done))
+        // Quit
+        if (((Move3_hmi == Move3_stop || Move3_key == Move3_stop|| stim_timeout) && stimulator_device.active) || (Move3_hmi == Move3_done || Move3_key == Move3_done))
         {
             stimulator_device.pause();
-            stim_done = !stimulator_device.active && (Move3_hmi == Move3_done);
+            stim_done = !stimulator_device.active && (Move3_hmi == Move3_done || Move3_key == Move3_done);
             Move3_hmi = Move3_none;
+            Move3_key = Move3_none;
             if (stim_done)
             {
                 std::cout << "RehaMove3 message: manual callibration done." << endl;
