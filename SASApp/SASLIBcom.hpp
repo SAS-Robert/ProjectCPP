@@ -31,7 +31,7 @@
 using namespace std;
 
 // ------------------ Functions definition ------------------
-bool UDP_decode(char *message, bool &value1, bool &value2)
+bool decode_udp(char *message, bool &value1, bool &value2)
 {
   char b_true[6] = "true";
   char b_false[6] = "false";
@@ -84,7 +84,7 @@ bool UDP_decode(char *message, bool &value1, bool &value2)
   return valid_msg;
 }
 
-bool TCP_decode(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &user, ROB_Type &status, int &rep, bool &finished, Smpt_Channel &sel_ch)
+bool decode_tcp(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &user, ROB_Type &status, int &rep, bool &finished, Smpt_Channel &sel_ch)
 {
   int length = strlen(message);
   char start_msg[7] = "SCREEN";
@@ -208,7 +208,7 @@ bool TCP_decode(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &us
 }
 
 // ------------------ Objects definition ------------------
-typedef struct UDPClient
+typedef struct UdpClient
 {
 private:
   struct sockaddr_in si_other;
@@ -232,7 +232,7 @@ public:
   bool valid_msg;
 
   // Constructor 
-  UDPClient(char* S_address, uint32_t port) {
+  UdpClient(char* S_address, uint32_t port) {
       slen = sizeof(si_other);
       error = false; 
       error_lim = false;
@@ -331,7 +331,7 @@ public:
       int length = sizeof(SERVERc);
       recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *)&si_other, &slen);
       // Decode message here
-      valid_msg = UDP_decode(buf, isMoving, Reached);
+      valid_msg = decode_udp(buf, isMoving, Reached);
       if (valid_msg)
       {
         error_cnt = 0;
@@ -362,7 +362,7 @@ public:
   };
 };
 
-typedef struct TCPClient
+typedef struct TcpClient
 {
 private:
   // Communication variables
@@ -519,7 +519,7 @@ public:
 
 };
 
-typedef struct TCPServer
+typedef struct TcpServer
 {
 private:
   WSADATA wsaData;
@@ -544,7 +544,7 @@ public:
   int error_cnt;
 
   // Constructor 
-  TCPServer(char* S_port) {
+  TcpServer(char* S_port) {
       ListenSocket = INVALID_SOCKET;
       ClientSocket = INVALID_SOCKET;
       senbuflen = BUFLEN;

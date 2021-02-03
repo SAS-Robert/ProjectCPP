@@ -88,13 +88,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\32bit lib\include\low-level;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\32bit lib\include\mid-level;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\32bit lib\include\general;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\32bit lib\include\dyscom-level;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\32bit lib\include\low-level;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\32bit lib\include\mid-level;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\32bit lib\include\general;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\32bit lib\include\dyscom-level;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>libsmpt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\32bit lib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\ProjectCPP\SASApp\32bit lib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -111,6 +111,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\ProjectCPP\SASApp\32bit lib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -119,12 +120,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\iir;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\64bit lib\include\low-level;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\64bit lib\include\mid-level;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\64bit lib\include\general;C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\64bit lib\include\dyscom-level;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\ProjectCPP\SASApp\iir;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\64bit lib\include\low-level;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\64bit lib\include\mid-level;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\64bit lib\include\general;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\64bit lib\include\dyscom-level;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Carolina\Desktop\Internship\Software\ProjectCPP\SASApp\64bit lib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\64bit lib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libsmpt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -136,12 +137,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\ProjectCPP\SASApp\iir;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\64bit lib\include\low-level;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\64bit lib\include\mid-level;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\64bit lib\include\general;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\64bit lib\include\dyscom-level;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SASApp\64bit lib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

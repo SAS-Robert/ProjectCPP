@@ -76,17 +76,19 @@ typedef enum
 auto th1_st = std::chrono::steady_clock::now();
 auto th1_fn = std::chrono::steady_clock::now();
 std::chrono::duration<double> th1_diff;
-const double th1_cycle = 0.03;
+const double TH1_CYCLE = 0.03;
 double th1_d = 0;
-int th1_sleep = 1, main_thread = 1;
-bool thread_start = true, thread_end = false;
+int th1_sleep = 1;
+const int MAIN_THREAD = 1;
+const bool THREAD_START = true, THREAD_END = false;
 
 auto th2_st = std::chrono::steady_clock::now();
 auto th2_fn = std::chrono::steady_clock::now();
 std::chrono::duration<double> th2_diff;
-const double th2_cycle = 0.15;
+const double TH2_CYCLE = 0.15;
 double th2_d = 0.0;
-int th2_sleep = 1, interface_thread = 2;
+int th2_sleep = 1;
+const int INTERFACE_THREAD = 2;
 
 //Tic-toc time
 auto tstart = std::chrono::steady_clock::now();
@@ -112,7 +114,7 @@ void generate_date(char* outStr)
     }
 }
 
-string convertToString(char *a, int size)
+string convert_to_string(char *a, int size)
 {
     int i;
     string s = "";
@@ -171,7 +173,7 @@ bool toc()
     return done;
 }
 
-void thread_control(int thread_nr, bool start, state_Type state)
+void control_thread(int thread_nr, bool start, state_Type state)
 {
     if (start){
         // Start thread: start counting time
@@ -192,9 +194,9 @@ void thread_control(int thread_nr, bool start, state_Type state)
             th1_diff = th1_fn - th1_st;
             th1_d = ((double)th1_diff.count()) + 0.0015;
             //Sleep(10);
-            if ((th1_d < th1_cycle) && (state >= st_wait) && (state <= st_stop))
+            if ((th1_d < TH1_CYCLE) && (state >= st_wait) && (state <= st_stop))
             {
-                th1_d = (th1_cycle - th1_d) * 1000;
+                th1_d = (TH1_CYCLE - th1_d) * 1000;
                 th1_sleep = 1 + (int)th1_d;
                 Sleep(th1_sleep);
             }
