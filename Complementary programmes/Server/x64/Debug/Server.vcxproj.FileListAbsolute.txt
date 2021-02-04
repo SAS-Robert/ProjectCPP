@@ -1,0 +1,2 @@
+C:\Users\Carolina\Desktop\net_shared\ProjectCPP\Complementary programmes\Server\x64\Debug\Server.exe
+C:\Users\Carolina\Desktop\net_shared\ProjectCPP\Complementary programmes\Server\x64\Debug\Server.pdb

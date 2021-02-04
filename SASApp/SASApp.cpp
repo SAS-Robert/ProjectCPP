@@ -69,12 +69,12 @@ RehaIngest_Req_Type Inge_key = Inge_none;
 RehaIngest_Req_Type Inge_hmi = Inge_none;
 User_Req_Type User_cmd = User_none;
 
-char PORT_STIM[5] = "COM6";   // Laptop
+char PORT_STIM[5] = "COM3";   // Laptop
 // char PORT_STIM[5] = "COM4";     // Robot
 RehaMove3 stimulator(PORT_STIM);
 
-//char PORT_REC[5] = "COM4";    // Laptop
-char PORT_REC[5] = "COM5";      // Robot
+char PORT_REC[5] = "COM4";    // Laptop
+// char PORT_REC[5] = "COM5";      // Robot
 RehaIngest recorder(PORT_REC);
 
 // Other variables
@@ -118,7 +118,7 @@ const float D_CUR_LOW = 0.5, D_CUR_MED = 0.5, D_CUR_HIGH = 1;
 const uint8_t D_RAMP_LOW = 3, D_RAMP_MED = 4, D_RAMP_HIGH = 5, D_POINTS_AUTO = 1;
 // New
 int calCycle_nr = 0;
-const int CAL_CYCLE_LIM = 40;
+const int CAL_CYCLE_LIM = 100;
 const float CAL_CUR_LIM = 40.0;
 Smpt_Channel hmi_channel = Smpt_Channel_Red;
 // State process variables
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
             {
                 std::cout << "===================================" << endl;
                 printf("SAS PROGRAMME: Starting automatic callibration...\n");
-                GL_state = st_testA_go;
+                GL_state = st_calA_go;
                 toc_lim = 5;
                 tic();
             }
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
             {
                 std::cout << "===================================" << endl;
                 printf("SAS PROGRAMME: Starting manual callibration...\n");
-                GL_state = st_testM;
+                GL_state = st_calM;
 
                 if (!GL_tcpActive)
                 {
@@ -284,13 +284,13 @@ int main(int argc, char *argv[])
             break;
 
         // Stimulation calibration process
-        case st_testA_go:
+        case st_calA_go:
             // Stimulation too weak: nothing happens
             if (toc() && !stimA_start_b && !stim_auto_done)
             {
                 toc_lim = 5;
                 printf("SAS test: Endpoint not reached, break of %2.2f s.\n", toc_lim);
-                GL_state = st_testA_stop;
+                GL_state = st_calA_stop;
                 tic();
                 calCycle_nr++; // New for testing
             }
@@ -304,11 +304,11 @@ int main(int argc, char *argv[])
             }
             if (toc() && stimA_start_b && !robert.Reached)
             {
-                printf("SAS test: Stopping movement and break of %2.2f s\n", toc_lim);
-                GL_state = st_testA_stop;
+                GL_state = st_calA_stop;
                 toc_lim = 10;
                 tic();
                 calCycle_nr++; // New for testing
+                printf("SAS test: Stopping movement and break of %2.2f s\n", toc_lim);
             }
             // Stimulation values OK: Reached End Point
             if (stim_auto_done && toc())
@@ -321,12 +321,12 @@ int main(int argc, char *argv[])
                     std::cout << "-Q = Stop stimulation.\n-E = Re-start stimulation.\n-X = end current calibration (manual or automatic).\n\n";
                     std::cout << "===================================" << endl;
                 }
-                GL_state = st_testM;
+                GL_state = st_calM;
             }
             // Quit automatic calibration
             if (stim_userX && !stimulator.active)
             {
-                GL_state = st_testM;
+                GL_state = st_calM;
                 printf("SAS PROGRAMME: Quitting automatic callibration. Starting manual...\n");
                 if (!GL_tcpActive)
                 {
@@ -338,11 +338,11 @@ int main(int argc, char *argv[])
             }
             break;
 
-        case st_testA_stop:
+        case st_calA_stop:
             // Quit automatic calibration
             if (stim_userX && !stimulator.active)
             {
-                GL_state = st_testM;
+                GL_state = st_calM;
                 printf("SAS PROGRAMME: Quitting automatic callibration. Starting manual...\n");
                 if (!GL_tcpActive)
                 {
@@ -355,8 +355,17 @@ int main(int argc, char *argv[])
             // Abort automatic calibration if it has run for too long
             else if ((calCycle_nr >= CAL_CYCLE_LIM) || (stimulator.stim[Smpt_Channel_Red].points[0].current >= CAL_CUR_LIM))
             {
-                GL_state = st_testM;
-                printf("SAS PROGRAMME: Automatic callibration failed after %d cycles of %d limit cycles. Switching to manual...\n", calCycle_nr, CAL_CYCLE_LIM);
+                GL_state = st_calM;
+                // why has the calibration failed
+                if (calCycle_nr >= CAL_CYCLE_LIM)
+                {
+                    printf("SAS PROGRAMME: Automatic callibration failed after %d tries. Switching to manual...\n", calCycle_nr);
+                }
+                else
+                {
+                    printf("SAS PROGRAMME: Automatic callibration failed. Stimulation has reached the maximum current of %2.2f mA. Switching to manual...\n", CAL_CUR_LIM);
+                }
+
                 if (!GL_tcpActive)
                 {
                     std::cout << "===================================" << endl;
@@ -367,14 +376,14 @@ int main(int argc, char *argv[])
             }
             else if (!stimulator.active && toc())
             {
-                GL_state = st_testA_go;
+                GL_state = st_calA_go;
                 toc_lim = 5;
                 tic();
                 printf("SAS test: Finish cycle nr.%d. Starting next cycle with a stim time of %2.2f s.\n", calCycle_nr, toc_lim);
             }
             break;
 
-        case st_testM:
+        case st_calM:
             if (rec_status.ready && stim_done)
             {
                 printf("SAS PROGRAMME: setting threshold...\n");
@@ -459,14 +468,14 @@ int main(int argc, char *argv[])
         // If there is an issue with the UDP, the program will go to "saver" states
         if (robert.error_lim && MAIN_to_all.ready)
         {
-            bool jump_cal = (GL_state == st_testA_go) || (GL_state == st_testA_stop);
+            bool jump_cal = (GL_state == st_calA_go) || (GL_state == st_calA_stop);
             bool jump_run = (GL_state == st_running) || (GL_state == st_wait);
-            bool wait_cal = (GL_state == st_init) || (GL_state == st_testM) || (GL_state == st_th);
+            bool wait_cal = (GL_state == st_init) || (GL_state == st_calM) || (GL_state == st_th);
 
             if (jump_cal)
             {
                 printf("SAS PROGRAMME: Connection to the robot lost. Switching to manual calibration.\n");
-                GL_state = st_testM;
+                GL_state = st_calM;
             }
             else if (jump_run)
             {
@@ -746,7 +755,7 @@ void get_keyboard()
         }
         break;
     case '4':
-        if ((GL_state == st_testM) && (!GL_tcpActive))
+        if ((GL_state == st_calM) && (!GL_tcpActive))
         {
             rec_status.req = true;
             std::cout << "Start threshold." << endl;
@@ -826,7 +835,7 @@ void tcp_run()
                 }
                 break;
             case User_th:
-                if (GL_state == st_testM)
+                if (GL_state == st_calM)
                 {
                     rec_status.req = true;
                     std::cout << "Start threshold." << endl;
@@ -842,7 +851,7 @@ void tcp_run()
         if (decode_successful && (Move3_hmi != Move3_none))
         {
             bool update_values_TCP;
-            bool update_state = (GL_state == st_testM) || (GL_state == st_wait) || (GL_state == st_running);
+            bool update_state = (GL_state == st_calM) || (GL_state == st_wait) || (GL_state == st_running);
             do
             {
                 Sleep(5);
@@ -888,7 +897,7 @@ void set_stimulation(RehaMove3_Req_Type &code, Smpt_Channel sel_ch)
     // code = command (what to change)
 
     // Select increment
-    if ((GL_state != st_testA_go) && (GL_state != st_testA_stop))
+    if ((GL_state != st_calA_go) && (GL_state != st_calA_stop))
     {
         Dcurr = D_CUR_MAN;
         Dramp = D_RAMP_MAN;
@@ -934,7 +943,7 @@ void set_stimulation(RehaMove3_Req_Type &code, Smpt_Channel sel_ch)
     }
 
     // Automatic ramp values
-    if ((GL_state == st_testA_go) || (GL_state == st_testA_stop))
+    if ((GL_state == st_calA_go) || (GL_state == st_calA_stop))
     {
         if (next_val.points[0].current <= 20)
         {
@@ -1019,7 +1028,7 @@ void stimulating_sas()
         break;
 
     // Stimulator calibration process
-    case st_testA_go:
+    case st_calA_go:
         if (((Move3_hmi == Move3_stop || Move3_key == Move3_stop) && stimulator.active) || (Move3_hmi == Move3_done || Move3_key == Move3_done))
         {
             stimulator.pause();
@@ -1031,7 +1040,7 @@ void stimulating_sas()
             Move3_hmi = Move3_none;
             Move3_key = Move3_none;
         }
-        if ((Move3_hmi != Move3_stop && Move3_key != Move3_stop) && !stim_auto_done)
+        if ((Move3_hmi != Move3_stop && Move3_key != Move3_stop) && !stim_auto_done && !stim_userX)
         {
             stimulator.update();
             //stimulator.update(Smpt_Channel_Red);
@@ -1047,7 +1056,7 @@ void stimulating_sas()
 
         break;
 
-    case st_testA_stop:
+    case st_calA_stop:
         // Stop stimulator and update values
         if (stimulator.active)
         {
@@ -1065,7 +1074,7 @@ void stimulating_sas()
         }
         break;
 
-    case st_testM:
+    case st_calM:
         Move3_user_req = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_hmi != Move3_none) && (Move3_hmi != Move3_stop) && (Move3_hmi != Move3_done) && (Move3_hmi != Move3_start) && (Move3_hmi != Move3_en_ch);
         //Update stimulation parameters if a key associated with parameters has been pressed
         if ((Move3_user_req))
@@ -1215,7 +1224,7 @@ void recording_sas()
     switch (GL_state)
     {
 
-    case st_testM:
+    case st_calM:
         if (stim_done && rec_status.req && !recorder.ready)
         {
             startup_filters();

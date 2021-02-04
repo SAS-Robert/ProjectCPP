@@ -17,6 +17,30 @@
 using namespace std;
 
 // ------------------ Variables for process control ------------------
+// Types for internal process handling
+typedef enum
+{
+    st_init = 0,       // Nothing to do
+    st_th = 1,         // set threshold
+    st_wait = 2,       // Waiting to overcome threshold
+    st_running = 3,    // Stimulating
+    st_stop = 4,       // Done 1 seq, waiting for next
+    st_end = 5,        // Setting threshold
+    st_calM = 6,      // Stimulation manual calibration
+    st_calA_go = 7,   // Stimulation automatic calibration -> stimulator active
+    st_calA_stop = 8, // Stimulation automatic calibration -> resting period
+} state_Type;
+
+typedef enum
+{
+    exInvalid = -1,         // Invalid exercise
+    exUnregistered = 0,     // New exercise or that is not registered
+    exLowerLeg_flex = 1,    // Lower leg flexion
+    exUpperLeg_ext = 2,     // Upper leg extension
+    exElect = 99,           // The simulator is connected to an electrical circuit
+} exercise_Type;
+
+// User options for stimulation and process
 typedef enum
 {
     Move3_none = 0,      // Nothing to do
@@ -41,6 +65,7 @@ typedef enum
     Inge_decr = 2, // Decrease threshold gain
 } RehaIngest_Req_Type;
 
+// For TCP connection
 typedef enum
 {
     pause = 'P', // 'P' = pause by user-request
@@ -48,18 +73,7 @@ typedef enum
     start = 'S', // 'S' = start of repetition
 } ROB_Type;
 
-typedef enum
-{
-    st_init = 0,       // Nothing to do
-    st_th = 1,         // set threshold
-    st_wait = 2,       // Waiting to overcome threshold
-    st_running = 3,    // Stimulating
-    st_stop = 4,       // Done 1 seq, waiting for next
-    st_end = 5,        // Setting threshold
-    st_testM = 6,      // Run stimulation test (manual)
-    st_testA_go = 7,   // Run stimulation test (automatic) -> apply current
-    st_testA_stop = 8, // Run stimulation test (automatic) -> stop stim for recovery
-} state_Type;
+
 
 typedef enum
 {
