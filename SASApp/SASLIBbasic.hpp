@@ -20,7 +20,8 @@ using namespace std;
 // Types for internal process handling
 typedef enum
 {
-    st_init = 0,       // Nothing to do
+    st_setup = -1,    // Before init, select exercise and re-do stuff
+    st_init = 0,       // Start up
     st_th = 1,         // set threshold
     st_wait = 2,       // Waiting to overcome threshold
     st_running = 3,    // Stimulating
@@ -29,15 +30,16 @@ typedef enum
     st_calM = 6,      // Stimulation manual calibration
     st_calA_go = 7,   // Stimulation automatic calibration -> stimulator active
     st_calA_stop = 8, // Stimulation automatic calibration -> resting period
+    st_repeat = 9,    // Repeat an exercise
 } state_Type;
 
 typedef enum
 {
-    exInvalid = -1,         // Invalid exercise
-    exUnregistered = 0,     // New exercise or that is not registered
-    exLowerLeg_flex = 1,    // Lower leg flexion
-    exUpperLeg_ext = 2,     // Upper leg extension
-    exElect = 99,           // The simulator is connected to an electrical circuit
+    exInvalid = -1,     // Invalid exercise
+    exUnregistered = 0, // New exercise or that is not registered
+    lowerLeg_flex = 1,  // Lower leg flexion
+    upperLeg_ext = 2,   // Upper leg extension
+    exCircuit = 99,     // The simulator is connected to an electrical circuit
 } exercise_Type;
 
 // User options for stimulation and process
@@ -83,6 +85,9 @@ typedef enum
     User_X = 3,    // Quit calibration
     User_th = 4,   // Start threshold
     User_st = 5,   // Start training
+    User_ex = 6,   // User must select an exercise
+    User_rep = 7,  // Repeat same exercise
+    User_new = 8,  // Do a new type of exercise
 } User_Req_Type;
 
 // ------------------ Global variables ------------------

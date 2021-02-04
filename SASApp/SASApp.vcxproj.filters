@@ -21,6 +21,9 @@
     <ClCompile Include="SASApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="iir\Butterworth.cpp">
+      <Filter>Header Files\Filter_iir</Filter>
+    </ClCompile>
     <ClCompile Include="iir\State.cpp">
       <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
@@ -40,9 +43,6 @@
       <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
     <ClCompile Include="iir\Cascade.cpp">
-      <Filter>Header Files\Filter_iir</Filter>
-    </ClCompile>
-    <ClCompile Include="iir\Butterworth.cpp">
       <Filter>Header Files\Filter_iir</Filter>
     </ClCompile>
     <ClCompile Include="iir\Biquad.cpp">

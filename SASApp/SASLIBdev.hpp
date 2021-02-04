@@ -17,12 +17,25 @@ using namespace std;
 #include "smpt_ml_client.h"
 #include "smpt_dl_client.h"
 #include "smpt_definitions.h"
+#include "SASLIBbasic.hpp"
 
 // ------------------ Gobal variables ------------------
+// For recorder
 static std::vector<double> recorder_emg1;
 static std::vector<double> recorder_emg2;
 
+// For stimulator
+// Limits
+const float MAX_STIM_CUR = 50.0, MIN_STIM_CUR = 1.0;
+const uint8_t MAX_STIM_RAMP = 10, MIN_STIM_RAMP = 1;
+// Stimulation profiles for different exercises
+Smpt_ml_channel_config UPPERLEG_SET;    // values initialized on void load_stim_settings
+Smpt_ml_channel_config LOWERLEG_SET;
+Smpt_ml_channel_config CIRCUIT_SET;
+
+
 // ------------------ Functions definition ------------------
+// Original Hasomed Functions
 void fill_ml_init(Smpt_device *const device, Smpt_ml_init *const ml_init)
 {
     /* Clear ml_init struct and set the data */
@@ -183,6 +196,40 @@ static bool handle_dl_packet_global(Smpt_device *const device)
     return output;
 }
 
+// New functions
+void load_stim_settings() {
+    // This function just initializes the stimulation values for different profiles:
+
+    // Upper leg extension
+    UPPERLEG_SET.number_of_points = 3; 
+    UPPERLEG_SET.ramp = 3;             
+    UPPERLEG_SET.period = 20;
+    UPPERLEG_SET.points[0].current = 25;
+    UPPERLEG_SET.points[0].time = 200;
+    UPPERLEG_SET.points[1].time = 200;
+    UPPERLEG_SET.points[2].current = -25;
+    UPPERLEG_SET.points[2].time = 200;
+
+    // Lower leg extension
+    LOWERLEG_SET.number_of_points = 3;
+    LOWERLEG_SET.ramp = 3;
+    LOWERLEG_SET.period = 20;
+    LOWERLEG_SET.points[0].current = 15;
+    LOWERLEG_SET.points[0].time = 200;
+    LOWERLEG_SET.points[1].time = 200;
+    LOWERLEG_SET.points[2].current = -15;
+    LOWERLEG_SET.points[2].time = 200;
+
+    // Electrical circuit
+    CIRCUIT_SET.number_of_points = 3;
+    CIRCUIT_SET.ramp = 3;
+    CIRCUIT_SET.period = 20;
+    CIRCUIT_SET.points[0].current = 5;
+    CIRCUIT_SET.points[0].time = 200;
+    CIRCUIT_SET.points[1].time = 200;
+    CIRCUIT_SET.points[2].current = -5;
+    CIRCUIT_SET.points[2].time = 200;
+}
 // ------------------ Objects definition ------------------
 // Stimulator
 class RehaMove3
@@ -222,7 +269,7 @@ public:
         active = false;
     }
     // Functions
-    void init()
+    void init(Smpt_ml_channel_config settings)
     {
         // Old
         // Stimulation values
@@ -293,15 +340,15 @@ public:
         // Initialize stim channels values
         for (int k = 0; k < 4; k++)
         {
-            stim[k].number_of_points = 3; //* Set the number of points
-            stim[k].ramp = 3;             //* Three lower pre-pulses
-            stim[k].period = 20;          //* Frequency: 50 Hz
+            stim[k].number_of_points = settings.number_of_points;
+            stim[k].ramp = settings.ramp;
+            stim[k].period = settings.period;
             // Set the stimulation pulse
-            stim[k].points[0].current = 5.0;
-            stim[k].points[0].time = 200;
-            stim[k].points[1].time = 200;
-            stim[k].points[2].current = -5.0;
-            stim[k].points[2].time = 200;
+            stim[k].points[0].current = settings.points[0].current;
+            stim[k].points[0].time = settings.points[0].time;
+            stim[k].points[1].time = settings.points[1].time;
+            stim[k].points[2].current = settings.points[2].current;
+            stim[k].points[2].time = settings.points[2].time;
         }
 
         printf("Device RehaMove3 ready.\n");

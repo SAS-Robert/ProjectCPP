@@ -9,8 +9,7 @@ wirefolder = 'C:\Users\Carolina\LSR Dropbox\LSR Quality Management System\SAS\RO
 wirepath = genpath(wirefolder);
 addpath(wirepath);
 
-
-%% Set up internal var
+% Set up internal var
 % Getting folders' names
 wiredir = dir(wirefolder);
 % Extract only those that are directories

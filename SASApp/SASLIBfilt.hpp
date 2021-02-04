@@ -62,16 +62,17 @@ unsigned long long int GL_processed = 0;
 unsigned long long int GL_sampleNr = 0;
 
 // Threshold processing
-unsigned int TH_TIME = 3;                    // 3 seconds
-unsigned long long int TH_NR = TH_TIME * SAMPLINGRATE; // amount of samples for threshold
-double TH_DISCARD = SAMPLINGRATE * 1.1;                // discard first filtered samples from the threshold
+const unsigned int TH_TIME = 3;                    // 3 seconds to set threshold
+const unsigned long long int TH_NR = TH_TIME * SAMPLINGRATE; // amount of samples for threshold
+const double TH_DISCARD = SAMPLINGRATE * 1.1;                // discard first filtered samples from the threshold
 double GL_thDiscard = 0;
 int TH_WAIT = 20, GL_thWaitCnt = 0; // amount of mean sets before triggering
 
 // Accumulate old means and sizes for the flexible window
-double old_value[5] = { 0, 0, 0, 0, 0 };
-unsigned long long int old_nr[5] = { 0, 0, 0, 0, 0 };
-unsigned int SAMPLE_LIM = 27;
+const unsigned int FLEX_WINDOW = 5;
+double old_value[FLEX_WINDOW] = { 0, 0, 0, 0, 0 };
+unsigned long long int old_nr[FLEX_WINDOW] = { 0, 0, 0, 0, 0 };
+const unsigned int SAMPLE_LIM = 27;
 
 // Savind data in files will be eventually deleted
 ofstream fileVALUES, fileFILTERS;
@@ -92,6 +93,12 @@ void startup_filters() {
     b200_result.clear();
     b250_result.clear();
     GL_processed = 0;
+    THRESHOLD = 0.0;
+    for (int i = 0; i < FLEX_WINDOW; i++)
+    {
+        old_value[i] = 0;
+        old_nr[i] = 0;
+    }
 }
 
 static double process_data_iir(unsigned long long int v_size, vector<double> raw_data)
@@ -116,7 +123,7 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
 
         // Calculating mean of retified EMG
         temp = b250_result[i];
-        if (b100_result[i] < 0)
+        if (b250_result[i] < 0)
         {
             temp = -b250_result[i];
         }
@@ -167,7 +174,7 @@ static double process_th(unsigned long long int v_size, vector<double> raw_data)
         fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "," << b100_result[i] << "," << b150_result[i] << "," << b200_result[i] << "," << b250_result[i] << "\n";
         // Calculating mean of retified EMG
         temp = b250_result[i];
-        if (b100_result[i] < 0)
+        if (b250_result[i] < 0)
         {
             temp = -b250_result[i];
         }
