@@ -31,7 +31,7 @@
 using namespace std;
 
 // ------------------ Functions definition ------------------
-bool decode_udp(char *message, bool &value1, bool &value2)
+bool decode_robot(char *message, bool &value1, bool &value2)
 {
   char b_true[6] = "true";
   char b_false[6] = "false";
@@ -331,7 +331,7 @@ public:
       int length = sizeof(SERVERc);
       recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *)&si_other, &slen);
       // Decode message here
-      valid_msg = decode_udp(buf, isMoving, Reached);
+      valid_msg = decode_robot(buf, isMoving, Reached);
       if (valid_msg)
       {
         error_cnt = 0;
@@ -357,9 +357,169 @@ public:
     WSACleanup();
     if (display)
     {
-      printf("UDP Connection closed\n");
+      printf("UDP Client connection closed\n");
     }
   };
+};
+
+struct UdpServer
+{
+  private:
+    uint32_t nPORT;
+    SOCKET s;
+    fd_set fds;
+    struct sockaddr_in server, si_other;
+    int slen, recv_len, n;
+    WSADATA wsa;
+    char SERVERc[15]; // IP address
+
+  public:
+    char recvbuf[BUFLEN];
+    char senbuf[BUFLEN];
+    bool error, new_message, finish, display, error_lim;
+    struct timeval timeout;
+    int error_cnt, ERROR_CNT_LIM;
+    // constructor
+    UdpServer(char *S_address, char *PORTc)
+    {
+      nPORT = 30001;
+      slen = sizeof(si_other);
+      display = false;
+      nPORT = atoi(PORTc);
+      strcpy(SERVERc, S_address);
+      ERROR_CNT_LIM = 5;
+  }
+  // methods
+  void start()
+  {
+    //Initialise winsock
+    if(display) { printf("UDP Server - Initialising Winsock..."); }
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+    {
+      printf("UDP Server - Failed. Error Code : %d", WSAGetLastError());
+      exit(EXIT_FAILURE);
+    }
+    printf("UDP Server - Initialised.\n");
+
+    //Create a socket
+    if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET)
+    {
+      printf("UDP Server - Could not create socket : %d", WSAGetLastError());
+    }
+    printf("UDP Server - Socket created.\n");
+
+    //Prepare the sockaddr_in structure
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_addr.S_un.S_addr = inet_addr(SERVERc);
+    server.sin_port = htons(nPORT);
+    char *ip = inet_ntoa(server.sin_addr);
+    std::cout << "Running UDP Server on IP " << ip << ", port " << nPORT << endl;
+    //Bind
+    if (bind(s, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR)
+    {
+      printf("UDP Server - Bind failed with error code : %d\n", WSAGetLastError());
+    }
+    puts("UDP Server - Bind done");
+    fflush(stdout);
+    //clear the buffer by filling null, it might have previously received data
+    memset(recvbuf, '\0', BUFLEN);
+    memset(senbuf, '\0', BUFLEN);
+    // Set up the struct timeval for the timeout.
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 500;
+    FD_ZERO(&fds);
+    FD_SET(s, &fds);
+  }
+
+  // method with blocking call
+  void check()
+  {
+      //clear the buffer(s)
+      fflush(stdout);
+      memset(recvbuf, '\0', BUFLEN);
+      //try to receive some data, this is a blocking call
+      if ((recv_len = recvfrom(s, recvbuf, BUFLEN, 0, (struct sockaddr*)&si_other, &slen)) == SOCKET_ERROR)
+      {
+          if (display)
+          {
+              printf("recvfrom() failed with error code : %d\n", WSAGetLastError());
+          }
+          error = true;
+          error_cnt++;
+      } 
+      else if (display)
+      {
+        printf("UDP Server received data: %s\n", recvbuf);
+        error = false;
+      }
+      error_lim = error_cnt >= ERROR_CNT_LIM;
+  }
+
+  // method with timeout control
+  /*
+  void check()
+  {
+      // Wait until timeout or data received.
+      FD_ZERO(&fds);
+      FD_SET(s, &fds);
+      n = select(s, &fds, NULL, NULL, &timeout);
+      if ((n == 0) || (n == -1))
+      {
+          if (n == 0 && display)
+          {
+              printf("UDP Server - Timeout\n");
+          }
+          else if (display)
+          {
+              printf("UDP Server - Error while receiving.\n");
+          }
+          error = true;
+          error_cnt++;
+      }
+      // Data has been received
+      if (!error)
+      {
+          //clear the buffer(s)
+          fflush(stdout);
+          memset(recvbuf, '\0', BUFLEN);
+          //try to receive some data, this is a blocking call
+          recv_len = recvfrom(s, recvbuf, BUFLEN, 0, (struct sockaddr*)&si_other, &slen);
+          //print details of the client/peer and the data received
+          //printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
+          if (display)
+          {
+              printf("UDP Server received data: %s\n", recvbuf);
+          }
+      }
+      error_lim = error_cnt >= ERROR_CNT_LIM;
+
+  }
+  */
+  void stream()
+  {
+    if (display)
+    {
+      printf("UDP Sending: %s\n", senbuf);
+    }
+    if (sendto(s, senbuf, BUFLEN, 0, (struct sockaddr *)&si_other, slen) == SOCKET_ERROR)
+    {
+      if (display)
+      {
+        printf("sendto() failed with error code : %d", WSAGetLastError());
+      }
+    }
+  }
+
+  void end()
+  {
+    closesocket(s);
+    WSACleanup();
+    if (display)
+    {
+        printf("UDP Connection closed\n");
+    }
+  }
 };
 
 typedef struct TcpClient
@@ -538,10 +698,9 @@ private:
 public:
   char recvbuf[BUFLEN];
   char senbuf[BUFLEN];
-  // New
   bool error, new_message, finish, display, error_lim;
   struct timeval timeout;
-  int error_cnt;
+  int error_cnt, ERROR_CNT_LIM;
 
   // Constructor 
   TcpServer(char* S_port) {
@@ -555,6 +714,7 @@ public:
       finish = false;
       display = false;
       error_cnt = 0;
+      ERROR_CNT_LIM = 5;
       error_lim = false;
 
       strcpy(PORTc, S_port);
@@ -705,7 +865,7 @@ public:
         printf("TCP error.\n");
       }
     }
-    error_lim = error_cnt >= 5;
+    error_lim = error_cnt >= ERROR_CNT_LIM;
     //Decode after this
   } // void check
 
