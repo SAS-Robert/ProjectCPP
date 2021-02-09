@@ -95,8 +95,14 @@ aau_blue = '#211a52'
 def TCP_update():
     global stim_code, rob_status, rep_nr, user_code, ch_str
     # Encode message
+    str_rep = ' '
+    if rep_nr >= 10:
+        str_rep = str(rep_nr)
+    else:
+        str_rep = '0' + str(rep_nr)
+
     message = 'SCREEN;' + str(stim_code) + ';' + \
-        str(user_code) + ';' + rob_status + str(rep_nr) + ';' + \
+        str(user_code) + ';' + rob_status + str_rep + ';' + \
         str(ch_select.index(ch_str.get())) + ';'
     #print(f'Sending... {message}')
     s.sendall(message.encode("utf-8"))

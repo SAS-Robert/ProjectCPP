@@ -69,10 +69,10 @@ RehaIngest_Req_Type Inge_key = Inge_none;
 RehaIngest_Req_Type Inge_hmi = Inge_none;
 User_Req_Type User_cmd = User_none;
 
-exercise_Type GL_exercise = exInvalid; // exCircuit;
+exercise_Type GL_exercise = exCircuit; // upperLeg_extexCircuit;
 
-// char PORT_STIM[5] = "COM3";   // Laptop
-char PORT_STIM[5] = "COM3";     // Robot
+char PORT_STIM[5] = "COM5";   // Laptop
+// char PORT_STIM[5] = "COM3";     // Robot
 RehaMove3 stimulator(PORT_STIM);
 
 // char PORT_REC[5] = "COM4";    // Laptop
@@ -102,7 +102,7 @@ TcpServer screen(SCREEN_PORT);
 // TCP Stuff
 int ROB_rep = 0;
 ROB_Type TCP_rob;
-int TCP_rep = 20;
+int TCP_rep = 2;
 
 ROB_Type screen_status;
 bool start_train = false, hmi_repeat = false, hmi_new = false;
@@ -181,9 +181,9 @@ bool GL_tcpActive = true;
 // Interface functions
 void get_keyboard();
 void connect_thread();
-void tcp_run();
+void run_gui();
 // Devices functions
-void set_stimulation(RehaMove3_Req_Type &code, Smpt_Channel sel_ch);
+void modify_stimulation(RehaMove3_Req_Type &code, Smpt_Channel sel_ch);
 static void stimulating_sas();
 
 static void recording_sas();
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
     std::cout << "===================================" << endl;
 
     std::thread Interface(connect_thread);
-    std::thread GUI(tcp_run);
+    std::thread GUI(run_gui);
 
     MAIN_to_all.start = true;
     MAIN_to_all.ready = true;
@@ -269,8 +269,8 @@ int main(int argc, char *argv[])
 
         switch (GL_state)
         {
-        case st_init:
-            if (stim_status.ready && stimA_active)
+         case st_init:
+            if (rec_status.ready && stim_status.ready && stimA_active)
             {
                 std::cout << "===================================" << endl;
                 printf("SAS PROGRAMME: Starting automatic callibration...\n");
@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
                 toc_lim = 5;
                 tic();
             }
-            if (stim_status.ready && stimM_active)
+            if (rec_status.ready && stim_status.ready && stimM_active)
             {
                 std::cout << "===================================" << endl;
                 printf("SAS PROGRAMME: Starting manual callibration...\n");
@@ -290,9 +290,9 @@ int main(int argc, char *argv[])
                     std::cout << "-Q = Stop stimulation.\n-E = Re-start stimulation.\n-X = end current calibration (manual or automatic).\n\n";
                     std::cout << "===================================" << endl;
                 }
-            }
-            break;
-
+            }          
+         break;
+         
         // Stimulation calibration process
         case st_calA_go:
             // Stimulation too weak: nothing happens
@@ -478,18 +478,18 @@ int main(int argc, char *argv[])
                 // Reset process variables: this needs to be better structured
                 ROB_rep = 0;
 
-                if (MAIN_to_all.end) 
+                if (MAIN_to_all.end && rec_status.ready && stim_status.ready) 
                 {
                     GL_state = st_end;
                 }
-                else if (hmi_repeat) {
+                else if (hmi_repeat && rec_status.ready && stim_status.ready) {
                     // Repeat same type of exercise
                     GL_state = st_th;
                     startup_filters();
                     hmi_repeat = false;
                     hmi_new = false;
                 }
-                else if (hmi_new) {
+                else if (hmi_new && rec_status.ready && stim_status.ready) {
                     // Do a new type of exercise
                     GL_state = st_init;
                     startup_filters();
@@ -842,14 +842,14 @@ void connect_thread()
     } // while loop
 } // thread
 
-void tcp_run()
+void run_gui()
 {
     bool decode_successful;
     while (!MAIN_to_all.end && (GL_state != st_end) && !screen.finish && GL_tcpActive)
     {
         // Receive
         screen.check();
-        decode_successful = decode_tcp(screen.recvbuf, Move3_hmi, User_cmd, TCP_rob, TCP_rep, screen.finish, hmi_channel);
+        decode_successful = decode_gui(screen.recvbuf, Move3_hmi, User_cmd, TCP_rob, TCP_rep, screen.finish, hmi_channel);
 
         if (decode_successful)
         {
@@ -935,99 +935,80 @@ void tcp_run()
 }
 // ---------------------------- Functions devices  --------------------------
 //New
-void set_stimulation(RehaMove3_Req_Type &code, Smpt_Channel sel_ch)
+void modify_stimulation(RehaMove3_Req_Type &code, Smpt_Channel sel_ch)
 {
+    // current_Val = real values on the stimulator
+    // next_val = values that are going to be assigned
+    // code = command (what to change)
     Smpt_ml_channel_config next_val;
     next_val = stimulator.stim[sel_ch]; // New
     //next_val = stimulator.stim[Smpt_Channel_Red]; // Old
     float Dcurr = 0.0, DHz = 0.0;
     uint8_t Dramp = 0, Dnr = 0;
-    // current_Val = real values on the stimulator
-    // next_val = values that are going to be assigned
-    // code = command (what to change)
+    bool autoCal_process = (GL_state == st_calA_go) || (GL_state == st_calA_stop); // Automatic cal in progress
 
-    // Select increment
-    if ((GL_state != st_calA_go) && (GL_state != st_calA_stop))
+    // Automatic calibration
+    if (autoCal_process)
     {
-        Dcurr = D_CUR_MAN;
-        Dramp = D_RAMP_MAN;
-        Dnr = D_POINT_MAN;
-        DHz = D_HZ_MAN;
-    }
-    else
-    {
-        // Automatic calibration values
-        if (next_val.points[0].current < 20)
-        {
-            Dcurr = D_CUR_HIGH;
-        }
-        else if (next_val.points[0].current < 30)
-        {
-            Dcurr = D_CUR_MED;
-        }
-        else if (next_val.points[0].current < 40)
-        {
-            Dcurr = D_CUR_LOW;
-        }
-    }
-
-    switch (code)
-    {
-        // User interface changes
-    case Move3_ramp_more:
-        next_val.number_of_points += Dnr;
-        next_val.ramp += Dramp;
-        break;
-    case Move3_ramp_less:
-        next_val.number_of_points -= Dnr;
-        next_val.ramp -= Dramp;
-        break;
-    case Move3_decr:
-        next_val.points[0].current -= Dcurr;
-        next_val.points[2].current += Dcurr;
-        break;
-    case Move3_incr:
-        next_val.points[0].current += Dcurr;
-        next_val.points[2].current -= Dcurr;
-        break;
-    }
-
-    // Automatic ramp values
-    if ((GL_state == st_calA_go) || (GL_state == st_calA_stop))
-    {
+        // Select type of increments
         if (next_val.points[0].current <= 20)
         {
+            Dcurr = D_CUR_HIGH;
             next_val.ramp = D_RAMP_LOW;
             next_val.number_of_points = D_RAMP_LOW;
         }
         else if (next_val.points[0].current <= 30)
         {
+            Dcurr = D_CUR_MED;
             next_val.ramp = D_RAMP_MED;
             next_val.number_of_points = D_RAMP_MED;
         }
         else if (next_val.points[0].current <= 40)
         {
+            Dcurr = D_CUR_LOW;
             next_val.ramp = D_RAMP_HIGH;
             next_val.number_of_points = D_RAMP_HIGH;
         }
     }
-    // Checking max and min possible values:
-    if (next_val.number_of_points > MAX_STIM_RAMP)
-    {
-        next_val.number_of_points = MAX_STIM_RAMP;
-    }
-    else if (next_val.number_of_points < MIN_STIM_RAMP)
-    {
-        next_val.number_of_points = MIN_STIM_RAMP;
+    // Manual calibration or standard process
+    else {
+        Dcurr = D_CUR_MAN;
+        Dramp = D_RAMP_MAN;
+        Dnr = D_POINT_MAN;
+        DHz = D_HZ_MAN;
     }
 
+    // Apply increments 
+    switch (code)
+    {
+        case Move3_ramp_more:
+            next_val.number_of_points += Dnr;
+            next_val.ramp += Dramp;
+            break;
+        case Move3_ramp_less:
+            next_val.number_of_points -= Dnr;
+            next_val.ramp -= Dramp;
+            break;
+        case Move3_decr:
+            next_val.points[0].current -= Dcurr;
+            next_val.points[2].current += Dcurr;
+            break;
+        case Move3_incr:
+            next_val.points[0].current += Dcurr;
+            next_val.points[2].current -= Dcurr;
+            break;
+    }
+
+    // Checking max and min possible values:
     if (next_val.ramp > MAX_STIM_RAMP)
     {
         next_val.ramp = MAX_STIM_RAMP;
+        next_val.number_of_points = MAX_STIM_RAMP;
     }
     else if (next_val.ramp < MIN_STIM_RAMP)
     {
         next_val.ramp = MIN_STIM_RAMP;
+        next_val.number_of_points = MIN_STIM_RAMP;
     }
 
     if (next_val.points[0].current > MAX_STIM_CUR)
@@ -1040,13 +1021,15 @@ void set_stimulation(RehaMove3_Req_Type &code, Smpt_Channel sel_ch)
         next_val.points[0].current = MIN_STIM_CUR;
         next_val.points[2].current = MIN_STIM_CUR;
     }
-    stimulator.stim[sel_ch] = next_val; // New
+    // Update values
+    stimulator.stim[sel_ch] = next_val;
     // stimulator.stim[Smpt_Channel_Red] = next_val; // Old
     if ((code != Move3_stop) && (code != Move3_start) && (!GL_tcpActive || screen.display))
     {
         printf("RehaMove3 message: Stimulation update -> current = %2.2f, ramp points = %d, ramp value = %d\n", stimulator.stim[sel_ch].points[0].current, stimulator.stim[sel_ch].number_of_points, stimulator.stim[sel_ch].ramp);
         //%2.1f is the format to show a float number, 2.1 means 2 units and 1 decimal
     }
+    // Update commands
     code = Move3_none;
     Move3_cmd = Move3_none;
     Move3_hmi = Move3_none;
@@ -1065,20 +1048,8 @@ void stimulating_sas()
         if (!stimulator.ready)
         {
             // Choose an exercise
-            //load_stim_settings();
-
-            switch(GL_exercise)
-            {
-            case lowerLeg_flex:
-                stimulator.init(LOWERLEG_SET);
-                break;
-            case upperLeg_ext:
-                stimulator.init(UPPERLEG_SET);
-                break;
-            default:
-                stimulator.init(CIRCUIT_SET);
-                break;
-            }
+            load_stim_settings();
+            stimulator.init(GL_exercise);
         }
         if(!stim_fl0)
         {
@@ -1131,7 +1102,7 @@ void stimulating_sas()
             stimulator.pause();
             Move3_cmd = Move3_incr;
             // if keep going?
-            set_stimulation(Move3_cmd, Smpt_Channel_Red);
+            modify_stimulation(Move3_cmd, Smpt_Channel_Red);
         }
         if ((Move3_hmi == Move3_done || Move3_key == Move3_done) && !stim_userX)
         {
@@ -1147,7 +1118,7 @@ void stimulating_sas()
         //Update stimulation parameters if a key associated with parameters has been pressed
         if ((Move3_user_req))
         {
-            set_stimulation(Move3_hmi, hmi_channel);
+            modify_stimulation(Move3_hmi, hmi_channel);
         }
 
         // Enable / disable channels. By default, only red channel is avaliable.
@@ -1192,10 +1163,11 @@ void stimulating_sas()
     // Normal SAS process
     case st_wait:
         stim_fl3 = false;
+        stim_fl4 = false;
         // do stuff
         if (Move3_hmi != Move3_none)
         {
-            set_stimulation(Move3_hmi, Smpt_Channel_Red);
+            modify_stimulation(Move3_hmi, Smpt_Channel_Red);
         }
         break;
 
@@ -1203,7 +1175,7 @@ void stimulating_sas()
         // do stuff
         if ((Move3_hmi != Move3_none) && (Move3_hmi != Move3_stop))
         {
-            set_stimulation(Move3_hmi, Smpt_Channel_Red);
+            modify_stimulation(Move3_hmi, Smpt_Channel_Red);
             stim_fl1 = false;
         }
 
@@ -1244,6 +1216,7 @@ void stimulating_sas()
             stim_fl0 = false;
             stim_fl1 = false;
             stim_fl2 = false;
+            stim_fl3 = false;
             stim_status.ready = true;
         }
 
@@ -1256,6 +1229,16 @@ void stimulating_sas()
         stim_userX = false;
         stim_done = false;
         start_train = false;
+        
+        if (hmi_new) {
+            set_stimulation(GL_exercise, stimulator.stim[Smpt_Channel_Red]);
+            stim_status.ready = true;
+        }
+        else {
+            stim_status.ready = hmi_repeat;
+        }
+
+
         break;
 
     case st_end:
@@ -1301,16 +1284,35 @@ void recording_sas()
     switch (GL_state)
     {
 
-    case st_calM:
-        if (stim_done && rec_status.req && !recorder.ready)
+    
+    case st_init:
+        if (!recorder.ready)
         {
             std::cout << "Reha Ingest message: Starting recorder." << endl;
             recorder.init();
             recorder.start();
-            rec_status.ready = recorder.ready;
         }
-        break;
+        startup_filters();
+        rec_status.ready = recorder.ready;
+    break;
 
+    case st_calA_go:
+        // Discard data
+        recorder.record();
+        recorder_emg1.clear();
+    break;
+
+    case st_calA_stop:
+        // Discard data
+        recorder.record();
+        recorder_emg1.clear();
+    break;
+
+    case st_calM:
+        // Discard data
+        recorder.record();
+        recorder_emg1.clear();
+    break;
     case st_th:
         recorder.record();
         if (recorder.data_received && recorder.data_start && !fileFILTERS.is_open())
@@ -1395,8 +1397,10 @@ void recording_sas()
 
     case st_repeat:
         rec_status.req = false;
+        // Discard data
+        recorder.record();
         recorder_emg1.clear();
-        recorder.ready = false;
+        // rec_status.ready = false;
         break;
 
     case st_end:

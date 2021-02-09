@@ -230,6 +230,22 @@ void load_stim_settings() {
     CIRCUIT_SET.points[2].current = -5;
     CIRCUIT_SET.points[2].time = 200;
 }
+
+void set_stimulation(exercise_Type profile, Smpt_ml_channel_config &settings)
+{
+    Smpt_ml_channel_config new_settings = CIRCUIT_SET;
+    switch (profile) 
+    {
+        case lowerLeg_flex:
+            new_settings = LOWERLEG_SET;
+            break;
+        case upperLeg_ext:
+            new_settings = UPPERLEG_SET;
+            break;
+    }
+    // Update values
+    settings = new_settings;
+}
 // ------------------ Objects definition ------------------
 // Stimulator
 class RehaMove3
@@ -269,7 +285,7 @@ public:
         active = false;
     }
     // Functions
-    void init(Smpt_ml_channel_config settings)
+    void init(exercise_Type exercise)
     {
         // Old
         // Stimulation values
@@ -340,6 +356,8 @@ public:
         // Initialize stim channels values
         for (int k = 0; k < 4; k++)
         {
+            set_stimulation(exercise, stim[k]);
+            /*
             stim[k].number_of_points = settings.number_of_points;
             stim[k].ramp = settings.ramp;
             stim[k].period = settings.period;
@@ -349,6 +367,7 @@ public:
             stim[k].points[1].time = settings.points[1].time;
             stim[k].points[2].current = settings.points[2].current;
             stim[k].points[2].time = settings.points[2].time;
+            */
         }
 
         printf("Device RehaMove3 ready.\n");

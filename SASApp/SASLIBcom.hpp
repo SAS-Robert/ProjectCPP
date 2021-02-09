@@ -84,7 +84,7 @@ bool decode_udp(char *message, bool &value1, bool &value2)
   return valid_msg;
 }
 
-bool decode_tcp(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &user, ROB_Type &status, int &rep, bool &finished, Smpt_Channel &sel_ch)
+bool decode_gui(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &user, ROB_Type &status, int &rep, bool &finished, Smpt_Channel &sel_ch)
 {
   int length = strlen(message);
   char start_msg[7] = "SCREEN";
