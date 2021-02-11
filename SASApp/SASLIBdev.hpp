@@ -261,7 +261,7 @@ private:
     Smpt_ml_update ml_update; // Struct for ml_update command
 
 public:
-    bool ready, active;
+    bool ready, active, display;
     //Smpt_ml_channel_config stim;
     Smpt_ml_channel_config stim[4]; // New
     bool stim_act[4] = {true, false, false, false};
@@ -269,9 +269,8 @@ public:
     bool abort;
 
     // Constructor
-    RehaMove3(char *port)
+    RehaMove3()
     {
-        port_name_rm = port;
         device = {0};
         ml_init = {0};
         ml_get_current_data = {0};
@@ -283,11 +282,14 @@ public:
         ready = false;
         abort = false;
         active = false;
+        turn_on = 2500;
+        display = false;
     }
     // Functions
-    void init(exercise_Type exercise)
+    void init(char* port, exercise_Type exercise)
     {
-        // Old
+        // device port
+        port_name_rm = port;
         // Stimulation values
         stim[Smpt_Channel_Red].number_of_points = 3; // Set the number of points
         stim[Smpt_Channel_Red].ramp = 3;             // Three lower pre-pulses
@@ -300,77 +302,60 @@ public:
         stim[Smpt_Channel_Red].points[2].time = 200;
 
         // Start Process
-        printf("Reha Move3 message: Initializing device on port %s... ", port_name_rm); //<<port_name_rm<<endl;
-        while (!smpt_next)
-        {
-            smpt_check = smpt_check_serial_port(port_name_rm);
-            smpt_port = smpt_open_serial_port(&device, port_name_rm);
-            // Request ID Data
-            packet = smpt_packet_number_generator_next(&device);
-            smpt_send_get_device_id(&device, packet);
+        if (display) { printf("Reha Move3 message: Initializing device on port %s... ", port_name_rm); } 
 
-            fill_ml_init(&device, &ml_init);
-            smpt_send_ml_init(&device, &ml_init);
-            fill_ml_update(&device, &ml_update, Smpt_Channel_Red, stim_act[Smpt_Channel_Red], stim[Smpt_Channel_Red]); // <- comment out this one
-            //enable_ml_update(&device, &ml_update, Smpt_Channel_Red, true); //New
-            smpt_send_ml_update(&device, &ml_update);
-            fill_ml_get_current_data(&device, &ml_get_current_data);
-            // This last command check if it's received all the data requested
-            smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+        smpt_check = smpt_check_serial_port(port_name_rm);
+        smpt_port = smpt_open_serial_port(&device, port_name_rm);
+        // Request ID Data
+        packet = smpt_packet_number_generator_next(&device);
+        smpt_send_get_device_id(&device, packet);
 
-            // smpt_next = go to next step -> Process running
-            smpt_next = smpt_check && smpt_port && smpt_get;
-            if (!smpt_next)
-            {
-                smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
-                smpt_close_serial_port(&device);
-                if (smpt_check)
-                {
-                    std::cout << "\nError - Reha Move3: Device does not respond. Turn it on or restart it.\n";
-                    turn_on = 2500;
-                }
-                else
-                {
-                    std::cout << "\nError - Reha Move3: Device not found. Check connection.\n";
-                }
-                Sleep(5000); // waits for 5 seconds to give you time to regret your life
-                std::cout << "\nReha Move 3 message: Retrying... ";
-                smpt_port = true;
-            }
-            if (abort)
-            {
-                smpt_end = true;
-                break;
-            }
-        }
+        fill_ml_init(&device, &ml_init);
+        smpt_send_ml_init(&device, &ml_init);
+        fill_ml_update(&device, &ml_update, Smpt_Channel_Red, stim_act[Smpt_Channel_Red], stim[Smpt_Channel_Red]); // <- comment out this one
+        smpt_send_ml_update(&device, &ml_update);
+        fill_ml_get_current_data(&device, &ml_get_current_data);
+        // This last command check if it's received all the data requested
+        smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
 
-        // Run Process
-        if (!smpt_end)
+        // smpt_next = connection port was successfull
+        smpt_next = smpt_check && smpt_port && smpt_get;
+
+        if (smpt_next && !abort && !smpt_end)
         {
             Sleep(turn_on); // wait for it to be properly started
             smpt_port = false;
             fill_ml_init(&device, &ml_init);
             smpt_send_ml_init(&device, &ml_init);
             ready = true;
-        }
-        // Initialize stim channels values
-        for (int k = 0; k < 4; k++)
-        {
-            set_stimulation(exercise, stim[k]);
-            /*
-            stim[k].number_of_points = settings.number_of_points;
-            stim[k].ramp = settings.ramp;
-            stim[k].period = settings.period;
-            // Set the stimulation pulse
-            stim[k].points[0].current = settings.points[0].current;
-            stim[k].points[0].time = settings.points[0].time;
-            stim[k].points[1].time = settings.points[1].time;
-            stim[k].points[2].current = settings.points[2].current;
-            stim[k].points[2].time = settings.points[2].time;
-            */
-        }
 
-        printf("Device RehaMove3 ready.\n");
+            // Initialize stim channels values
+            for (int k = 0; k < 4; k++)
+            {
+                set_stimulation(exercise, stim[k]);
+            }
+            if(display) { printf("Device RehaMove3 ready.\n"); }
+            }
+            else if (!smpt_next)
+            {
+                smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
+                smpt_close_serial_port(&device);
+                if (smpt_check && display)
+                {
+                    std::cout << "\nError - Reha Move3: Device does not respond. Turn it on or restart it.\n";
+                }
+                else if(display)
+                {
+                    std::cout << "\nError - Reha Move3: Device not found. Check connection.\n";
+                }
+                smpt_port = true;
+                // Retry after this
+            }
+            else if (abort) 
+            {
+                smpt_end = true;
+            }
+
     };
     void update()
     {
@@ -396,11 +381,11 @@ public:
     {
         stim_act[sel_ch] = enable;
 
-        if (enable)
+        if (enable && display)
         {
             printf("Chanel %i is enabled\n", sel_ch);
         }
-        else
+        else if(display)
         {
             printf("Chanel %i is not enabled\n", sel_ch);
         }
@@ -424,7 +409,7 @@ public:
         }
         ready = false;
         active = false;
-        if (smpt_check)
+        if (smpt_check && display)
         {
             std::cout << "Reha Move3 message: Process finished.\n";
         }
@@ -443,13 +428,12 @@ private:
     bool smpt_port, smpt_check, smpt_stop, smpt_next, smpt_end;
 
 public:
-    bool abort, ready;
+    bool abort, ready, found, display;
     bool data_received, data_start, data_printed;
 
     // Constructor
-    RehaIngest(char *port)
+    RehaIngest()
     {
-        port_name_ri = port;
         device_ri = {0};
         ml_init = {0};
         packet_number = 0;
@@ -463,36 +447,41 @@ public:
         data_printed = false;
         ready = false;
         abort = false;
+        display = false;
+        found = false;
     }
     // Functions
-    void init()
+    void init(char* port)
     {
+        ready = false;
+        found = false;
+        port_name_ri = port;
         // First step
-        std::cout << "Reha Ingest message: Setting communication on port " << port_name_ri << "... ";
-        while (!smpt_next)
-        {
-            smpt_check = smpt_check_serial_port(port_name_ri);
-            smpt_port = smpt_open_serial_port(&device_ri, port_name_ri);
-            packet_number = smpt_packet_number_generator_next(&device_ri);
-            smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
-            smpt_next = smpt_check && smpt_port && smpt_stop;
-            if (!smpt_next)
-            {
-                std::cout << "Error - Reha Ingest: Device not found. Turn it on and/or check connection.\n";
-                smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
-                smpt_close_serial_port(&device_ri);
-                Sleep(5000); // waits for 5 seconds to give you time to regret your life
-                std::cout << "Reha Ingest message: Retrying... ";
-            }
-            if (abort)
-            {
-                smpt_end = true;
-                break;
-            }
+        if (display) { std::cout << "Reha Ingest message: Setting communication on port " << port_name_ri << "... "; }
+
+        smpt_check = smpt_check_serial_port(port_name_ri);
+        smpt_port = smpt_open_serial_port(&device_ri, port_name_ri);
+        packet_number = smpt_packet_number_generator_next(&device_ri);
+        smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
+        smpt_next = smpt_check && smpt_port && smpt_stop;
+        // smpt_next = connection to the device was successful
+
+        if (smpt_next && !smpt_end && !abort) {
+            if (display) { std::cout << "Device RehaIngest found." << endl; }
+            recorder_emg1.clear();
+            found = true;
         }
-        std::cout << "Device RehaIngest found." << endl;
-        ready = true;
-        recorder_emg1.clear();
+        else if (!smpt_next)
+        {
+            if (display) { std::cout << "Error - Reha Ingest: Device not found. Turn it on and/or check connection.\n"; }
+            smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
+            smpt_close_serial_port(&device_ri);
+        }
+        else if (abort)
+        {
+            smpt_end = true;
+        }
+
     };
     void start()
     {
@@ -504,7 +493,7 @@ public:
             handle_dl_packet_global(&device_ri);
         }
         // Second step: enable device
-        std::cout << "Reha Ingest message: Enabling and initializing device... ";
+        if (display) { std::cout << "Reha Ingest message: Enabling and initializing device... "; }
         Smpt_dl_power_module dl_power_module = {0};
         fill_dl_power_module(&device_ri, &dl_power_module);
         smpt_send_dl_power_module(&device_ri, &dl_power_module);
@@ -533,7 +522,7 @@ public:
         packet_number = smpt_packet_number_generator_next(&device_ri);
         smpt_send_dl_start(&device_ri, packet_number);
         ready = true;
-        std::cout << "Device ready.\n";
+        if (display) { std::cout << "Device ready.\n"; }
     };
     void record()
     {
@@ -560,7 +549,7 @@ public:
         smpt_port = smpt_close_serial_port(&device_ri);
         smpt_check = smpt_check_serial_port(port_name_ri);
         ready = false;
-        printf("Reha Ingest message: Process finished.\n");
+        if (display) { printf("Reha Ingest message: Process finished.\n"); }
     };
 };
 

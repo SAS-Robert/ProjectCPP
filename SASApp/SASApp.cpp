@@ -59,8 +59,7 @@ string date_s;
 string filter_s;
 
 // ------------------------- Devices handling --------------------------------
-bool stim_ready = false;
-bool rec_ready = false;
+bool stim_ready = false, rec_ready = false, stim_abort = false;
 
 RehaMove3_Req_Type Move3_cmd = Move3_none;
 RehaMove3_Req_Type Move3_hmi = Move3_none;
@@ -73,18 +72,19 @@ exercise_Type GL_exercise = exCircuit; // upperLeg_extexCircuit;
 
 char PORT_STIM[5] = "COM5";   // Laptop
 // char PORT_STIM[5] = "COM3";     // Robot
-RehaMove3 stimulator(PORT_STIM);
+RehaMove3 stimulator;
 
 // char PORT_REC[5] = "COM4";    // Laptop
 char PORT_REC[5] = "COM4";      // Robot
-RehaIngest recorder(PORT_REC);
+RehaIngest recorder;
 
-// Other variables
+// Flag variables
 bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
 bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false;
-bool main_fl0 = false, main_fl1 = false;
+bool main_fl0 = false, main_fl1 = false, main_init = false;
 
 // Dummies and files
+bool date_set;
 ofstream fileLOGS;
 string SASName4, SASName5, th_s;
 
@@ -105,6 +105,7 @@ UdpServer screen(SCREEN_ADDRESS, SCREEN_PORT); // Using UDP-IP protocol
 int ROB_rep = 0;
 ROB_Type TCP_rob;
 int TCP_rep = 2;
+string screenMessage = "";
 
 ROB_Type screen_status;
 bool start_train = false, hmi_repeat = false, hmi_new = false;
@@ -143,20 +144,10 @@ bool stim_timing = false, stim_timeout = false;
 //-time 2 = filtering perfomance (EMG_tic)
 //-time 3 = process perfomance: state machine + recorder + stimulator time
 //-time 4 = interface perfomance: keyboard + UDP + TCP time
-ofstream time1_f;
-ofstream time2_f;
-ofstream time3_f;
-ofstream time4_f;
-std::vector<double> time1_v;
-std::vector<double> time2_v;
-std::vector<double> time2_v2;
-std::vector<double> time3_v;
-std::vector<double> time3_v2;
-std::vector<double> time4_v;
-std::chrono::duration<double> time1_diff;
-std::chrono::duration<double> time2_diff;
-std::chrono::duration<double> time3_diff;
-std::chrono::duration<double> time4_diff;
+ofstream time1_f, time2_f, time3_f, time4_f;
+double time1_d, time2_d, time3_d, time3_v2_d, time4_d;
+std::vector<double> time1_v, time2_v, time3_v, time3_v2, time4_v;
+std::chrono::duration<double> time1_diff, time2_diff, time3_diff, time4_diff;
 auto time1_start = std::chrono::steady_clock::now();
 auto time1_end = std::chrono::steady_clock::now();
 auto time2_start = std::chrono::steady_clock::now();
@@ -167,13 +158,9 @@ auto auto_start_stim = std::chrono::steady_clock::now();
 auto auto_end_stim = std::chrono::steady_clock::now();
 auto time4_start = std::chrono::steady_clock::now();
 auto time4_end = std::chrono::steady_clock::now();
-std::chrono::duration<double> auto_diff_stim;
-std::chrono::duration<double> auto_diff_rec;
+std::chrono::duration<double> auto_diff_stim, auto_diff_rec;
 
-string time1_s;
-string time2_s;
-string time3_s;
-string time4_s;
+string time1_s, time2_s, time3_s, time4_s;
 char folder[256] = "files\\";
 char Sname[256] = "subject";
 // ---------------------------- Functions declaration  -----------------------------
@@ -192,6 +179,9 @@ static void recording_sas();
 // ------------------------------ Main  -----------------------------
 int main(int argc, char *argv[])
 {
+    // Local variables
+    bool devicesReady;
+    bool robotReady;
     // initialize files names
     get_dir(argc, argv, file_dir);
     generate_date(date); //get current date/time in format YYMMDD_hhmm
@@ -208,10 +198,6 @@ int main(int argc, char *argv[])
     // Flushing input and output buffers
     cout.flush();
     fflush(stdin);
-
-    // Things to do only once:
-    startup_filters(); // maybe more than that? 
-    load_stim_settings();
 
 
     std::cout << "\n===================================" << endl;
@@ -259,7 +245,8 @@ int main(int argc, char *argv[])
     MAIN_to_all.start = true;
     MAIN_to_all.ready = true;
 
-    printf("SAS PROGRAMME: starting up stimulator.\n");
+    screenMessage = "Starting up stimulator and recorder.";
+    std::cout << screenMessage << endl;
 
     // main process
     while (!MAIN_to_all.end && (GL_state != st_end))
@@ -272,18 +259,28 @@ int main(int argc, char *argv[])
         switch (GL_state)
         {
          case st_init:
-            if (rec_status.ready && stim_status.ready && stimA_active)
+             devicesReady = rec_status.ready && stim_status.ready;
+             if (devicesReady && !stimA_active && !stimM_active && !main_init)
+             {
+                 screenMessage = "Devices ready. Press either manual or automatic calibration";
+                 std::cout << screenMessage << endl;
+                 main_init = true;
+            }
+            if (devicesReady && stimA_active)
             {
                 std::cout << "===================================" << endl;
-                printf("SAS PROGRAMME: Starting automatic callibration...\n");
+                screenMessage = "Starting automatic callibration...";
+                std::cout << screenMessage << endl;
+
                 GL_state = st_calA_go;
                 toc_lim = 5;
                 tic();
             }
-            if (rec_status.ready && stim_status.ready && stimM_active)
+            if (devicesReady && stimM_active)
             {
                 std::cout << "===================================" << endl;
-                printf("SAS PROGRAMME: Starting manual callibration...\n");
+                screenMessage = "Starting manual callibration...";
+                std::cout << screenMessage << endl;
                 GL_state = st_calM;
 
                 if (!GL_tcpActive)
@@ -302,7 +299,10 @@ int main(int argc, char *argv[])
             if (toc() && !stimA_start_b && !stim_auto_done)
             {
                 toc_lim = 5;
-                printf("SAS test: Endpoint not reached, break of %2.2f s.\n", toc_lim);
+                //printf("SAS test: Endpoint not reached, break of %2.2f s.\n", toc_lim);
+                screenMessage = "Auto-calibration : Endpoint not reached, break of " + to_string(toc_lim) + "s.";
+                std::cout << screenMessage << endl;
+
                 GL_state = st_calA_stop;
                 tic();
                 calCycle_nr++; // New for testing
@@ -313,7 +313,9 @@ int main(int argc, char *argv[])
             {
                 toc_lim = 7;
                 stimA_start_b = true;
-                printf("SAS test: Movement detected, stimulation total time will be set to %2.2f s.\n", toc_lim);
+                // printf("SAS test: Movement detected, stimulation total time will be set to %2.2f s.\n", toc_lim);
+                screenMessage = "Auto-calibration: Movement detected, stimulation total time will be set to " + to_string(toc_lim) + "s.";
+                std::cout << screenMessage << endl;
             }
             if (toc() && stimA_start_b && !robert.Reached)
             {
@@ -321,12 +323,18 @@ int main(int argc, char *argv[])
                 toc_lim = 10;
                 tic();
                 calCycle_nr++; // New for testing
-                printf("SAS test: Stopping movement and break of %2.2f s\n", toc_lim);
+                
+                //printf("SAS test: Stopping movement and break of %2.2f s\n", toc_lim);
+                screenMessage = "Auto-calibration : Stopping movement and break of " + to_string(toc_lim) + "s.";
+                std::cout << screenMessage << endl;
             }
             // Stimulation values OK: Reached End Point
             if (stim_auto_done && toc())
             {
-                printf("SAS test: Reached End Point, %2.2f s. Switching to manual callibration.\n", toc_lim);
+                //printf("SAS test: Reached End Point, %2.2f s. Switching to manual callibration.\n", toc_lim);
+                screenMessage = "SAS test: Reached End Point. Switching to manual callibration.";
+                std::cout << screenMessage << endl;
+
                 if (!GL_tcpActive)
                 {
                     std::cout << "===================================" << endl;
@@ -340,7 +348,9 @@ int main(int argc, char *argv[])
             if (stim_userX && !stimulator.active)
             {
                 GL_state = st_calM;
-                printf("SAS PROGRAMME: Quitting automatic callibration. Starting manual...\n");
+                screenMessage = "Quitting automatic callibration. Starting manual...";
+                std::cout << screenMessage << endl;
+
                 if (!GL_tcpActive)
                 {
                     std::cout << "===================================" << endl;
@@ -356,7 +366,9 @@ int main(int argc, char *argv[])
             if (stim_userX && !stimulator.active)
             {
                 GL_state = st_calM;
-                printf("SAS PROGRAMME: Quitting automatic callibration. Starting manual...\n");
+                screenMessage = "Quitting automatic callibration. Starting manual...";
+                std::cout << screenMessage << endl;
+
                 if (!GL_tcpActive)
                 {
                     std::cout << "===================================" << endl;
@@ -372,11 +384,15 @@ int main(int argc, char *argv[])
                 // why has the calibration failed
                 if (calCycle_nr >= CAL_CYCLE_LIM)
                 {
-                    printf("SAS PROGRAMME: Automatic callibration failed after %d tries. Switching to manual...\n", calCycle_nr);
+                    //printf("SAS PROGRAMME: Automatic callibration failed after %d tries. Switching to manual...\n", calCycle_nr);
+                    screenMessage = "Automatic callibration failed after " + to_string(calCycle_nr) + " tries. Switching to manual...";
+                    std::cout << screenMessage << endl;
                 }
                 else
                 {
-                    printf("SAS PROGRAMME: Automatic callibration failed. Stimulation has reached the maximum current of %2.2f mA. Switching to manual...\n", CAL_CUR_LIM);
+                    //printf("SAS PROGRAMME: Automatic callibration failed. Stimulation has reached the maximum current of %2.2f mA. Switching to manual...\n", CAL_CUR_LIM);
+                    screenMessage = "Automatic callibration failed. Stimulation has reached the maximum current of " + to_string(CAL_CUR_LIM) + "mA. Switching to manual...";
+                    std::cout << screenMessage << endl;
                 }
 
                 if (!GL_tcpActive)
@@ -392,14 +408,17 @@ int main(int argc, char *argv[])
                 GL_state = st_calA_go;
                 toc_lim = 5;
                 tic();
-                printf("SAS test: Finish cycle nr.%d. Starting next cycle with a stim time of %2.2f s.\n", calCycle_nr, toc_lim);
+                //printf("SAS test: Finish cycle nr.%d. Starting next cycle with a stim time of %2.2f s.\n", calCycle_nr, toc_lim);
+                screenMessage = "Finish cycle nr." + to_string(calCycle_nr) + ". Starting next cycle with a stim time of " + to_string(toc_lim) + "s.";
+                std::cout << screenMessage << endl;
             }
             break;
 
         case st_calM:
             if (rec_status.ready && rec_status.req && stim_done)
             {
-                printf("SAS PROGRAMME: setting threshold...\n");
+                screenMessage = "Setting threshold...";
+                std::cout << screenMessage << endl;
                 GL_state = st_th;
             }
             break;
@@ -410,11 +429,13 @@ int main(int argc, char *argv[])
             {
                 if (GL_tcpActive)
                 {
-                    printf("SAS PROGRAMME: Threshold saved. Press start training button. Waiting for stimulator to be triggered.\n");
+                    //printf("SAS PROGRAMME: Threshold saved. Press start training button. Waiting for stimulator to be triggered.\n");
+                    screenMessage = "Threshold saved. Press start training button. Waiting for stimulator to be triggered.";
+                    std::cout << screenMessage << endl;
                 }
                 else
                 {
-                    printf("SAS PROGRAMME: Threshold saved. Press 1 to start training. Waiting for stimulator to be triggered.\n");
+                    printf("Threshold saved. Press 1 to start training. Waiting for stimulator to be triggered.\n");
                 }
                 std::cout << "\n===================================" << endl;
                 GL_state = st_wait;
@@ -422,56 +443,96 @@ int main(int argc, char *argv[])
             break;
 
         case st_wait:
-            if (rec_status.start)
+            if(stim_abort)
             {
+                // Exercise has been aborted
+                ROB_rep++;
+                //printf("SAS PROGRAMME: Abort exercise.\n");
+                //std::cout << "\n---> Repetition nr." << ROB_rep << " completed of " << TCP_rep << " <--- " << endl;
+                screenMessage = "Exercise aborted. Completed " + to_string(ROB_rep) +  " repetitions of " + to_string(TCP_rep);
+                std::cout << screenMessage << endl;
+
+                GL_state = st_stop;
+                fileLOGS << "2.0, " << GL_processed << "\n";
+            }
+            else if (rec_status.start)
+            {
+                // normal trigger
                 GL_state = st_running;
-                printf("SAS PROGRAMME: Stimulator triggered\n");
+                //printf("SAS PROGRAMME: Stimulator triggered\n");
+                screenMessage = "Stimulator triggered";
+                std::cout << screenMessage << endl;
+
                 fileLOGS << "1.0, " << GL_processed << "\n";
             }
             if (robert.Reached && robert.valid_msg)
             {
                 // Increase repetitions
                 ROB_rep++;
-                printf("SAS PROGRAMME: End of Point reached.\n");
-                std::cout << "\n---> Repetition nr." << ROB_rep << " completed of " << TCP_rep << " <--- " << endl;
+                //printf("SAS PROGRAMME: End of Point reached.\n");
+                //std::cout << "\n---> Repetition nr." << ROB_rep << " completed of " << TCP_rep << " <--- " << endl;
+                screenMessage = "End of Point reached. Completed " + to_string(ROB_rep) + " repetitions of " + to_string(TCP_rep);
+
                 if (ROB_rep < TCP_rep)
                 {
-                    std::cout << "Waiting for robot to return to start position." << endl;
+                    //std::cout << "Waiting for robot to return to start position." << endl;
+                    screenMessage += ". Waiting for robot to return to start position.";
                 }
+                std::cout << screenMessage << endl;
+
                 GL_state = st_stop;
                 fileLOGS << "2.0, " << GL_processed << "\n";
             }
             break;
 
         case st_running:
+            if (stim_abort)
+            {
+                // Exercise has been aborted
+                ROB_rep++;
+                //printf("SAS PROGRAMME: Abort exercise.\n");
+                //std::cout << "\n---> Repetition nr." << ROB_rep << " completed of " << TCP_rep << " <--- " << endl;
+                screenMessage = "Exercise aborted. Completed " + to_string(ROB_rep) + " repetitions of " + to_string(TCP_rep);
+                std::cout << screenMessage << endl;
+                GL_state = st_stop;
+                fileLOGS << "3.0, " << GL_processed << "\n";
+            }
             if (robert.Reached && robert.valid_msg)
             {
                 // Increase repetitions
                 ROB_rep++;
-                printf("SAS PROGRAMME: End of Point reached.\n");
-                std::cout << "\n---> Repetition nr." << ROB_rep << " completed of " << TCP_rep << " <--- " << endl;
+                //printf("SAS PROGRAMME: End of Point reached.\n");
+                //std::cout << "\n---> Repetition nr." << ROB_rep << " completed of " << TCP_rep << " <--- " << endl;
+                screenMessage = "End of Point reached. Completed " + to_string(ROB_rep) + " repetitions of " + to_string(TCP_rep);
                 if (ROB_rep < TCP_rep)
                 {
-                    std::cout << "Waiting for robot to return to start position." << endl;
+                    screenMessage += "Waiting for robot to return to start position.";
                 }
+                std::cout << screenMessage << endl;
+
                 GL_state = st_stop;
                 fileLOGS << "3.0, " << GL_processed << "\n";
             }
             break;
 
         case st_stop:
+            devicesReady = stim_status.ready && rec_status.ready;
+            robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
             // Check nr of repetitions and devices
-            if (ROB_rep < TCP_rep && stim_status.ready && rec_status.ready && !robert.Reached && !robert.isMoving && robert.valid_msg)
+            if (ROB_rep < TCP_rep && devicesReady && robotReady && !stim_abort)
             {
                 std::cout << "\n===================================" << endl;
-                std::cout << "SAS PROGRAMME: Starting next repetition" << endl;
+                screenMessage = "Starting next repetition";
+                std::cout << screenMessage << endl;
+
                 GL_state = st_wait;
                 fileLOGS << "4.0, " << GL_sampleNr << "\n";
             }
-            else if (ROB_rep >= TCP_rep && stim_status.ready && rec_status.ready)
+            else if ((ROB_rep >= TCP_rep || stim_abort) && stim_status.ready && rec_status.ready)
             {
                 std::cout << "\n===================================" << endl;
-                std::cout << "SAS PROGRAMME: Exercise finished. Do another exercise or finish the program." << endl;
+                screenMessage =  "Exercise finished. Do another exercise or finish the program.";
+                std::cout << screenMessage << endl;
                 //GL_state = st_end;
                 GL_state = st_repeat;
             }
@@ -480,16 +541,22 @@ int main(int argc, char *argv[])
         case st_repeat:
                 // Reset process variables: this needs to be better structured
                 ROB_rep = 0;
+                main_init = false;
+                devicesReady = rec_status.ready && stim_status.ready && !stim_abort;
+                robotReady = !robert.isMoving && !robert.Reached && robert.valid_msg;
 
-                if (MAIN_to_all.end && rec_status.ready && stim_status.ready) 
+                if (MAIN_to_all.end && devicesReady)
                 {
                     GL_state = st_end;
                 }
-                else if (hmi_repeat && rec_status.ready && stim_status.ready) {
+                else if (hmi_repeat && devicesReady && robotReady) {
                     // Repeat same type of exercise
                     if (!rec_status.req && !main_fl0) {
-                        printf("Waiting for Threshold button.\n");
+                        screenMessage = "Waiting for Threshold button.";
+                        std::cout << screenMessage << endl;
+
                         main_fl0 = true;
+                        main_fl1 = false;
                     }
                     else if (rec_status.req) {
                         GL_state = st_th;
@@ -497,14 +564,22 @@ int main(int argc, char *argv[])
                         hmi_repeat = false;
                         hmi_new = false;
                         main_fl0 = false;
+                        main_fl1 = false;
                     }
                 }
-                else if (hmi_new && rec_status.ready && stim_status.ready) {
+                else if (hmi_new && devicesReady && robotReady) {
                     // Do a new type of exercise
                     GL_state = st_init;
                     startup_filters();
                     hmi_repeat = false;
                     hmi_new = false;
+                }
+
+                if ((hmi_repeat || hmi_new) && devicesReady && !robotReady && !main_fl1)
+                {
+                    screenMessage += "Waiting for robot to be at start position";
+                    std::cout << screenMessage << endl;
+                    main_fl1 = true;
                 }
             break;
         } // State machine
@@ -519,27 +594,33 @@ int main(int argc, char *argv[])
 
             if (jump_cal)
             {
-                printf("SAS PROGRAMME: Connection to the robot lost. Switching to manual calibration.\n");
+                screenMessage = "Connection to the robot lost. Switching to manual calibration.";
+                std::cout << screenMessage << endl;
                 GL_state = st_calM;
             }
             else if (jump_run)
             {
-                printf("SAS PROGRAMME: Connection to the robot lost. Stopping current repetition.\n");
+                screenMessage = "Connection to the robot lost. Stopping current repetition";
+                std::cout << screenMessage << endl;
                 GL_state = st_stop;
             }
             else if (wait_cal)
             {
-                printf("SAS PROGRAMME: Connection to the robot lost. Process will stop after calibration and threshold set up.\n");
+                screenMessage = "Connection to the robot lost. Process will stop after calibration and threshold set up";
+                std::cout << screenMessage << endl;
             }
             else
             {
-                printf("SAS PROGRAMME: Connection to the robot lost. Process will stop after calibration and threshold set up.\n");
+                screenMessage = "Connection to the robot lost. Process will stop after calibration and threshold set up";
+                std::cout << screenMessage << endl;
             }
             MAIN_to_all.ready = false;
         }
         else if (!robert.error_lim && !MAIN_to_all.ready)
         {
-            printf("SAS PROGRAMME: Connection to the robot restored.\n");
+            screenMessage = "Connection to the robot restored";
+            std::cout << screenMessage << endl;
+
             MAIN_to_all.ready = true;
         }
 
@@ -652,30 +733,52 @@ void get_keyboard()
     printf("---> Key pressed: %c <---\n", ch);
     switch (ch)
     {
-    // TCP - UDP options
+    // Display options
     case 'T':
         screen.display = !screen.display;
         if (screen.display && GL_tcpActive)
         {
-            printf("Showing TCP messages and status.\n");
+            printf("Showing screen IP-socket messages and status.\n");
         }
         else if (GL_tcpActive)
         {
-            printf("Not showing TCP messages and status.\n");
+            printf("Not showing screen IP-socket messages and status.\n");
         }
         break;
     case 'U':
         robert.display = !robert.display;
         if (robert.display)
         {
-            printf("Showing UDP messages and status.\n");
+            printf("Showing robot IP-socket messages and status.\n");
         }
         else
         {
-            printf("Not showing UDP messages and status.\n");
+            printf("Not showing robot IP-socket messages and status.\n");
         }
         break;
-    // Repetition options
+    case 'I':
+        stimulator.display = !stimulator.display;
+        if (stimulator.display)
+        {
+            printf("Showing stimulator messages.\n");
+        }
+        else
+        {
+            printf("Not showing stimulator messages.\n");
+        }
+        break;
+    case 'Y':
+        recorder.display = !recorder.display;
+        if (recorder.display)
+        {
+            printf("Showing recorder messages.\n");
+        }
+        else
+        {
+            printf("Not showing recorder messages.\n");
+        }
+        break;
+        // Repetition options
     case 'G':
         if (!GL_tcpActive)
         {
@@ -814,6 +917,12 @@ void connect_thread()
 {
     while (!MAIN_to_all.end && (GL_state != st_end))
     {
+        // Open file at the beginning 
+ //       if (GL_state == st_init & !time4_f.is_open() && date_set)
+ //       {
+ //           time4_f.open(time4_s);
+ //       }
+        // normal thread
         control_thread(INTERFACE_THREAD, THREAD_START, GL_state);
         GL_keyPressed = _kbhit();
         if (GL_keyPressed != 0)
@@ -831,6 +940,9 @@ void connect_thread()
         time4_end = std::chrono::steady_clock::now();
         time4_diff = time4_end - th2_st;
         time4_v.push_back((double)time4_diff.count());
+
+        // Close file in case exercise has been finished
+
     } // while loop
 } // thread
 
@@ -907,7 +1019,8 @@ void run_gui()
 
             // Send if something was received
             memset(screen.senbuf, '\0', 512);
-            sprintf(screen.senbuf, "SAS;%2.1f;%d;%d;", stimulator.stim[hmi_channel].points[0].current, stimulator.stim[hmi_channel].ramp, stimulator.stim_act[hmi_channel]);
+            //sprintf(screen.senbuf, "SAS;%2.1f;%d;%d;%d", stimulator.stim[hmi_channel].points[0].current, stimulator.stim[hmi_channel].ramp, stimulator.stim_act[hmi_channel],GL_state);
+            sprintf(screen.senbuf, "SAS;%2.1f;%d;%d;%d;%d;%d;%d;%s;", stimulator.stim[hmi_channel].points[0].current, stimulator.stim[hmi_channel].ramp, stimulator.stim_act[hmi_channel], stimulator.active, start_train, GL_exercise, GL_state, screenMessage.c_str());
             screen.stream();
         }
         else if(screen.error_lim && GL_tcpActive)
@@ -918,7 +1031,7 @@ void run_gui()
         else if (!screen.error && !GL_tcpActive)
         {
             GL_tcpActive = true;
-            printf("SAS PROGRAMME: Connection to the screen restor. Switching back to Touch Panel.\n");
+            printf("SAS PROGRAMME: Connection to the screen restored. Switching back to Touch Panel.\n");
         }
 
         // TCP Stuff
@@ -1047,15 +1160,9 @@ void stimulating_sas()
         {
             // Choose an exercise
             load_stim_settings();
-            stimulator.init(GL_exercise);
+            stimulator.init(PORT_STIM, GL_exercise);
         }
-        if(!stim_fl0)
-        {
-            printf("---> GUI Interface: press either automatic or manual calibration <---> ");
-            printf("Keyboard: press either 2 for automatic stimulation calibration, or 3 for manual <--- \n");
-            stim_fl0 = true;
-        }
-            stim_status.ready = stimulator.ready;
+        stim_status.ready = stimulator.ready;
         break;
 
     // Stimulator calibration process
@@ -1082,7 +1189,8 @@ void stimulating_sas()
         {
             stimulator.pause();
             stim_auto_done = !stimulator.active;
-            printf("---\\ auto stim done \\---");
+            screenMessage = "Stimulation: automatic calibration done";
+            std::cout << screenMessage << endl;
         }
 
         break;
@@ -1134,10 +1242,11 @@ void stimulating_sas()
             Move3_key = Move3_none;
             if (stim_done)
             {
-                std::cout << "RehaMove3 message: manual callibration done." << endl;
+
                 if (GL_tcpActive)
                 {
-                    std::cout << "--> Press set threshold <---" << endl;
+                    screenMessage = "Stimulation: manual callibration done. Press set threshold";
+                    std::cout << screenMessage << endl;
                 }
                 else
                 {
@@ -1146,7 +1255,8 @@ void stimulating_sas()
             }
             else
             {
-                std::cout << "RehaMove3 message: Stimulator stopped." << endl;
+                screenMessage = "Stimulation stopped";
+                std::cout << screenMessage << endl;
             }
         }
 
@@ -1173,6 +1283,14 @@ void stimulating_sas()
         {
             modify_stimulation(Move3_key, Smpt_Channel_Red);
         }
+
+        // Abort button
+        if ((Move3_key == Move3_done) || (Move3_hmi == Move3_done) && !stimulator.active)
+        {
+            stim_abort = true;
+            Move3_hmi = Move3_none;
+            Move3_key = Move3_none;
+        }
         break;
 
     case st_running:
@@ -1191,11 +1309,16 @@ void stimulating_sas()
             stim_fl1 = false;
         }
 
-        if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || stim_timeout) && stimulator.active)
+        if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || stim_timeout || Move3_hmi == Move3_done || Move3_key == Move3_done) && stimulator.active)
         {
             stimulator.pause();
-            std::cout << "RehaMove3 message: Stimulator stopped." << endl;
+            screenMessage = "Stimulation stopped";
+            std::cout << screenMessage << endl;
             stim_fl1 = true;
+            // abort exercise
+            if (Move3_hmi == Move3_done || Move3_key == Move3_done){
+                stim_abort = true;
+            }
             Move3_hmi = Move3_none;
             Move3_key = Move3_none;
         }
@@ -1207,7 +1330,9 @@ void stimulating_sas()
         // things to do only once
         if (!stim_fl2)
         {
-            std::cout << "Reha Move3 message: Stimulating.\n";
+            screenMessage = "Stimulation active";
+            std::cout << screenMessage << endl;
+
             time1_end = std::chrono::steady_clock::now();
             time1_diff = time1_end - time1_start;
             time1_v.push_back((double)time1_diff.count());
@@ -1240,8 +1365,10 @@ void stimulating_sas()
         stimA_active = false;
         stimM_active = false;
         stim_userX = false;
+        stim_auto_done = false;
         stim_done = false;
         start_train = false;
+        stim_abort = false;
         
         if (hmi_new) {
             set_stimulation(GL_exercise, stimulator.stim[Smpt_Channel_Red]);
@@ -1275,7 +1402,8 @@ void stimulating_sas()
         stim_timeout = ((double)stimA_diff.count()) >= stimA_cycle;
         if (stim_timeout)
         {
-            printf("RehaMove3 message: Stimulation timeout.\n");
+            screenMessage = "Stimulation timeout";
+            std::cout << screenMessage << endl;
         }
     }
     if (!stimulator.active && stim_timing)
@@ -1297,13 +1425,17 @@ void recording_sas()
     switch (GL_state)
     {
 
-    
     case st_init:
         if (!recorder.ready)
         {
-            std::cout << "Reha Ingest message: Starting recorder." << endl;
-            recorder.init();
-            recorder.start();
+            if (recorder.display) { std::cout << "Reha Ingest message: Starting recorder." << endl; }
+            recorder.init(PORT_REC);
+            if (recorder.found) { recorder.start(); }
+
+            // This is just in case the user needs to move the stuff around
+            if (!recorder.ready && recorder.display) {
+                Sleep(2500);
+            }
         }
         startup_filters();
         rec_status.ready = recorder.ready;
@@ -1330,6 +1462,7 @@ void recording_sas()
         recorder.record();
         if (recorder.data_received && recorder.data_start && !fileFILTERS.is_open())
         {
+            //printf("Data found\n");         // debugging stuff
             fileFILTERS.open(filter_s);
             fileVALUES.open(th_s);
         }
@@ -1338,6 +1471,7 @@ void recording_sas()
         if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
         {
             temp_value = process_th(GL_sampleNr, recorder_emg1);
+            //printf("%d\n", temp_value);         // debugging stuff
             if (GL_sampleNr >= TH_DISCARD)
             {
                 THRESHOLD = THRESHOLD + temp_value;
@@ -1345,7 +1479,10 @@ void recording_sas()
             if (GL_processed >= TH_NR)
             {
                 THRESHOLD = THRESHOLD / (GL_sampleNr - GL_thDiscard);
-                std::cout << "Reha Ingest message: threshold = " << THRESHOLD << ", old m = " << old_value[0] << ", old nr = " << old_nr[0] << endl;
+                screenMessage = "EMG activity: threshold = " + to_string(THRESHOLD);
+                std::cout << screenMessage << endl;
+
+                //std::cout << "Reha Ingest message: threshold = " << THRESHOLD << ", old m = " << old_value[0] << ", old nr = " << old_nr[0] << endl;
                 rec_status.th = true;
                 rec_status.req = false;
             }
@@ -1363,7 +1500,8 @@ void recording_sas()
 
             if ((mean >= THRESHOLD) && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)
             {
-                printf("Reha Ingest message: threshold overpassed.\n");
+                screenMessage = "EMG activity: threshold overpassed";
+                std::cout << screenMessage << endl;
                 rec_status.start = true;
                 time1_start = std::chrono::steady_clock::now();
                 rec_fl2 = false;
@@ -1379,7 +1517,8 @@ void recording_sas()
             }
             else if ((GL_thWaitCnt >= TH_WAIT) && !rec_fl2)
             {
-                printf("Reha Ingest message: Now you can push.\n");
+                screenMessage = "EMG activity: now you can push";
+                std::cout << screenMessage << endl;
                 rec_fl2 = true;
             }
         }

@@ -39,7 +39,7 @@ typedef enum
     exUnregistered = 0, // New exercise or that is not registered
     lowerLeg_flex = 1,  // Lower leg flexion
     upperLeg_ext = 2,   // Upper leg extension
-    exCircuit = 99,     // The simulator is connected to an electrical circuit
+    exCircuit = 9,     // The simulator is connected to an electrical circuit
 } exercise_Type;
 
 // User options for stimulation and process
