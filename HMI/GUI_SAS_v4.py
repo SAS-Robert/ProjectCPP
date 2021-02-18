@@ -22,73 +22,79 @@ def update_display():
     # udpate colours and texts on the screen
     global status, statusMessage, active, ch_active, start_train, exercise
     status_value['text'] = status_list[status]
-    status_display['text'] = statusMessage
+    status_display['text'] = 'Info: ' + statusMessage
 
     if (ch_active == 1.0):
         enButton['text'] = "Disable\nchannel"
     else:
         enButton['text'] = "Enable\nchannel"
-    if(active == 0 and ch_active == 0 and status == st_calM):
+    if(active == 0 and ch_active == 0):
         enButton['bg'] = LSR_PLUS
     else:
         enButton['bg'] = AAU_BLUE
+
     # Start/stop stimulator options change colours
     if(active == 1.0):
         quitButton['bg'] = DARK_RED
     else:
-        quitButton['bg'] = DARK_GREY
+        quitButton['bg'] = MEDIUM_GREY
 
     if(active == 0 and ch_active == 1 and status == st_calM):
         startButton['bg'] = LSR_PLUS
     else:
-        startButton['bg'] = DARK_GREY
+        startButton['bg'] = MEDIUM_GREY
 
     # Manual / Automatic calibration
     if (status == st_init):
-        manButton['bg'] = AAU_BLUE
-        manButton['fg'] = "white"
-        autoButton['bg'] = AAU_BLUE
-        autoButton['fg'] = "white"
+        manButton.configure(state="normal")
+        autoButton.configure(state="normal")
     else:
-        manButton['fg'] = AAU_BLUE
-        manButton['bg'] = "white"
-        autoButton['fg'] = AAU_BLUE
-        autoButton['bg'] = "white"
+        manButton.configure(state="disabled")
+        autoButton.configure(state="disabled")
 
-    if (status == st_init or status == st_th or status == st_repeat):   
-        xButton['fg'] = AAU_BLUE
-        xButton['bg'] = "white"
+    if(status == st_init or status == st_calM or status == st_calA_go or status == st_calA_stop):
+        xButton['text'] = "Quit\ncalibration"
     else:
-        xButton['bg'] = AAU_BLUE
-        xButton['fg'] = "white"
+        xButton['text'] = "Quit\nexercise"
+    if(status == st_init or status == st_repeat or status == st_th):
+        xButton.configure(state="disabled")
+    else:
+        xButton.configure(state="normal")
 
     # Other buttons
     if(status == st_calM or status == st_repeat):
-        thButton['bg'] = LSR_LINE
+        thButton.configure(state="normal")
     else:
-        thButton['bg'] = DARK_GREY
+        thButton.configure(state="disabled")
 
     if (status == st_wait and start_train == 0):
-        trainButton['bg'] = LSR_PLUS
+        trainButton.configure(state="normal")
     else:
-        trainButton['bg'] = DARK_GREY
+        trainButton.configure(state="disabled")
 
     if(status == st_repeat):
-        exButton_repeat['bg'] = STANDARD_BLUE
-        exButton_new['bg'] = STANDARD_BLUE
+        exButton_repeat.configure(state="normal")
+        exButton_new.configure(state="normal")
     else:
-        exButton_repeat['bg'] = DARK_GREY
-        exButton_new['bg'] = DARK_GREY
-    
-    # Select boxes
+        exButton_repeat.configure(state="disabled")
+        exButton_new.configure(state="disabled")
+
+    if(status == st_init or status == st_repeat):
+        ex_current['text'] =  'Incoming exercise: ' + str(ex_select[exercise])
+    else:
+        ex_current['text'] =  'Current exercise: ' + str(ex_select[exercise])
+
+    # Select boxes and options while manual calibration is active
     if(status == st_calM):
         ch_box.configure(state="normal")
+        enButton.configure(state="normal")
+        startButton.configure(state="normal")
     else:
         ch_str.set(ch_select[CH_RED])
         ch_box.configure(state="disabled")
+        enButton.configure(state="disabled")
+        startButton.configure(state="disabled")
     
-    ex_current['text'] =  'Current exercise: ' + str(ex_select[exercise])
-
 
 
 def update_sas():
@@ -196,31 +202,32 @@ def user_button(type=None):
         print('Invalid button pressed?')
 # ========================== Central frame ==========================
 # Decoration
-banner_label.grid(row=0, column=0)
-param_title_label['text'] = '  Program status '
-param_title_label.grid(row=0, columnspan=3)
-# param_label.grid(row=1, column=1) # Image file
+banner_label.grid(row=0, column=0) # Image file
 bottom_label.grid(row=0, columnspan=3) # Copyright
 
-
-status_value.grid(row=1, columnspan=1)
-status_display.grid(row=3, columnspan=1)
+param_title_label['text'] = '  Program status: '
+param_title_label.place(relx = 0.0)
+status_value.place(relx = 0.2)
+status_display.place(relx = 0.41)
 
 exButton_repeat['text'] = 'Repeat\nexercise'
 exButton_repeat['command'] = lambda: user_button(type=(User_rep))
-exButton_repeat.grid(row=5, columnspan=1)
 
 exButton_new['text'] = 'Do another\nexercise'
 exButton_new['command'] = lambda: user_button(type=(User_new))
 
-exButton_repeat.grid(row=5, columnspan=1)
-exButton_new.grid(row=6, columnspan=1)
+#exButton_repeat.grid(row=5, column=1)
+#exButton_new.grid(row=6, column=1)
+exButton_repeat.place(relx = 0.15, rely = 0.1)
+exButton_new.place(relx = 0.15, rely = 0.3)
 
 # Select exercise
-ex_current.grid(row=7, column=1)
-ex_next.grid(row=8, column=1)
-ex_box.grid(row=8, column=10)
-
+#ex_current.grid(row=7, column=0)
+#ex_next.grid(row=8, column=0)
+#ex_box.grid(row=8, column=10)
+ex_current.place(relx = 0.15, rely = 0.5)
+ex_next.place(relx = 0.15, rely = 0.6)
+ex_box.place(relx = 0.15, rely = 0.7)
 
 # =================== Side buttons definition ===================
 select_frame = ctr_left

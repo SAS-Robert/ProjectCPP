@@ -142,10 +142,10 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
 
     // Update GL_processed data parameters
     GL_processed = i;
-    for (int i = 1; i < 5; i++)
+    for (int i = 4; i >= 1 ; i--)
     {
-        old_value[i] = old_value[i - 1];
-        old_nr[i] = old_nr[i - 1];
+        old_value[i] = old_value[i-1];
+        old_nr[i] = old_nr[i-1];
     }
     old_value[0] = mean;
     old_nr[0] = N_len;
@@ -213,7 +213,7 @@ static double process_th(unsigned long long int v_size, vector<double> raw_data)
 
     // Update amount of GL_processed data
     GL_processed = i;
-    for (int i = 1; i < 5; i++)
+    for (int i = 4; i >= 1; i--)
     {
         old_value[i] = old_value[i - 1];
         old_nr[i] = old_nr[i - 1];

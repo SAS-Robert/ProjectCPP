@@ -106,7 +106,7 @@ i_status = 4
 global ch_select, ch_str, ex_select, ex_str, status_list, ex_current
 ch_select = ["Ch.Red", "Ch.Blue", "Ch.Black", "Ch.White"]
 ex_select = ["Other", "Lower leg flexion", "Upper leg extension"]
-status_list = ["Initialization", "Setting threshold", "EMG monitoring", "Tigger FES", "Stop FES", "Finish program", "Manual calibration active", "Automatic calibration - stimulating", "Automatic calibration - resting", "Exercise finished"]
+status_list = ["Initialization", "Setting threshold", "EMG monitoring", "Tigger FES", "Stop FES", "Finish program", "Manual calibration", "Automatic calibration\n- stimulating", "Automatic calibration\n- resting", "Exercise finished"]
 
 # Colours
 LIGHT_RED = '#D95319'
@@ -125,12 +125,19 @@ DARK_GREY = '#404040'
 # ========================== Functions ==========================
 #
 # ========================== Window layout ==========================
+ctrl_left_color = LSR_TEXT
+ctrl_left_fg = 'white'
+ctr_mid_color = 'white'
+ctr_mid_fg = 'black'
+ctr_right_color = 'green'
+
 root = Tk()
 root.title('GUI SAS')
 root.geometry('{}x{}'.format(1000, 650))
 
 # create all of the main containers
 top_frame = Frame(root, bg='black', width=1000, height=100, pady=1)
+top_frame_status = Frame(root, bg=ctr_mid_color, width=1000, height=100, pady=1)
 center = Frame(root, bg='gray2', width=50, height=40, padx=3, pady=1)
 btm_frame = Frame(root, bg=LSR_TEXT, width=450, height=45, pady=1)
 btm_frame2 = Frame(root, bg='lavender', width=1000, height=60, pady=1)
@@ -140,28 +147,25 @@ root.grid_rowconfigure(1, weight=1)
 root.grid_columnconfigure(0, weight=1)
 
 top_frame.grid(row=0, sticky="ew")
-center.grid(row=1, sticky="nsew")
-btm_frame.grid(row=3, sticky="ew")
-btm_frame2.grid(row=4, sticky="ew")
+top_frame_status.grid(row=1, sticky="nsew")
+center.grid(row=2, sticky="nsew")
+btm_frame.grid(row=4, sticky="ew")
+btm_frame2.grid(row=5, sticky="ew")
 
 # create the center widgets
+top_frame_status.grid_rowconfigure(0, weight=1)
+top_frame_status.grid_columnconfigure(1, weight=1)
+
 center.grid_rowconfigure(0, weight=1)
 center.grid_columnconfigure(1, weight=1)
 
-ctrl_left_color = LSR_TEXT
-ctrl_left_fg = 'white'
-ctr_mid_color = 'white'
-ctr_mid_fg = 'black'
-ctr_right_color = 'green'
-
 ctr_left = Frame(center, bg=ctrl_left_color, width=100, height=190)
-ctr_mid = Frame(center, bg=ctr_mid_color, width=250,
-                height=190, padx=3, pady=3)
+ctr_mid_top = Frame(center, bg=ctr_mid_color, width=250, height=85, padx=3, pady=3)
 #ctr_right = Frame(center, bg=ctr_right_color, width=100, height=190, padx=3, pady=3)
 
-ctr_left.grid(row=0, column=0, sticky="ns")
-ctr_mid.grid(row=0, column=1, sticky="nsew")
-#ctr_right.grid(row=0, column=2, sticky="ns")
+ctr_left.grid(row=0, column=0, sticky="nsew")
+ctr_mid_top.grid(row=0, column=1, sticky="nsew")
+# ctr_right.grid(row=0, column=2, sticky="ns")
 
 # =================== Window decoration ===================
 # the top frame
@@ -170,7 +174,7 @@ img_banner = ImageTk.PhotoImage(Image.open("banner.jpg"))
 banner_label = Label(top_frame, image=img_banner, bg='black')
 
 # center middle
-param_title_label = Label(ctr_mid, font=("Arial Italic", 34), bg=ctr_mid_color, fg=AAU_BLUE)
+param_title_label = Label(top_frame_status, font=("Arial Bold", 15), bg=ctr_mid_color, fg=STANDARD_BLUE)
 
 # bottom end
 c_symbol = "\u00a9"
@@ -178,19 +182,23 @@ text_copy = 'Copyright:' + c_symbol + \
     "2020 Life Science Robotics " + '&' + " Aalborg University."
 bottom_label = Label(btm_frame2, text=text_copy, bg='lavender', fg=AAU_BLUE)
 
-# Buttons on the blue side
+# Counters for the buttons on the left
 counters = [tk.IntVar() for _ in range(30)]
 
-# =================== Center description ===================
-select_frame = ctr_mid
+# =================== Center-top objects ===================
+select_frame = top_frame_status
 fSize = 15
 bSize_w = 3
 bSize_h = 1
 
-status_value = tk.Label(select_frame, font=(
-    "Arial Bold", fSize), bg=ctr_mid_color, fg=ctr_mid_fg)
-status_display = tk.Label(select_frame, font=(
-    "Arial Bold", 10), bg=ctr_mid_color, fg=ctr_mid_fg)
+status_value = tk.Label(select_frame, width = 20, font=("Arial Bold", fSize), bg=ctr_mid_color, fg=ctr_mid_fg, anchor="w")
+status_display = tk.Label(select_frame, width = 60, height = 3, font=("Arial Bold", 10), bg=ctr_mid_color, fg=ctr_mid_fg, anchor="nw")
+
+# =================== Center description ===================
+select_frame = ctr_mid_top
+
+ex_current = Label(select_frame, text='Current exercise',
+                     font=("Arial Bold", 10), bg=ctr_mid_color, fg = ctr_mid_fg)
 
 exButton_repeat = tk.Button(select_frame, font=("Arial Bold", fSize), width=10,
                            height=2, bg=STANDARD_BLUE, fg=ctrl_left_fg)
@@ -201,8 +209,7 @@ exButton_new = tk.Button(select_frame, font=("Arial Bold", fSize), width=10,
 dummy_label_center = Label(select_frame, text='        ',
                      font=("Arial Bold", 16), bg=ctr_mid_color)
 
-ex_current = Label(select_frame, text='Current exercise',
-                     font=("Arial Bold", 10), bg=ctr_mid_color, fg = ctr_mid_fg)
+
 
 ex_next = Label(select_frame, text='Next exercise:',
                      font=("Arial Bold", 10), bg=ctr_mid_color, fg = ctr_mid_fg)
@@ -274,7 +281,7 @@ dummy_label1 = Label(select_frame, text='        ',
 
 manButton = tk.Button(select_frame, font=("Arial", fSize_cal), width=bSize_w_cal, height=bSize_h_cal, text="Manual\nCalibration", fg=LSR_TEXT, bg=ctrl_left_fg)
 autoButton = tk.Button(select_frame, font=("Arial", fSize_cal), width=bSize_w_cal, height=bSize_h_cal, text="Automatic\nCalibration", fg=LSR_TEXT, bg=ctrl_left_fg)
-xButton = tk.Button(select_frame, font=("Arial", fSize_cal), width=bSize_w_cal-3, height=bSize_h_cal, text="X", bg=AAU_BLUE, fg="white")
+xButton = tk.Button(select_frame, font=("Arial", fSize_cal), width=bSize_w_cal, height=bSize_h_cal, text="Quit\nCalibration", fg=LSR_TEXT, bg=ctrl_left_fg)
 
 dummy_label2 = Label(select_frame, text='        ', font=(
     "Arial Bold", 16), bg=dummy_color)

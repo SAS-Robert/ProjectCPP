@@ -60,7 +60,7 @@ RehaMove3_Req_Type Move3_hmi = Move3_none;
 RehaMove3_Req_Type Move3_key = Move3_none;
 User_Req_Type User_cmd = User_none;
 
-exercise_Type GL_exercise = exCircuit; // upperLeg_extexCircuit;
+exercise_Type GL_exercise = exCircuit, GL_exercise_old = exCircuit; // upperLeg_extexCircuit;
 exercise_Type GL_hmi = exCircuit;
 
 char PORT_STIM[5] = "COM6";   // Laptop
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
             devicesReady = rec_status.ready && stim_status.ready;
             if (devicesReady && !stimA_active && !stimM_active && !main_init)
              {
-                 screenMessage = "Devices ready. Press either manual or automatic calibration";
+                 screenMessage = "Devices ready. \nPress either manual or automatic calibration";
                  std::cout << screenMessage << endl;
                  main_init = true;
             }
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
             if (stim_auto_done && toc())
             {
                 //printf("SAS test: Reached End Point, %2.2f s. Switching to manual callibration.\n", toc_lim);
-                screenMessage = "SAS test: Reached End Point. Switching to manual callibration.";
+                screenMessage = "SAS test: Reached End Point. \nSwitching to manual callibration.";
                 std::cout << screenMessage << endl;
 
                 if (!GL_tcpActive)
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
             if (stim_userX && !stimulator.active)
             {
                 GL_state = st_calM;
-                screenMessage = "Quitting automatic callibration. Starting manual...";
+                screenMessage = "Quitting automatic callibration. \nStarting manual...";
                 std::cout << screenMessage << endl;
 
                 if (!GL_tcpActive)
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
             if (stim_userX && !stimulator.active)
             {
                 GL_state = st_calM;
-                screenMessage = "Quitting automatic callibration. Starting manual...";
+                screenMessage = "Quitting automatic callibration. \nStarting manual...";
                 std::cout << screenMessage << endl;
 
                 if (!GL_tcpActive)
@@ -371,13 +371,13 @@ int main(int argc, char *argv[])
                 if (calCycle_nr >= CAL_CYCLE_LIM)
                 {
                     //printf("SAS PROGRAMME: Automatic callibration failed after %d tries. Switching to manual...\n", calCycle_nr);
-                    screenMessage = "Automatic callibration failed after " + to_string(calCycle_nr) + " tries. Switching to manual...";
+                    screenMessage = "Automatic callibration failed after " + to_string(calCycle_nr) + " tries. \nSwitching to manual...";
                     std::cout << screenMessage << endl;
                 }
                 else
                 {
                     //printf("SAS PROGRAMME: Automatic callibration failed. Stimulation has reached the maximum current of %2.2f mA. Switching to manual...\n", CAL_CUR_LIM);
-                    screenMessage = "Automatic callibration failed. Stimulation has reached the maximum current of " + to_string(CAL_CUR_LIM) + "mA. Switching to manual...";
+                    screenMessage = "Automatic callibration failed. Stimulation has reached the maximum current of " + to_string(CAL_CUR_LIM) + "mA. \nSwitching to manual...";
                     std::cout << screenMessage << endl;
                 }
 
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
                 toc_lim = 5;
                 tic();
                 //printf("SAS test: Finish cycle nr.%d. Starting next cycle with a stim time of %2.2f s.\n", calCycle_nr, toc_lim);
-                screenMessage = "Finish cycle nr." + to_string(calCycle_nr) + ". Starting next cycle with a stim time of " + to_string(toc_lim) + "s.";
+                screenMessage = "Finish cycle nr." + to_string(calCycle_nr) + ". \nStarting next cycle with a stim time of " + to_string(toc_lim) + "s.";
                 std::cout << screenMessage << endl;
             }
             break;
@@ -416,14 +416,17 @@ int main(int argc, char *argv[])
                 if (GL_tcpActive)
                 {
                     //printf("SAS PROGRAMME: Threshold saved. Press start training button. Waiting for stimulator to be triggered.\n");
-                    screenMessage = "Threshold saved. Press start training button. Waiting for stimulator to be triggered.";
+                    screenMessage = "Threshold saved. \nPress start training button. \nWaiting for stimulator to be triggered.";
                     std::cout << screenMessage << endl;
                 }
                 else
                 {
-                    printf("Threshold saved. Press 1 to start training. Waiting for stimulator to be triggered.\n");
+                    printf("Threshold saved. \nPress 1 to start training. \nWaiting for stimulator to be triggered.\n");
                 }
                 std::cout << "\n===================================" << endl;
+                // Update exercise
+                GL_exercise_old = GL_exercise;
+
                 GL_state = st_wait;
             }
             break;
@@ -435,7 +438,7 @@ int main(int argc, char *argv[])
                 ROB_rep++;
                 //printf("SAS PROGRAMME: Abort exercise.\n");
                 //std::cout << "\n---> Repetition nr." << ROB_rep << " completed of " << TCP_rep << " <--- " << endl;
-                screenMessage = "Exercise aborted. Completed " + to_string(ROB_rep) +  " repetitions of " + to_string(TCP_rep);
+                screenMessage = "Exercise aborted. \nCompleted " + to_string(ROB_rep) +  " repetitions of " + to_string(TCP_rep);
                 std::cout << screenMessage << endl;
 
                 GL_state = st_stop;
@@ -457,12 +460,12 @@ int main(int argc, char *argv[])
                 ROB_rep++;
                 //printf("SAS PROGRAMME: End of Point reached.\n");
                 //std::cout << "\n---> Repetition nr." << ROB_rep << " completed of " << TCP_rep << " <--- " << endl;
-                screenMessage = "End of Point reached. Completed " + to_string(ROB_rep) + " repetitions of " + to_string(TCP_rep);
+                screenMessage = "End of Point reached. \nCompleted " + to_string(ROB_rep) + " repetitions of " + to_string(TCP_rep);
 
                 if (ROB_rep < TCP_rep)
                 {
                     //std::cout << "Waiting for robot to return to start position." << endl;
-                    screenMessage += ". Waiting for robot to return to start position.";
+                    screenMessage += ". \nWaiting for robot to return to start position.";
                 }
                 std::cout << screenMessage << endl;
 
@@ -478,7 +481,7 @@ int main(int argc, char *argv[])
                 ROB_rep++;
                 //printf("SAS PROGRAMME: Abort exercise.\n");
                 //std::cout << "\n---> Repetition nr." << ROB_rep << " completed of " << TCP_rep << " <--- " << endl;
-                screenMessage = "Exercise aborted. Completed " + to_string(ROB_rep) + " repetitions of " + to_string(TCP_rep);
+                screenMessage = "Exercise aborted. \nCompleted " + to_string(ROB_rep) + " repetitions of " + to_string(TCP_rep);
                 std::cout << screenMessage << endl;
                 GL_state = st_stop;
                 fileLOGS << "3.0, " << GL_processed << "\n";
@@ -489,10 +492,10 @@ int main(int argc, char *argv[])
                 ROB_rep++;
                 //printf("SAS PROGRAMME: End of Point reached.\n");
                 //std::cout << "\n---> Repetition nr." << ROB_rep << " completed of " << TCP_rep << " <--- " << endl;
-                screenMessage = "End of Point reached. Completed " + to_string(ROB_rep) + " repetitions of " + to_string(TCP_rep);
+                screenMessage = "End of Point reached. \nCompleted " + to_string(ROB_rep) + " repetitions of " + to_string(TCP_rep);
                 if (ROB_rep < TCP_rep)
                 {
-                    screenMessage += "Waiting for robot to return to start position.";
+                    screenMessage += ". \nWaiting for robot to return to start position.";
                 }
                 std::cout << screenMessage << endl;
 
@@ -517,9 +520,10 @@ int main(int argc, char *argv[])
             else if ((ROB_rep >= TCP_rep || stim_abort) && stim_status.ready && rec_status.ready)
             {
                 std::cout << "\n===================================" << endl;
-                screenMessage =  "Exercise finished. Do another exercise or finish the program.";
+                screenMessage =  "Exercise finished. \nDo another exercise or finish the program.";
                 std::cout << screenMessage << endl;
                 //GL_state = st_end;
+                GL_exercise_old = GL_exercise;
                 GL_state = st_repeat;
             }
             break;
@@ -555,6 +559,7 @@ int main(int argc, char *argv[])
                         end_files();
                         start_files();
 
+                        GL_exercise = GL_exercise_old;
                         GL_state = st_th;
                     }
                 }
@@ -589,24 +594,24 @@ int main(int argc, char *argv[])
 
             if (jump_cal)
             {
-                screenMessage = "Connection to the robot lost. Switching to manual calibration.";
+                screenMessage = "Connection to the robot lost. \nSwitching to manual calibration.";
                 std::cout << screenMessage << endl;
                 GL_state = st_calM;
             }
             else if (jump_run)
             {
-                screenMessage = "Connection to the robot lost. Stopping current repetition";
+                screenMessage = "Connection to the robot lost. \nStopping current repetition";
                 std::cout << screenMessage << endl;
                 GL_state = st_stop;
             }
             else if (wait_cal)
             {
-                screenMessage = "Connection to the robot lost. Process will stop after calibration and threshold set up";
+                screenMessage = "Connection to the robot lost. \nProcess will stop after calibration and threshold set up";
                 std::cout << screenMessage << endl;
             }
             else
             {
-                screenMessage = "Connection to the robot lost. Process will stop after calibration and threshold set up";
+                screenMessage = "Connection to the robot lost. \nProcess will stop after calibration and threshold set up";
                 std::cout << screenMessage << endl;
             }
             MAIN_to_all.ready = false;
@@ -954,7 +959,7 @@ void run_gui()
                     break;
                 }
 
-                if (GL_state == st_repeat || GL_state == st_init || GL_state == st_calM)
+                if ((GL_state == st_repeat || GL_state == st_init)&& !hmi_repeat)
                 {
                     GL_exercise = GL_hmi;
                 }
