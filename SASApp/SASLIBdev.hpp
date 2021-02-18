@@ -148,6 +148,7 @@ static void handleSendLiveDataReceived(Smpt_device *const device, const Smpt_ack
     //value[3] : channel 4, analog signal.
     //value[4] : time_ofset between last sample and actual sample
     recorder_emg1.push_back((double)values[1]);
+    // recorder_emg2.push_back((double)values[2]);
 }
 
 static bool handle_dl_packet_global(Smpt_device *const device)

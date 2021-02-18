@@ -50,13 +50,7 @@ struct device_to_device
     bool req = false;
 } rec_status, MAIN_to_all, stim_status;
 //MAIN_to_all: the main function writes here and all threads read
-//rec_status: Ingest writes on the variable, Move3 reads it
 
-// Dummies for files
-char date[15];
-string file_dir;
-string date_s;
-string filter_s;
 
 // ------------------------- Devices handling --------------------------------
 bool stim_ready = false, rec_ready = false, stim_abort = false;
@@ -64,13 +58,12 @@ bool stim_ready = false, rec_ready = false, stim_abort = false;
 RehaMove3_Req_Type Move3_cmd = Move3_none;
 RehaMove3_Req_Type Move3_hmi = Move3_none;
 RehaMove3_Req_Type Move3_key = Move3_none;
-RehaIngest_Req_Type Inge_key = Inge_none;
-RehaIngest_Req_Type Inge_hmi = Inge_none;
 User_Req_Type User_cmd = User_none;
 
 exercise_Type GL_exercise = exCircuit; // upperLeg_extexCircuit;
+exercise_Type GL_hmi = exCircuit;
 
-char PORT_STIM[5] = "COM5";   // Laptop
+char PORT_STIM[5] = "COM6";   // Laptop
 // char PORT_STIM[5] = "COM3";     // Robot
 RehaMove3 stimulator;
 
@@ -82,11 +75,6 @@ RehaIngest recorder;
 bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
 bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false;
 bool main_fl0 = false, main_fl1 = false, main_init = false;
-
-// Dummies and files
-bool date_set;
-ofstream fileLOGS;
-string SASName4, SASName5, th_s;
 
 // ------------------------- UDP / TCP  ------------------------
 int udp_cnt = 0;
@@ -160,9 +148,16 @@ auto time4_start = std::chrono::steady_clock::now();
 auto time4_end = std::chrono::steady_clock::now();
 std::chrono::duration<double> auto_diff_stim, auto_diff_rec;
 
+
+// Files variables for names and handling
+char date[DATE_LENGTH];
+char folder[DATE_LENGTH] = "files\\";
+char Sname[DATE_LENGTH] = "subject";
+string file_dir, th_s, date_s, filter_s;
 string time1_s, time2_s, time3_s, time4_s;
-char folder[256] = "files\\";
-char Sname[256] = "subject";
+
+ofstream fileLOGS;
+
 // ---------------------------- Functions declaration  -----------------------------
 // Dummies
 bool GL_tcpActive = true;
@@ -175,6 +170,9 @@ void run_gui();
 void modify_stimulation(RehaMove3_Req_Type &code, Smpt_Channel sel_ch);
 static void stimulating_sas();
 static void recording_sas();
+// files functions
+void start_files();
+void end_files();
 
 // ------------------------------ Main  -----------------------------
 int main(int argc, char *argv[])
@@ -184,16 +182,7 @@ int main(int argc, char *argv[])
     bool robotReady;
     // initialize files names
     get_dir(argc, argv, file_dir);
-    generate_date(date); //get current date/time in format YYMMDD_hhmm
-    date_s = convert_to_string(date, sizeof(date));
-    filter_s = file_dir + folder + Sname + "_filter_" + date_s.c_str() + ".txt";
-    time1_s = file_dir + folder + Sname + "_time1_" + date_s.c_str() + ".txt";
-    time2_s = file_dir + folder + Sname + "_time2_" + date_s.c_str() + ".txt";
-    time3_s = file_dir + folder + Sname + "_time3_" + date_s.c_str() + ".txt";
-    time4_s = file_dir + folder + Sname + "_time4_" + date_s.c_str() + ".txt";
-    th_s = file_dir + folder + Sname + "_th_" + date_s.c_str() + ".txt";
-    string LOGS_s = file_dir + folder + Sname + "_log_" + date_s.c_str() + ".txt";
-    fileLOGS.open(LOGS_s);
+    start_files();
 
     // Flushing input and output buffers
     cout.flush();
@@ -226,9 +215,6 @@ int main(int argc, char *argv[])
     else
     {
         std::cout << "---> UDP controllers:\n-U = Show/hide UDP messages.\n\n";
-    }
-    if (!GL_tcpActive)
-    {
         std::cout << "---> Process controllers:\n-G = Increase repetitions nr.\n-H = Decrease repetitions nr.\n\n\n";
     }
     std::cout << "--->Instructions: \n1. Press any key to start SAS program.\n";
@@ -259,8 +245,8 @@ int main(int argc, char *argv[])
         switch (GL_state)
         {
          case st_init:
-             devicesReady = rec_status.ready && stim_status.ready;
-             if (devicesReady && !stimA_active && !stimM_active && !main_init)
+            devicesReady = rec_status.ready && stim_status.ready;
+            if (devicesReady && !stimA_active && !stimM_active && !main_init)
              {
                  screenMessage = "Devices ready. Press either manual or automatic calibration";
                  std::cout << screenMessage << endl;
@@ -547,6 +533,7 @@ int main(int argc, char *argv[])
 
                 if (MAIN_to_all.end && devicesReady)
                 {
+                    end_files();
                     GL_state = st_end;
                 }
                 else if (hmi_repeat && devicesReady && robotReady) {
@@ -559,20 +546,28 @@ int main(int argc, char *argv[])
                         main_fl1 = false;
                     }
                     else if (rec_status.req) {
-                        GL_state = st_th;
                         startup_filters();
                         hmi_repeat = false;
                         hmi_new = false;
                         main_fl0 = false;
                         main_fl1 = false;
+
+                        end_files();
+                        start_files();
+
+                        GL_state = st_th;
                     }
                 }
                 else if (hmi_new && devicesReady && robotReady) {
                     // Do a new type of exercise
-                    GL_state = st_init;
                     startup_filters();
                     hmi_repeat = false;
                     hmi_new = false;
+
+                    end_files();
+                    start_files();
+
+                    GL_state = st_init;
                 }
 
                 if ((hmi_repeat || hmi_new) && devicesReady && !robotReady && !main_fl1)
@@ -644,69 +639,11 @@ int main(int argc, char *argv[])
     Interface.join();
     GUI.join();
 
-    fileFILTERS.close();
-    fileVALUES.close();
-    fileLOGS.close();
-    // Safe here the time samples on a file
-    time1_f.open(time1_s);
-    if (time1_f.is_open())
+    // Close files if they are still open
+    if (fileFILTERS.is_open())
     {
-        for (int k = 0; k < time1_v.size(); k++)
-        {
-            time1_f << time1_v[k] << " ; " << endl;
-        }
-        printf("Main: time measurement t1 saved in file.\n");
+        end_files();
     }
-    else
-    {
-        printf("Main: Data t1 could not be saved.\n");
-    }
-    time1_f.close();
-
-    time2_f.open(time2_s);
-    if (time2_f.is_open())
-    {
-        for (int k = 0; k < time2_v.size(); k++)
-        {
-            time2_f << time2_v[k] << endl;
-        }
-        printf("Main: time measurement t2 saved in file.\n");
-    }
-    else
-    {
-        printf("Main: Data t2 could not be saved.\n");
-    }
-    time2_f.close();
-
-    time3_f.open(time3_s);
-    if (time3_f.is_open() && time3_v.size() >= 2)
-    {
-        for (int k = 0; k < time3_v.size(); k++)
-        {
-            time3_f << time3_v[k] << ", " << time3_v2[k] << ";" << endl;
-        }
-        printf("Main: time measurement t3 saved in file.\n");
-    }
-    else
-    {
-        printf("Main: Data t3 could not be saved.\n");
-    }
-    time3_f.close();
-
-    time4_f.open(time4_s);
-    if (time4_f.is_open() && time4_v.size() >= 2)
-    {
-        for (int k = 0; k < time4_v.size(); k++)
-        {
-            time4_f << time4_v[k] << ";" << endl;
-        }
-        printf("Main: time measurement t4 saved in file.\n");
-    }
-    else
-    {
-        printf("Main: Data t3 could not be saved.\n");
-    }
-    time4_f.close();
 
     robert.end();
     if (GL_tcpActive)
@@ -917,11 +854,6 @@ void connect_thread()
 {
     while (!MAIN_to_all.end && (GL_state != st_end))
     {
-        // Open file at the beginning 
- //       if (GL_state == st_init & !time4_f.is_open() && date_set)
- //       {
- //           time4_f.open(time4_s);
- //       }
         // normal thread
         control_thread(INTERFACE_THREAD, THREAD_START, GL_state);
         GL_keyPressed = _kbhit();
@@ -939,7 +871,12 @@ void connect_thread()
 
         time4_end = std::chrono::steady_clock::now();
         time4_diff = time4_end - th2_st;
-        time4_v.push_back((double)time4_diff.count());
+
+        // Only saving result if the state machine is not potentially closing/opening files
+        if (GL_state != st_repeat)
+        {
+            time4_v.push_back((double)time4_diff.count());
+        }
 
         // Close file in case exercise has been finished
 
@@ -957,13 +894,13 @@ void run_gui()
         if (!screen.error && GL_tcpActive)
         {
             // Normal procedure
-            decode_successful = decode_gui(screen.recvbuf, Move3_hmi, User_cmd, TCP_rob, TCP_rep, screen.finish, hmi_channel);
+            decode_successful = decode_gui(screen.recvbuf, Move3_hmi, User_cmd, TCP_rob, TCP_rep, screen.finish, hmi_channel, GL_hmi);
 
             if (decode_successful)
             {
                 if (screen.display)
                 {
-                    printf("From SCREEN received: move_key = %d, user_cmd = %d, satus = %c, rep_nr = %d, sel_ch = %d \n ", Move3_hmi, User_cmd, TCP_rob, TCP_rep, hmi_channel);
+                    printf("From SCREEN received: move_key = %d, user_cmd = %d, satus = %c, rep_nr = %d, sel_ch = %d, sel_ex = %d \n ", Move3_hmi, User_cmd, TCP_rob, TCP_rep, hmi_channel, GL_exercise);
                 }
                 // Actions related to the User_cmd
                 switch (User_cmd)
@@ -993,12 +930,33 @@ void run_gui()
                     }
                     break;
                 case User_th:
-                    if (GL_state == st_calM || GL_state == st_repeat)
+                    if (GL_state == st_calM || (GL_state == st_repeat && hmi_repeat))
                     {
                         rec_status.req = true;
                         std::cout << "Start threshold." << endl;
                     }
                     break;
+                case User_rep:
+                    if (GL_state == st_repeat && !hmi_new && !hmi_repeat)
+                    {
+                        hmi_repeat = true;
+                        screenMessage = "Selected: repeat same type of exercise.";
+                        std::cout << screenMessage << endl;
+                    }
+                    break;
+                case User_new:
+                    if (GL_state == st_repeat && !hmi_new && !hmi_repeat)
+                    {
+                        hmi_new = true;
+                        screenMessage = "Selected: start a new exercise.";
+                        std::cout << screenMessage << endl;
+                    }
+                    break;
+                }
+
+                if (GL_state == st_repeat || GL_state == st_init || GL_state == st_calM)
+                {
+                    GL_exercise = GL_hmi;
                 }
             }
             else if (!decode_successful && screen.display)
@@ -1019,7 +977,6 @@ void run_gui()
 
             // Send if something was received
             memset(screen.senbuf, '\0', 512);
-            //sprintf(screen.senbuf, "SAS;%2.1f;%d;%d;%d", stimulator.stim[hmi_channel].points[0].current, stimulator.stim[hmi_channel].ramp, stimulator.stim_act[hmi_channel],GL_state);
             sprintf(screen.senbuf, "SAS;%2.1f;%d;%d;%d;%d;%d;%d;%s;", stimulator.stim[hmi_channel].points[0].current, stimulator.stim[hmi_channel].ramp, stimulator.stim_act[hmi_channel], stimulator.active, start_train, GL_exercise, GL_state, screenMessage.c_str());
             screen.stream();
         }
@@ -1044,6 +1001,97 @@ void run_gui()
         MAIN_to_all.end = true;
     }
 }
+
+// ---------------------------- File function definitions --------------------------
+
+void start_files()
+{
+    // initialize files names
+    generate_date(date); //get current date/time in format YYMMDD_hhmm
+    date_s = convert_to_string(date, sizeof(date));
+    filter_s = file_dir + folder + Sname + "_filter_" + date_s.c_str() + ".txt";
+    time1_s = file_dir + folder + Sname + "_time1_" + date_s.c_str() + ".txt";
+    time2_s = file_dir + folder + Sname + "_time2_" + date_s.c_str() + ".txt";
+    time3_s = file_dir + folder + Sname + "_time3_" + date_s.c_str() + ".txt";
+    time4_s = file_dir + folder + Sname + "_time4_" + date_s.c_str() + ".txt";
+    th_s = file_dir + folder + Sname + "_th_" + date_s.c_str() + ".txt";
+    string LOGS_s = file_dir + folder + Sname + "_log_" + date_s.c_str() + ".txt";
+    fileLOGS.open(LOGS_s);
+}
+
+void end_files()
+{
+    fileFILTERS.close();
+    fileVALUES.close();
+    fileLOGS.close();
+    // Safe here the time samples on a file
+    time1_f.open(time1_s);
+    if (time1_f.is_open())
+    {
+        for (int k = 0; k < time1_v.size(); k++)
+        {
+            time1_f << time1_v[k] << " ; " << endl;
+        }
+        printf("Main: time measurement t1 saved in file.\n");
+    }
+    else
+    {
+        printf("Main: Data t1 could not be saved.\n");
+    }
+    time1_f.close();
+
+    time2_f.open(time2_s);
+    if (time2_f.is_open())
+    {
+        for (int k = 0; k < time2_v.size(); k++)
+        {
+            time2_f << time2_v[k] << endl;
+        }
+        printf("Main: time measurement t2 saved in file.\n");
+    }
+    else
+    {
+        printf("Main: Data t2 could not be saved.\n");
+    }
+    time2_f.close();
+
+    time3_f.open(time3_s);
+    if (time3_f.is_open() && time3_v.size() >= 2)
+    {
+        for (int k = 0; k < time3_v.size(); k++)
+        {
+            time3_f << time3_v[k] << ", " << time3_v2[k] << ";" << endl;
+        }
+        printf("Main: time measurement t3 saved in file.\n");
+    }
+    else
+    {
+        printf("Main: Data t3 could not be saved.\n");
+    }
+    time3_f.close();
+
+    time4_f.open(time4_s);
+    if (time4_f.is_open() && time4_v.size() >= 2)
+    {
+        for (int k = 0; k < time4_v.size(); k++)
+        {
+            time4_f << time4_v[k] << ";" << endl;
+        }
+        printf("Main: time measurement t4 saved in file.\n");
+    }
+    else
+    {
+        printf("Main: Data t3 could not be saved.\n");
+    }
+    time4_f.close();
+
+    time1_v.clear();
+    time2_v.clear();
+    time3_v.clear();
+    time3_v2.clear();
+    time4_v.clear();
+}
+
 // ---------------------------- Devices function definitions  --------------------------
 
 void modify_stimulation(RehaMove3_Req_Type &code, Smpt_Channel sel_ch)

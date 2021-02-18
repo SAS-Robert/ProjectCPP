@@ -84,7 +84,8 @@ bool decode_robot(char *message, bool &value1, bool &value2)
   return valid_msg;
 }
 
-bool decode_gui(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &user, ROB_Type &status, int &rep, bool &finished, Smpt_Channel &sel_ch)
+//bool decode_gui(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &user, ROB_Type &status, int &rep, bool &finished, Smpt_Channel &sel_ch)
+bool decode_gui(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished, Smpt_Channel& sel_ch, exercise_Type& sel_ex)
 {
   int length = strlen(message);
   char start_msg[7] = "SCREEN";
@@ -94,7 +95,7 @@ bool decode_gui(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &us
   bool valid_msg = false;
 
   int comp = 0, pos = 0, pos_cont = 0, j = 0;
-  bool comp_b = false, valid1 = false, valid2 = false, valid3 = false, charac = false, delimt = false;
+  bool comp_b = false, valid1 = false, valid2 = false, valid3 = false, valid4 = false, charac = false, delimt = false;
   bool check_end = false;
   //Looking for beginning of the message:
   while ((j < length) && !valid_msg)
@@ -135,6 +136,7 @@ bool decode_gui(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &us
         valid1 = (message[pos + 7] >= '0') || (message[pos + 7] <= '9');
         valid2 = (message[pos + 9] >= '0') || (message[pos + 9] <= '9');
         valid3 = (message[pos + 15] >= '0') || (message[pos + 15] <= '3');
+        valid4 = (message[pos + 17] >= '0') || (message[pos + 15] <= '9');
         // Checking rep value
         charac = (message[pos + 11] >= 'A') && (message[pos + 11] <= 'Z');
         valid_msg = (comp == 0) && delimt && valid1 && valid2 && charac && valid3;
@@ -157,9 +159,11 @@ bool decode_gui(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &us
     //Convert from char to int values
     int move_value = message[pos + 7] - '0';
     int user_value = message[pos + 9] - '0';
-    int ch_value = message[pos + 15] - '0';
-
     int get_status = message[pos + 11];
+    int ch_value = message[pos + 15] - '0';
+    // New: select exercise
+    int ex_value = message[pos + 17] - '0';
+    
     unsigned long long int rep_nr = 0;
 
     if (get_status == 'R')
@@ -189,6 +193,7 @@ bool decode_gui(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &us
       stimulator = (RehaMove3_Req_Type)move_value;
       user = (User_Req_Type)user_value;
       sel_ch = (Smpt_Channel)ch_value;
+      sel_ex = (exercise_Type)ex_value;
       status = (ROB_Type)get_status;
       if (get_status == 'R')
       {

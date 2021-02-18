@@ -60,13 +60,6 @@ typedef enum
     Move3_us_ls = 12,    // Decrease pulse width
 } RehaMove3_Req_Type;
 
-typedef enum
-{
-    Inge_none = 0, // Nothing to do
-    Inge_incr = 1, // Increase threshold gain
-    Inge_decr = 2, // Decrease threshold gain
-} RehaIngest_Req_Type;
-
 // For TCP connection
 typedef enum
 {
@@ -74,8 +67,6 @@ typedef enum
     rep = 'R',   // 'R' = repetition active
     start = 'S', // 'S' = start of repetition
 } ROB_Type;
-
-
 
 typedef enum
 {
@@ -91,6 +82,7 @@ typedef enum
 } User_Req_Type;
 
 // ------------------ Global variables ------------------
+const int DATE_LENGTH = 32;
 // Threads cycles
 auto th1_st = std::chrono::steady_clock::now();
 auto th1_fn = std::chrono::steady_clock::now();
@@ -122,12 +114,12 @@ void generate_date(char* outStr)
     //So the function gets a pointer to a global char array to write the date
     time_t rawtime;
     struct tm* timeinfo;
-    char buffer[15];
+    char buffer[DATE_LENGTH];
     //char output;
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    strftime(buffer, sizeof(buffer), "%Y%m%d_%H%M", timeinfo);
-    for (int i = 0; i < 15; ++i)
+    strftime(buffer, sizeof(buffer), "%Y%m%d_%H%M%S", timeinfo);
+    for (int i = 0; i < DATE_LENGTH; ++i)
     {
         outStr[i] = buffer[i];
     }

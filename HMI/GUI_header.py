@@ -46,13 +46,15 @@ Move3_start = 6
 Move3_done = 7
 Move3_en_ch = 8
 # User_Req_Type
-global User_none, User_CM, User_CA, User_X, User_th, User_st
+global User_none, User_CM, User_CA, User_X, User_th, User_st, User_rep, User_new
 User_none = 0
 User_CM = 1
 User_CA = 2
 User_X = 3
 User_th = 4
 User_st = 5
+User_rep = 7
+User_new = 8 
 
 # Initialize
 global stim_code, rob_status, rep_nr, user_code, exercise, status, statusMessage
@@ -71,6 +73,13 @@ CH_RED = 0
 CH_BLUE = 1
 CH_BLACK = 2
 CH_WHITE = 3
+
+global EX_OTHER, EX_LOWERLEG, EX_UPPERLEG, EX_CIRCUIT
+EX_OTHER = 0
+EX_LOWERLEG = 1
+EX_UPPERLEG = 2
+EX_CIRCUIT = 9
+
 # ========================== Internal variables ==========================
 global MAX_REP, MIN_REP, MAX_CUR, MIN_CUR, MAX_RAMP, MIN_RAMP
 global Drep, Dcur, Dramp, i_rep, i_cur, i_ramp, init_cur, init_ramp, init_rep
@@ -94,7 +103,7 @@ i_ramp = 1
 i_status = 4
 
 # Display lists
-global ch_select, ch_str, ex_select, status_list
+global ch_select, ch_str, ex_select, ex_str, status_list, ex_current
 ch_select = ["Ch.Red", "Ch.Blue", "Ch.Black", "Ch.White"]
 ex_select = ["Other", "Lower leg flexion", "Upper leg extension"]
 status_list = ["Initialization", "Setting threshold", "EMG monitoring", "Tigger FES", "Stop FES", "Finish program", "Manual calibration active", "Automatic calibration - stimulating", "Automatic calibration - resting", "Exercise finished"]
@@ -188,6 +197,21 @@ exButton_repeat = tk.Button(select_frame, font=("Arial Bold", fSize), width=10,
 
 exButton_new = tk.Button(select_frame, font=("Arial Bold", fSize), width=10,
                            height=2, bg=STANDARD_BLUE, fg=ctrl_left_fg)
+
+dummy_label_center = Label(select_frame, text='        ',
+                     font=("Arial Bold", 16), bg=ctr_mid_color)
+
+ex_current = Label(select_frame, text='Current exercise',
+                     font=("Arial Bold", 10), bg=ctr_mid_color, fg = ctr_mid_fg)
+
+ex_next = Label(select_frame, text='Next exercise:',
+                     font=("Arial Bold", 10), bg=ctr_mid_color, fg = ctr_mid_fg)
+# Select exercise
+ex_str = StringVar(root)
+ex_str.set(ex_select[EX_LOWERLEG])
+ex_box = OptionMenu(select_frame, ex_str, *ex_select)
+ex_box.configure(width=15, font=("Arial Bold", 10),
+                 bg=ctr_mid_color, fg=ctr_mid_fg)
 
 # =================== Side buttons description ===================
 select_frame = ctr_left

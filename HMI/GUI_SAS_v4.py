@@ -20,7 +20,7 @@ s.connect((HOST, PORT))
 # ========================== Functions ==========================
 def update_display():
     # udpate colours and texts on the screen
-    global status, statusMessage, active, ch_active, start_train
+    global status, statusMessage, active, ch_active, start_train, exercise
     status_value['text'] = status_list[status]
     status_display['text'] = statusMessage
 
@@ -79,11 +79,20 @@ def update_display():
     else:
         exButton_repeat['bg'] = DARK_GREY
         exButton_new['bg'] = DARK_GREY
+    
+    # Select boxes
+    if(status == st_calM):
+        ch_box.configure(state="normal")
+    else:
+        ch_str.set(ch_select[CH_RED])
+        ch_box.configure(state="disabled")
+    
+    ex_current['text'] =  'Current exercise: ' + str(ex_select[exercise])
 
 
 
 def update_sas():
-    global stim_code, rob_status, rep_nr, user_code, ch_str
+    global stim_code, rob_status, rep_nr, user_code, ch_str, exercise
     # Encode message
     str_rep = ' '
     if rep_nr >= 10:
@@ -93,7 +102,8 @@ def update_sas():
 
     message = 'SCREEN;' + str(stim_code) + ';' + \
         str(user_code) + ';' + rob_status + str_rep + ';' + \
-        str(ch_select.index(ch_str.get())) + ';'
+        str(ch_select.index(ch_str.get())) + ';' + \
+        str(ex_select.index(ex_str.get()))
     #print(f'Sending... {message}')
     s.sendall(message.encode("utf-8"))
     # Decode message
@@ -118,7 +128,7 @@ def update_sas():
             active = int(data_ls[4])
             # status parameters 
             start_train = int(data_ls[5])
-            exercise = float(data_ls[6])
+            exercise = int(data_ls[6])
             temp_status = float(data_ls[7])
             status = int(temp_status)
             statusMessage = str(data_ls[8])
@@ -171,11 +181,14 @@ def decrease_stat(event=None, counter=None, incr=None, limit=None, type=None):
 
 
 def user_button(type=None):
-    global stim_code, rep_nr, user_code, User_CM, User_st, Move3_en_ch, status
+    global stim_code, rep_nr, user_code, status
+    global User_CM, User_new        # max and min user command values
+    global Move3_incr, Move3_en_ch  # max and min stim command values
+
     user_code = User_none
     stim_code = Move3_none
 
-    if (type >= User_CM) and (type <= User_st):
+    if (type >= User_CM) and (type <= User_new):
         user_code = type
     elif (type >= 10) and (type <= (10+Move3_en_ch)):
         stim_code = type - 10
@@ -194,9 +207,21 @@ status_value.grid(row=1, columnspan=1)
 status_display.grid(row=3, columnspan=1)
 
 exButton_repeat['text'] = 'Repeat\nexercise'
+exButton_repeat['command'] = lambda: user_button(type=(User_rep))
+exButton_repeat.grid(row=5, columnspan=1)
+
 exButton_new['text'] = 'Do another\nexercise'
+exButton_new['command'] = lambda: user_button(type=(User_new))
+
 exButton_repeat.grid(row=5, columnspan=1)
 exButton_new.grid(row=6, columnspan=1)
+
+# Select exercise
+ex_current.grid(row=7, column=1)
+ex_next.grid(row=8, column=1)
+ex_box.grid(row=8, column=10)
+
+
 # =================== Side buttons definition ===================
 select_frame = ctr_left
 
