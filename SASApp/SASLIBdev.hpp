@@ -27,7 +27,24 @@ static std::vector<double> recorder_emg2;
 // For stimulator
 // Limits
 const float MAX_STIM_CUR = 50.0, MIN_STIM_CUR = 1.0;
+const float MAX_STIM_FQ = 50.0, MIN_STIM_FQ = 20.0, INIT_FQ = 30.0;
 const uint8_t MAX_STIM_RAMP = 10, MIN_STIM_RAMP = 1;
+const int MS_TO_HZ = 1000;
+
+// Current and ramp increments
+// Manual mode = the user can only do 1 incremet at the time and with these values
+const float D_CUR_MAN = 0.5, D_FQ_MAN = 1.0;
+const uint8_t D_RAMP_MAN = 1, D_POINT_MAN = 1;
+const uint16_t D_WIDTH = 10; // us increment
+// Automatic the increment vary depending on the current stimulation values,
+// to make the calibration faster
+const float D_CUR_LOW = 0.5, D_CUR_MED = 0.5, D_CUR_HIGH = 1;
+const uint8_t D_RAMP_LOW = 3, D_RAMP_MED = 4, D_RAMP_HIGH = 5, D_POINTS_AUTO = 1;
+// Calibration settings
+int calCycle_nr = 0;
+const int CAL_CYCLE_LIM = 100;
+const float CAL_CUR_LIM = 40.0;
+
 // Stimulation profiles for different exercises
 Smpt_ml_channel_config UPPERLEG_SET;    // values initialized on void load_stim_settings
 Smpt_ml_channel_config LOWERLEG_SET;
@@ -204,17 +221,17 @@ void load_stim_settings() {
     // Upper leg extension
     UPPERLEG_SET.number_of_points = 3; 
     UPPERLEG_SET.ramp = 3;             
-    UPPERLEG_SET.period = 20;
-    UPPERLEG_SET.points[0].current = 25;
+    UPPERLEG_SET.period = 33;               // 1/frequency (ms)
+    UPPERLEG_SET.points[0].current = 25;    // amplitude (mA)
     UPPERLEG_SET.points[0].time = 200;
     UPPERLEG_SET.points[1].time = 200;
-    UPPERLEG_SET.points[2].current = -25;
+    UPPERLEG_SET.points[2].current = -25;   // amplitude (bipolar)
     UPPERLEG_SET.points[2].time = 200;
 
     // Lower leg extension
     LOWERLEG_SET.number_of_points = 3;
     LOWERLEG_SET.ramp = 3;
-    LOWERLEG_SET.period = 20;
+    LOWERLEG_SET.period = 33;
     LOWERLEG_SET.points[0].current = 15;
     LOWERLEG_SET.points[0].time = 200;
     LOWERLEG_SET.points[1].time = 200;
@@ -224,7 +241,7 @@ void load_stim_settings() {
     // Electrical circuit
     CIRCUIT_SET.number_of_points = 3;
     CIRCUIT_SET.ramp = 3;
-    CIRCUIT_SET.period = 20;
+    CIRCUIT_SET.period = 33;
     CIRCUIT_SET.points[0].current = 5;
     CIRCUIT_SET.points[0].time = 200;
     CIRCUIT_SET.points[1].time = 200;
@@ -232,7 +249,7 @@ void load_stim_settings() {
     CIRCUIT_SET.points[2].time = 200;
 }
 
-void set_stimulation(exercise_Type profile, Smpt_ml_channel_config &settings)
+void set_stimulation(exercise_Type profile, Smpt_ml_channel_config &settings, double frequency)
 {
     Smpt_ml_channel_config new_settings = CIRCUIT_SET;
     switch (profile) 
@@ -245,6 +262,7 @@ void set_stimulation(exercise_Type profile, Smpt_ml_channel_config &settings)
             break;
     }
     // Update values
+    new_settings.period = float(MS_TO_HZ / frequency);
     settings = new_settings;
 }
 // ------------------ Objects definition ------------------
@@ -264,7 +282,8 @@ private:
 public:
     bool ready, active, display;
     //Smpt_ml_channel_config stim;
-    Smpt_ml_channel_config stim[4]; // New
+    Smpt_ml_channel_config stim[4];
+    double fq[4];
     bool stim_act[4] = {true, false, false, false};
     // From main:
     bool abort;
@@ -333,7 +352,8 @@ public:
             // Initialize stim channels values
             for (int k = 0; k < 4; k++)
             {
-                set_stimulation(exercise, stim[k]);
+                fq[k] = INIT_FQ;
+                set_stimulation(exercise, stim[k], fq[k]);
             }
             if(display) { printf("Device RehaMove3 ready.\n"); }
             }
@@ -367,7 +387,7 @@ public:
         smpt_send_ml_get_current_data(&device, &ml_get_current_data);
         active = stim_act[Smpt_Channel_Red];
     };
-    //New
+    //New: multichannel selection
     void update2(Smpt_Channel sel_ch)
     {
         fill_ml_update(&device, &ml_update, sel_ch, stim_act[sel_ch], stim[sel_ch]);
@@ -474,7 +494,7 @@ public:
         }
         else if (!smpt_next)
         {
-            if (display) { std::cout << "Error - Reha Ingest: Device not found. Turn it on and/or check connection.\n"; }
+            std::cout << "Error - Reha Ingest: Device not found. Turn it on and/or check connection.\n";
             smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
             smpt_close_serial_port(&device_ri);
         }

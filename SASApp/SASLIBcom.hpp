@@ -84,132 +84,84 @@ bool decode_robot(char *message, bool &value1, bool &value2)
   return valid_msg;
 }
 
-//bool decode_gui(char *message, RehaMove3_Req_Type &stimulator, User_Req_Type &user, ROB_Type &status, int &rep, bool &finished, Smpt_Channel &sel_ch)
-bool decode_gui(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished, Smpt_Channel& sel_ch, exercise_Type& sel_ex)
+bool decode_gui(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished, Smpt_Channel& sel_ch, exercise_Type& sel_ex, threshold_Type& sel_th)
 {
-  int length = strlen(message);
-  char start_msg[7] = "SCREEN";
-  char finish_msg[7] = "ENDTCP";
-  char delim_msg = 59; // ASCII Semicolon ; code
-  char end_msg = 59;
-  bool valid_msg = false;
+    int field = 0, nrFields = 8, length = strlen(message);
+    string start_msg = "SCREEN";
+    string finish_msg = "ENDTCP";
+    char temp_status[2] = "0";
+    bool valid[10], valid_msg = true;
+    int value[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    string messageStr = convert_to_string(message, length);
+    string delimiter = ";";
+    size_t pos = 0;
+    string token;
+    // Separate every field on the string
+        while ( ((pos = messageStr.find(delimiter)) != std::string::npos) && !finished) {
+            token = messageStr.substr(0, pos);
+            messageStr.erase(0, pos + delimiter.length());
 
-  int comp = 0, pos = 0, pos_cont = 0, j = 0;
-  bool comp_b = false, valid1 = false, valid2 = false, valid3 = false, valid4 = false, charac = false, delimt = false;
-  bool check_end = false;
-  //Looking for beginning of the message:
-  while ((j < length) && !valid_msg)
-  {
-    // Beginning of the string found
-    if (((message[j] == start_msg[0]) || (message[j] == finish_msg[0])) && (pos_cont <= 1))
-    { //start_msg[0]){
-      comp_b = true;
-      pos_cont = 0;
-      comp = 0;
-      pos = j;
-      if (message[j] == finish_msg[0])
-      {
-        check_end = true;
-      }
-    }
-    // If the beginning is found, start storing the "SCREEN" identifier
-    if ((comp_b) && (pos_cont < 7))
-    {
-      if (!check_end)
-      {
-        comp = comp + (message[j] - start_msg[j - pos]);
-      }
-      else
-      {
-        comp = comp + (message[j] - finish_msg[j - pos]);
-      }
-      pos_cont++;
-    }
-    // After 6 iteractions, verify that the identifier was found, then compare fields
-    if ((pos_cont >= 6) && (comp == 0))
-    {
-      if (!check_end)
-      {
-        // Checking delimiters
-        delimt = (message[pos + 6] == delim_msg) && (message[pos + 8] == delim_msg) && (message[pos + 10] == delim_msg);
-        // Checking commands
-        valid1 = (message[pos + 7] >= '0') || (message[pos + 7] <= '9');
-        valid2 = (message[pos + 9] >= '0') || (message[pos + 9] <= '9');
-        valid3 = (message[pos + 15] >= '0') || (message[pos + 15] <= '3');
-        valid4 = (message[pos + 17] >= '0') || (message[pos + 15] <= '9');
-        // Checking rep value
-        charac = (message[pos + 11] >= 'A') && (message[pos + 11] <= 'Z');
-        valid_msg = (comp == 0) && delimt && valid1 && valid2 && charac && valid3;
-      }
-      else
-      {
-        valid_msg = (comp == 0);
-      }
-    }
-    else if (pos_cont >= 6)
-    {
-      comp_b = false; // If not found_set up back
-      check_end = false;
-    }
-    j++;
-  }
+            switch (field) {
+                // Start message
+            case 0:
+                finished = (token == finish_msg);
+                valid[field] = (token == start_msg);
 
-  if (!check_end)
-  {
-    //Convert from char to int values
-    int move_value = message[pos + 7] - '0';
-    int user_value = message[pos + 9] - '0';
-    int get_status = message[pos + 11];
-    int ch_value = message[pos + 15] - '0';
-    // New: select exercise
-    int ex_value = message[pos + 17] - '0';
-    
-    unsigned long long int rep_nr = 0;
+                if (finished) {
+                    return valid_msg;
+                }
+                break;
+                // standard command options and repetitions
+            case 1:
+                value[field] = stoi(token);
+                valid[field] = (value[field] >= 0) && (value[field] <= 9);
+                break;
+            case 2:
+                value[field] = stoi(token);
+                valid[field] = (value[field] >= 0) && (value[field] <= 8);
+                break;
+            case 3:
+                strcpy(temp_status, token.c_str());
+                valid[field] = (temp_status[0] >= 'A') && (temp_status[0] <= 'Z');
+                break;
+            case 4:
+                value[field] = stoi(token);
+                valid[field] = (value[field] >= 0) && (value[field] <= 99);
+                break;
+                // Select channel, exercise and method
+            case 5:
+                value[field] = stoi(token);
+                valid[field] = (value[field] >= 0) && (value[field] <= 4);
+                break;
+            case 6:
+                value[field] = stoi(token);
+                valid[field] = (value[field] >= 0) && (value[field] <= 4);
+                break;
+            case 7:
+                value[field] = stoi(token);
+                valid[field] = (value[field] >= 0) && (value[field] <= 3);
+                break;
+            }
 
-    if (get_status == 'R')
-    { // Only necessary to decode the rep number if R
-      int rep_unit100 = message[pos + 12] - '0';
-      int rep_unit10 = message[pos + 13] - '0';
+            field++;
+        }
+        // Check that all the fields are correct
+        for (int k = 0; k < nrFields; k++)
+        {
+            valid_msg = valid_msg && valid[k];
+        }
 
-      if (message[pos + 13] == delim_msg)
-      {
-        rep_nr = rep_unit100;
-      }
-      else if (message[pos + 14] == delim_msg)
-      {
-        rep_nr = rep_unit100 * 10 + rep_unit10;
-      }
-      else
-      {
-        int rep_unit1 = message[pos + 14] - '0';
-        rep_nr = rep_unit100 * 100 + rep_unit10 * 10 + rep_unit1;
-      }
-      valid_msg = valid_msg && (rep_nr >= 0) && (rep_nr <= 999); // Check values
-    }
-
-    //Outputs
-    if (valid_msg)
-    {
-      stimulator = (RehaMove3_Req_Type)move_value;
-      user = (User_Req_Type)user_value;
-      sel_ch = (Smpt_Channel)ch_value;
-      sel_ex = (exercise_Type)ex_value;
-      status = (ROB_Type)get_status;
-      if (get_status == 'R')
-      {
-        rep = rep_nr;
-      }
-    }
-  } // !check_end
-  else
-  {
-    if (valid_msg)
-    {
-      finished = true;
-    }
-  }
-
-  return valid_msg;
+        if (valid_msg)
+        {
+            stimulator = (RehaMove3_Req_Type)value[1];
+            user = (User_Req_Type)value[2];
+            status = (ROB_Type)temp_status[0];
+            rep = value[4];
+            sel_ch = (Smpt_Channel)value[5];
+            sel_ex = (exercise_Type)value[6];
+            sel_th = (threshold_Type)value[7];
+        }
+        return valid_msg;
 }
 
 // ------------------ Objects definition ------------------

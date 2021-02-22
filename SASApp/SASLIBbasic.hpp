@@ -36,11 +36,17 @@ typedef enum
 typedef enum
 {
     exInvalid = -1,     // Invalid exercise
-    exUnregistered = 0, // New exercise or that is not registered
-    lowerLeg_flex = 1,  // Lower leg flexion
-    upperLeg_ext = 2,   // Upper leg extension
-    exCircuit = 9,     // The simulator is connected to an electrical circuit
+    lowerLeg_flex = 0,  // Lower leg flexion
+    upperLeg_ext = 1,   // Upper leg extension
+    exCircuit = 2,     // The simulator is connected to an electrical circuit
 } exercise_Type;
+
+typedef enum
+{
+    th_SD05 = 0,        // SD*0.5 = Half of the standard deviation
+    th_SD03 = 1,        // SD*0.3 = Third of the standard deviation
+    th_other = 2,       // Other?
+} threshold_Type;
 
 // User options for stimulation and process
 typedef enum
@@ -53,11 +59,11 @@ typedef enum
     Move3_stop = 5,      // Stop Stimulating
     Move3_start = 6,     // Stimulate with initial values
     Move3_done = 7,      // Finish callibration
-    Move3_en_ch = 8,     //Enable/disable channel
-    Move3_Hz_mr = 9,     // Increase frequency
-    Move3_Hz_ls = 10,    // Decrease Frequency
-    Move3_us_mr = 11,    // Increase pulse width
-    Move3_us_ls = 12,    // Decrease pulse width
+    Move3_Hz_mr = 8,     // Increase frequency
+    Move3_Hz_ls = 9,    // Decrease Frequency
+    Move3_us_mr = 10,    // Increase pulse width
+    Move3_us_ls = 11,    // Decrease pulse width
+    Move3_en_ch = 12,     //Enable/disable channel
 } RehaMove3_Req_Type;
 
 // For TCP connection
@@ -213,7 +219,7 @@ void control_thread(int thread_nr, bool start, state_Type state)
             }
             else
             {
-                Sleep(5);
+                Sleep(25);
                 th1_sleep = 0;
             }
             break;
