@@ -67,8 +67,8 @@ User_Req_Type User_cmd = User_none;
 // ------------------------- Devices handling --------------------------------
 bool stim_ready = false, rec_ready = false, stim_abort = false;
 
-char PORT_STIM[5] = "COM6";   // Laptop
-// char PORT_STIM[5] = "COM3";     // Robot
+// char PORT_STIM[5] = "COM6";   // Laptop
+char PORT_STIM[5] = "COM3";     // Robot
 RehaMove3 stimulator;
 
 // char PORT_REC[5] = "COM4";    // Laptop
@@ -86,7 +86,7 @@ int udp_cnt = 0;
 char ROBOT_IP_E[15] = "127.0.0.1";
 char ROBOT_IP[15] = "172.31.1.147";
 uint32_t ROBOT_PORT = 30007;
-UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
+UdpClient robert(ROBOT_IP, ROBOT_PORT);
 
 char SCREEN_ADDRESS[15] = "127.0.0.1";
 char SCREEN_PORT[15] = "30002";

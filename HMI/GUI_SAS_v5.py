@@ -72,10 +72,10 @@ def update_display():
         exButton_new.configure(state="disabled")
 
     if(status == st_init or status == st_repeat):
-        ex_current['text'] =  'Incoming exercise: ' + ex_select[exercise]
+        #ex_current['text'] =  'Incoming exercise: ' + ex_select[exercise]
         mth_current['text'] =  'Incoming method: ' + mth_select[method]
     else:
-        ex_current['text'] =  'Current exercise: ' + ex_select[exercise]
+        #ex_current['text'] =  'Current exercise: ' + ex_select[exercise]
         mth_current['text'] =  'Current method: ' + mth_select[method]
 
     # Select boxes and options while manual calibration is active
@@ -238,10 +238,10 @@ mth_next.place(relx = marginX, rely = marginY+next_marginY)
 mth_box.place(relx = marginX+next_margin, rely = marginY+next_marginY)
 
 # Select exercise
-marginY += 0.2
-ex_current.place(relx = marginX, rely = marginY)
-ex_next.place(relx = marginX, rely = marginY+next_marginY)
-ex_box.place(relx = marginX+next_margin, rely = marginY+next_marginY)
+#marginY += 0.2
+#ex_current.place(relx = marginX, rely = marginY)
+#ex_next.place(relx = marginX, rely = marginY+next_marginY)
+#ex_box.place(relx = marginX+next_margin, rely = marginY+next_marginY)
 # =================== Side buttons definition ===================
 select_frame = ctr_left
 
