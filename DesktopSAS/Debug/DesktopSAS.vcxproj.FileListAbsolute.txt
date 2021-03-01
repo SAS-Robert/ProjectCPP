@@ -1,0 +1,5 @@
+C:\Users\Carolina\Desktop\net_shared\ProjectCPP\DesktopSAS\Debug\DesktopSAS.vcxprojAssemblyReference.cache
+C:\Users\Carolina\Desktop\net_shared\ProjectCPP\DesktopSAS\Debug\DesktopSAS.MyForm.resources
+C:\Users\Carolina\Desktop\net_shared\ProjectCPP\DesktopSAS\Debug\DesktopSAS.vcxproj.GenerateResource.cache
+C:\Users\Carolina\Desktop\net_shared\ProjectCPP\DesktopSAS\Debug\DesktopSAS.exe
+C:\Users\Carolina\Desktop\net_shared\ProjectCPP\DesktopSAS\Debug\DesktopSAS.pdb

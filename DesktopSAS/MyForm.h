@@ -2,6 +2,8 @@
 #include <random>
 #include <string>
 
+#include "Header.h"
+
 namespace DesktopSAS {
 
 	using namespace System;
@@ -76,10 +78,13 @@ namespace DesktopSAS {
 			// 
 			// backgroundWorker1
 			// 
-			this->backgroundWorker1->WorkerSupportsCancellation = true;
+			this->backgroundWorker1->WorkerSupportsCancellation = true;		// it is possible to abort/end the background function
+			this->backgroundWorker1->WorkerReportsProgress = true;			// it is possible to report progress
 			this->backgroundWorker1->DoWork += gcnew System::ComponentModel::DoWorkEventHandler(this, &MyForm::backgroundWorker1_DoWork);
 			this->backgroundWorker1->RunWorkerCompleted += gcnew System::ComponentModel::RunWorkerCompletedEventHandler(this, &MyForm::backgroundWorker1_RunWorkerCompleted);
-			// 
+			// New
+			this->backgroundWorker1->ProgressChanged += gcnew System::ComponentModel::ProgressChangedEventHandler(this, &MyForm::worker_ProgressChanged);
+			//
 			// message1
 			// 
 			this->message1->Location = System::Drawing::Point(13, 84);
@@ -114,12 +119,14 @@ namespace DesktopSAS {
 	private: System::Void start_pressed(System::Object^ sender, System::EventArgs^ e) {
 		this->message1->Text = L"Started backgroundWorker";
 		this->backgroundWorker1->RunWorkerAsync(2000);
+		//this->backgroundWorker1->CancelAsync();
+
 	}
 	// End background worker
 	private: System::Void cancel_pressed(System::Object^ sender, System::EventArgs^ e) {
 		this->message1->Text = L"Close BackgroundWorker";
 		// Close background task
-		this->backgroundWorker1->CancelAsync();
+		//this->backgroundWorker1->CancelAsync();
 	}
 
 	private: System::Void backgroundWorker1_DoWork(System::Object^ sender, DoWorkEventArgs^ e)
@@ -127,11 +134,19 @@ namespace DesktopSAS {
 		// Do not access the form's BackgroundWorker reference directly.
 		// Instead, use the reference provided by the sender parameter.
 		//BackgroundWorker bw; // = sender();// as BackgroundWorker;
-
-		dummy++;
-		this->backLabel->Text = L"backgroundWorker was here";
-		// Extract the argument.
 		int arg = (int)e->Argument;
+
+		for (int j = 0; j < 5; j++) {
+			dummy++;
+			// Test stuff
+			this->backgroundWorker1->ReportProgress(dummy);
+			System::Threading::Thread::Sleep(arg);
+		}
+
+		// This generates a cross-thread exception
+		//this->backLabel->Text = L"backgroundWorker was here";
+		// Extract the argument.
+		
 
 		// Start the time-consuming operation.
 		e->Result = TimeConsumingOperation(arg);
@@ -149,6 +164,8 @@ namespace DesktopSAS {
 		   // in the DoWork event handler.
 	private: System::Void backgroundWorker1_RunWorkerCompleted(System::Object^ sender, RunWorkerCompletedEventArgs^ e)
 	{
+		//this->backLabel->Text = L"backgroundWorker was here";
+
 		if (e->Cancelled)
 		{
 			// The user canceled the operation.
@@ -169,6 +186,7 @@ namespace DesktopSAS {
 			//System::Windows::Forms::MessageBox::Show(msg);
 			this->backLabel->Text = L"Result = {0}";
 		}
+		this->backLabel->Text = L"Result = {0}";
 	}
 
 		   int TimeConsumingOperation(int sleepPeriod)
@@ -219,5 +237,27 @@ namespace DesktopSAS {
 
 			   return result;
 		   }
+	
+
+	private: System::Void worker_ProgressChanged(System::Object^ sender, ProgressChangedEventArgs^ e)
+	{
+		int a = dummy;
+		char intStr[30];
+		itoa(a, intStr, 10);		// itoa(number,string outout, radix = 10 decimal, 16 hexadecimal, 2 binary
+		//std::wstring wstext = s2ws(string(intStr));
+		//wstring ctext = L"This is an example";
+
+		//
+		string v1st, vt2;
+		System::String^ v1str = "Phase A: ";
+		v1st += vt2; // or maybe gcnew System::String(vt2.c_str());
+		v1str += " Vac";
+
+		v1str = gcnew String(string(intStr).c_str());
+
+		//
+		this->backLabel->Text = v1str;
+		//this->backLabel->Text = L"backgroundWorker was here";
+	}
 	};
 }
