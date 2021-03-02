@@ -1,0 +1,809 @@
+#pragma once
+#include <random>
+#include <string>
+
+#include "sasGui.h"
+#include "SASLIBbasic.hpp"
+/* ---> Some notes on the background run:
+* It requires a Backgroundworker type field
+* Some Background fields need to be associated with methods and set up
+* A backgroundworker starts with RunWorkerAsync and ends with CancelAsync
+* A backgroundworker must run from beginning to end before being started again
+* The method assigned to DoWorkEventHandler runs when RunWorkerAsync is called
+* The method assigned to RunWorkerCompletedEventHandler will run when the CancelAsync is called
+* The method assigned to ProgressChangedEventHandler is called indirectly from DoWorkEventHandler
+* ---> In this project:
+* There is only 1 background worker, which updates the UI
+* It is launched only 1 at the begining (constructor)
+* It ends among the main program
+* As a ref class, it cannot be set as a global variable, so it communicates with the rest of SAS
+* through a class-object, declared as global variable, where both (SAS thread and GUI) read and write
+* */
+// this->Icon = gcnew System::Drawing::Icon(L"logo_square.ico");
+namespace DesktopSAS {
+
+	using namespace System;
+	using namespace System::ComponentModel;
+	using namespace System::Collections;
+	using namespace System::Windows::Forms;
+	using namespace System::Data;
+	using namespace System::Drawing;
+
+	/// <summary>
+	/// Summary for MyForm
+	/// </summary>
+	public ref class MyForm : public System::Windows::Forms::Form
+	{
+	public:
+		MyForm(void)
+		{
+			// Start GUI components
+			InitializeComponent();
+			// Start internal gui-sas fields
+			InitializeSASGUI();
+			// Start Background
+			this->backgroundWorker1->RunWorkerAsync(2000);
+			int dummy = 0;
+		}
+
+	protected:
+		/// <summary>
+		/// Clean up any resources being used.
+		/// </summary>
+		~MyForm()
+		{
+			if (components)
+			{
+				delete components;
+			}
+		}
+	// Class public fields
+	public: 
+			int dummy;
+			const int UPDATE_PERIOD_MS = 100;
+			// SAS <-> GUI fields
+			RehaMove3_Req_Type Move3_gui;
+			User_Req_Type user_gui;
+			state_Type state;
+			bool bUser, bMove3;
+			bool trainStart, stimA_active, stimM_active, gui_repeat, gui_new;
+
+	public: System::Windows::Forms::Button^ start_Button;
+	     	System::ComponentModel::BackgroundWorker^ backgroundWorker1;
+			System::Windows::Forms::Label^ message1;						// Not necessary, only for testing
+			System::Windows::Forms::Label^ backLabel;						// Not necessary, only for testing
+			System::Windows::Forms::Button^ manButton;
+			System::Windows::Forms::Label^ statusMsg;
+			System::Windows::Forms::Label^ statusLabel;
+			System::Windows::Forms::Label^ statusTitle;
+			System::Windows::Forms::Label^ stimTitle;
+			System::Windows::Forms::Label^ exerciseTitle;
+			System::Windows::Forms::Button^ xButton;
+			System::Windows::Forms::Button^ trainButton;
+			System::Windows::Forms::Button^ thButton;
+			System::Windows::Forms::Button^ newButton;
+			System::Windows::Forms::Button^ repeatButton;
+	public: System::Windows::Forms::Label^ rampTitle;
+	public: System::Windows::Forms::Label^ rampValue;
+	public: System::Windows::Forms::Button^ rampPlus;
+	public: System::Windows::Forms::Button^ rampMinus;
+	public: System::Windows::Forms::Button^ curMinus;
+	public: System::Windows::Forms::Button^ curPlus;
+	public: System::Windows::Forms::Label^ curValue;
+	public: System::Windows::Forms::Label^ curTitle;
+	public: System::Windows::Forms::Button^ fqMinus;
+	public: System::Windows::Forms::Button^ fqPlus;
+	public: System::Windows::Forms::Label^ fqValue;
+	public: System::Windows::Forms::Label^ fqTitle;
+	public: System::Windows::Forms::Button^ stopButton;
+	public: System::Windows::Forms::Button^ stButton;
+
+	protected:
+
+	private:
+		System::ComponentModel::Container ^components;
+
+#pragma region Windows Form Designer generated code
+		/// <summary>
+		/// Required method for Designer support - do not modify
+		/// the contents of this method with the code editor.
+		/// </summary>
+		void InitializeComponent(void)
+		{
+			this->start_Button = (gcnew System::Windows::Forms::Button());
+			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
+			this->message1 = (gcnew System::Windows::Forms::Label());
+			this->backLabel = (gcnew System::Windows::Forms::Label());
+			this->manButton = (gcnew System::Windows::Forms::Button());
+			this->statusMsg = (gcnew System::Windows::Forms::Label());
+			this->statusLabel = (gcnew System::Windows::Forms::Label());
+			this->statusTitle = (gcnew System::Windows::Forms::Label());
+			this->stimTitle = (gcnew System::Windows::Forms::Label());
+			this->exerciseTitle = (gcnew System::Windows::Forms::Label());
+			this->xButton = (gcnew System::Windows::Forms::Button());
+			this->trainButton = (gcnew System::Windows::Forms::Button());
+			this->thButton = (gcnew System::Windows::Forms::Button());
+			this->newButton = (gcnew System::Windows::Forms::Button());
+			this->repeatButton = (gcnew System::Windows::Forms::Button());
+			this->rampTitle = (gcnew System::Windows::Forms::Label());
+			this->rampValue = (gcnew System::Windows::Forms::Label());
+			this->rampPlus = (gcnew System::Windows::Forms::Button());
+			this->rampMinus = (gcnew System::Windows::Forms::Button());
+			this->curMinus = (gcnew System::Windows::Forms::Button());
+			this->curPlus = (gcnew System::Windows::Forms::Button());
+			this->curValue = (gcnew System::Windows::Forms::Label());
+			this->curTitle = (gcnew System::Windows::Forms::Label());
+			this->fqMinus = (gcnew System::Windows::Forms::Button());
+			this->fqPlus = (gcnew System::Windows::Forms::Button());
+			this->fqValue = (gcnew System::Windows::Forms::Label());
+			this->fqTitle = (gcnew System::Windows::Forms::Label());
+			this->stopButton = (gcnew System::Windows::Forms::Button());
+			this->stButton = (gcnew System::Windows::Forms::Button());
+			this->SuspendLayout();
+			// 
+			// start_Button
+			// 
+			this->start_Button->Location = System::Drawing::Point(326, 450);
+			this->start_Button->Name = L"start_Button";
+			this->start_Button->Size = System::Drawing::Size(109, 23);
+			this->start_Button->TabIndex = 0;
+			this->start_Button->Text = L"Press me!";
+			this->start_Button->UseVisualStyleBackColor = true;
+			this->start_Button->Click += gcnew System::EventHandler(this, &MyForm::start_pressed);
+			// 
+			// backgroundWorker1
+			// 
+			this->backgroundWorker1->WorkerReportsProgress = true;
+			this->backgroundWorker1->WorkerSupportsCancellation = true;
+			this->backgroundWorker1->DoWork += gcnew System::ComponentModel::DoWorkEventHandler(this, &MyForm::launchBackground);
+			this->backgroundWorker1->ProgressChanged += gcnew System::ComponentModel::ProgressChangedEventHandler(this, &MyForm::updateBackground);
+			this->backgroundWorker1->RunWorkerCompleted += gcnew System::ComponentModel::RunWorkerCompletedEventHandler(this, &MyForm::endBackground);
+			// 
+			// message1
+			// 
+			this->message1->Location = System::Drawing::Point(323, 489);
+			this->message1->Name = L"message1";
+			this->message1->Size = System::Drawing::Size(213, 24);
+			this->message1->TabIndex = 1;
+			this->message1->Text = L"message1";
+			// 
+			// backLabel
+			// 
+			this->backLabel->Location = System::Drawing::Point(323, 523);
+			this->backLabel->Name = L"backLabel";
+			this->backLabel->Size = System::Drawing::Size(213, 13);
+			this->backLabel->TabIndex = 2;
+			this->backLabel->Text = L"backgroundWorker Text";
+			// 
+			// manButton
+			// 
+			this->manButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->manButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->manButton->FlatAppearance->BorderSize = 0;
+			this->manButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->manButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->manButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->manButton->Location = System::Drawing::Point(305, 191);
+			this->manButton->Name = L"manButton";
+			this->manButton->Size = System::Drawing::Size(133, 78);
+			this->manButton->TabIndex = 3;
+			this->manButton->Text = L"SET-UP STIMULATION";
+			this->manButton->UseVisualStyleBackColor = false;
+			this->manButton->Click += gcnew System::EventHandler(this, &MyForm::click_manButton);
+			// 
+			// statusMsg
+			// 
+			this->statusMsg->Location = System::Drawing::Point(249, 12);
+			this->statusMsg->Name = L"statusMsg";
+			this->statusMsg->Size = System::Drawing::Size(323, 86);
+			this->statusMsg->TabIndex = 4;
+			this->statusMsg->Text = L"status message here";
+			// 
+			// statusLabel
+			// 
+			this->statusLabel->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 9.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->statusLabel->Location = System::Drawing::Point(12, 40);
+			this->statusLabel->Name = L"statusLabel";
+			this->statusLabel->Size = System::Drawing::Size(213, 51);
+			this->statusLabel->TabIndex = 5;
+			this->statusLabel->Text = L"status Label here";
+			// 
+			// statusTitle
+			// 
+			this->statusTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->statusTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->statusTitle->Location = System::Drawing::Point(7, 9);
+			this->statusTitle->Name = L"statusTitle";
+			this->statusTitle->Size = System::Drawing::Size(236, 31);
+			this->statusTitle->TabIndex = 6;
+			this->statusTitle->Text = L"PROGRAM STATUS:";
+			// 
+			// stimTitle
+			// 
+			this->stimTitle->BorderStyle = System::Windows::Forms::BorderStyle::FixedSingle;
+			this->stimTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->stimTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->stimTitle->Location = System::Drawing::Point(-1, 104);
+			this->stimTitle->Name = L"stimTitle";
+			this->stimTitle->Size = System::Drawing::Size(300, 461);
+			this->stimTitle->TabIndex = 7;
+			this->stimTitle->Text = L"STIMULATION";
+			this->stimTitle->TextAlign = System::Drawing::ContentAlignment::TopCenter;
+			// 
+			// exerciseTitle
+			// 
+			this->exerciseTitle->BorderStyle = System::Windows::Forms::BorderStyle::FixedSingle;
+			this->exerciseTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->exerciseTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->exerciseTitle->Location = System::Drawing::Point(298, 104);
+			this->exerciseTitle->Name = L"exerciseTitle";
+			this->exerciseTitle->Size = System::Drawing::Size(300, 461);
+			this->exerciseTitle->TabIndex = 8;
+			this->exerciseTitle->Text = L"EXERCISE SETTINGS";
+			this->exerciseTitle->TextAlign = System::Drawing::ContentAlignment::TopCenter;
+			// 
+			// xButton
+			// 
+			this->xButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->xButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->xButton->FlatAppearance->BorderSize = 0;
+			this->xButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->xButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->xButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->xButton->Location = System::Drawing::Point(444, 191);
+			this->xButton->Name = L"xButton";
+			this->xButton->Size = System::Drawing::Size(133, 78);
+			this->xButton->TabIndex = 9;
+			this->xButton->Text = L"END SET-UP";
+			this->xButton->UseVisualStyleBackColor = false;
+			this->xButton->Click += gcnew System::EventHandler(this, &MyForm::click_xButton);
+			// 
+			// trainButton
+			// 
+			this->trainButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->trainButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->trainButton->FlatAppearance->BorderSize = 0;
+			this->trainButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->trainButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->trainButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->trainButton->Location = System::Drawing::Point(444, 275);
+			this->trainButton->Name = L"trainButton";
+			this->trainButton->Size = System::Drawing::Size(133, 78);
+			this->trainButton->TabIndex = 11;
+			this->trainButton->Text = L"START TRAINING";
+			this->trainButton->UseVisualStyleBackColor = false;
+			this->trainButton->Click += gcnew System::EventHandler(this, &MyForm::click_trainButton);
+			// 
+			// thButton
+			// 
+			this->thButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->thButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->thButton->FlatAppearance->BorderSize = 0;
+			this->thButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->thButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->thButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->thButton->Location = System::Drawing::Point(305, 275);
+			this->thButton->Name = L"thButton";
+			this->thButton->Size = System::Drawing::Size(133, 78);
+			this->thButton->TabIndex = 10;
+			this->thButton->Text = L"SET THRESHOLD";
+			this->thButton->UseVisualStyleBackColor = false;
+			this->thButton->Click += gcnew System::EventHandler(this, &MyForm::click_thButton);
+			// 
+			// newButton
+			// 
+			this->newButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->newButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->newButton->FlatAppearance->BorderSize = 0;
+			this->newButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->newButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->newButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->newButton->Location = System::Drawing::Point(444, 359);
+			this->newButton->Name = L"newButton";
+			this->newButton->Size = System::Drawing::Size(133, 78);
+			this->newButton->TabIndex = 13;
+			this->newButton->Text = L"NEW EXERCISE";
+			this->newButton->UseVisualStyleBackColor = false;
+			this->newButton->Click += gcnew System::EventHandler(this, &MyForm::click_newButton);
+			// 
+			// repeatButton
+			// 
+			this->repeatButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->repeatButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->repeatButton->FlatAppearance->BorderSize = 0;
+			this->repeatButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->repeatButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->repeatButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->repeatButton->Location = System::Drawing::Point(305, 359);
+			this->repeatButton->Name = L"repeatButton";
+			this->repeatButton->Size = System::Drawing::Size(133, 78);
+			this->repeatButton->TabIndex = 12;
+			this->repeatButton->Text = L"REPEAT EXERCISE";
+			this->repeatButton->UseVisualStyleBackColor = false;
+			this->repeatButton->Click += gcnew System::EventHandler(this, &MyForm::click_repeatButton);
+			// 
+			// rampTitle
+			// 
+			this->rampTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->rampTitle->ForeColor = System::Drawing::SystemColors::ControlText;
+			this->rampTitle->Location = System::Drawing::Point(68, 144);
+			this->rampTitle->Name = L"rampTitle";
+			this->rampTitle->Size = System::Drawing::Size(175, 31);
+			this->rampTitle->TabIndex = 14;
+			this->rampTitle->Text = L"RAMP";
+			this->rampTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			// 
+			// rampValue
+			// 
+			this->rampValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->rampValue->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->rampValue->Location = System::Drawing::Point(68, 188);
+			this->rampValue->Name = L"rampValue";
+			this->rampValue->Size = System::Drawing::Size(175, 31);
+			this->rampValue->TabIndex = 15;
+			this->rampValue->Text = L"RAMP";
+			this->rampValue->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			// 
+			// rampPlus
+			// 
+			this->rampPlus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->rampPlus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->rampPlus->FlatAppearance->BorderSize = 0;
+			this->rampPlus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->rampPlus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->rampPlus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->rampPlus->Location = System::Drawing::Point(232, 144);
+			this->rampPlus->Name = L"rampPlus";
+			this->rampPlus->Size = System::Drawing::Size(60, 78);
+			this->rampPlus->TabIndex = 16;
+			this->rampPlus->Text = L"+";
+			this->rampPlus->UseVisualStyleBackColor = false;
+			this->rampPlus->Click += gcnew System::EventHandler(this, &MyForm::click_rampPlus);
+			// 
+			// rampMinus
+			// 
+			this->rampMinus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->rampMinus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->rampMinus->FlatAppearance->BorderSize = 0;
+			this->rampMinus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->rampMinus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F));
+			this->rampMinus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->rampMinus->Location = System::Drawing::Point(15, 144);
+			this->rampMinus->Name = L"rampMinus";
+			this->rampMinus->Size = System::Drawing::Size(60, 78);
+			this->rampMinus->TabIndex = 17;
+			this->rampMinus->Text = L"-";
+			this->rampMinus->UseVisualStyleBackColor = false;
+			this->rampMinus->Click += gcnew System::EventHandler(this, &MyForm::click_rampMinus);
+			// 
+			// curMinus
+			// 
+			this->curMinus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->curMinus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->curMinus->FlatAppearance->BorderSize = 0;
+			this->curMinus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->curMinus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F));
+			this->curMinus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->curMinus->Location = System::Drawing::Point(15, 238);
+			this->curMinus->Name = L"curMinus";
+			this->curMinus->Size = System::Drawing::Size(60, 78);
+			this->curMinus->TabIndex = 21;
+			this->curMinus->Text = L"-";
+			this->curMinus->UseVisualStyleBackColor = false;
+			this->curMinus->Click += gcnew System::EventHandler(this, &MyForm::click_curMinus);
+			// 
+			// curPlus
+			// 
+			this->curPlus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->curPlus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->curPlus->FlatAppearance->BorderSize = 0;
+			this->curPlus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->curPlus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->curPlus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->curPlus->Location = System::Drawing::Point(232, 238);
+			this->curPlus->Name = L"curPlus";
+			this->curPlus->Size = System::Drawing::Size(60, 78);
+			this->curPlus->TabIndex = 20;
+			this->curPlus->Text = L"+";
+			this->curPlus->UseVisualStyleBackColor = false;
+			this->curPlus->Click += gcnew System::EventHandler(this, &MyForm::click_curPlus);
+			// 
+			// curValue
+			// 
+			this->curValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->curValue->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->curValue->Location = System::Drawing::Point(68, 282);
+			this->curValue->Name = L"curValue";
+			this->curValue->Size = System::Drawing::Size(175, 31);
+			this->curValue->TabIndex = 19;
+			this->curValue->Text = L"CURRENT";
+			this->curValue->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			// 
+			// curTitle
+			// 
+			this->curTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->curTitle->ForeColor = System::Drawing::SystemColors::ControlText;
+			this->curTitle->Location = System::Drawing::Point(68, 238);
+			this->curTitle->Name = L"curTitle";
+			this->curTitle->Size = System::Drawing::Size(175, 31);
+			this->curTitle->TabIndex = 18;
+			this->curTitle->Text = L"AMPLITUDE";
+			this->curTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			// 
+			// fqMinus
+			// 
+			this->fqMinus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->fqMinus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->fqMinus->FlatAppearance->BorderSize = 0;
+			this->fqMinus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->fqMinus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F));
+			this->fqMinus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->fqMinus->Location = System::Drawing::Point(15, 330);
+			this->fqMinus->Name = L"fqMinus";
+			this->fqMinus->Size = System::Drawing::Size(60, 78);
+			this->fqMinus->TabIndex = 25;
+			this->fqMinus->Text = L"-";
+			this->fqMinus->UseVisualStyleBackColor = false;
+			this->fqMinus->Click += gcnew System::EventHandler(this, &MyForm::click_fqMinus);
+			// 
+			// fqPlus
+			// 
+			this->fqPlus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->fqPlus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->fqPlus->FlatAppearance->BorderSize = 0;
+			this->fqPlus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->fqPlus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->fqPlus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->fqPlus->Location = System::Drawing::Point(232, 330);
+			this->fqPlus->Name = L"fqPlus";
+			this->fqPlus->Size = System::Drawing::Size(60, 78);
+			this->fqPlus->TabIndex = 24;
+			this->fqPlus->Text = L"+";
+			this->fqPlus->UseVisualStyleBackColor = false;
+			this->fqPlus->Click += gcnew System::EventHandler(this, &MyForm::click_fqPlus);
+			// 
+			// fqValue
+			// 
+			this->fqValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->fqValue->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->fqValue->Location = System::Drawing::Point(68, 374);
+			this->fqValue->Name = L"fqValue";
+			this->fqValue->Size = System::Drawing::Size(175, 31);
+			this->fqValue->TabIndex = 23;
+			this->fqValue->Text = L"HZ";
+			this->fqValue->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			// 
+			// fqTitle
+			// 
+			this->fqTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->fqTitle->ForeColor = System::Drawing::SystemColors::ControlText;
+			this->fqTitle->Location = System::Drawing::Point(68, 330);
+			this->fqTitle->Name = L"fqTitle";
+			this->fqTitle->Size = System::Drawing::Size(175, 31);
+			this->fqTitle->TabIndex = 22;
+			this->fqTitle->Text = L"FREQUENCY";
+			this->fqTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			// 
+			// stopButton
+			// 
+			this->stopButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->stopButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->stopButton->FlatAppearance->BorderSize = 0;
+			this->stopButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->stopButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->stopButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->stopButton->Location = System::Drawing::Point(158, 447);
+			this->stopButton->Name = L"stopButton";
+			this->stopButton->Size = System::Drawing::Size(133, 78);
+			this->stopButton->TabIndex = 27;
+			this->stopButton->Text = L"STOP STIMULATION";
+			this->stopButton->UseVisualStyleBackColor = false;
+			this->stopButton->Click += gcnew System::EventHandler(this, &MyForm::click_stopButton);
+			// 
+			// stButton
+			// 
+			this->stButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->stButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->stButton->FlatAppearance->BorderSize = 0;
+			this->stButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->stButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->stButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->stButton->Location = System::Drawing::Point(19, 447);
+			this->stButton->Name = L"stButton";
+			this->stButton->Size = System::Drawing::Size(133, 78);
+			this->stButton->TabIndex = 26;
+			this->stButton->Text = L"START STIMULATION";
+			this->stButton->UseVisualStyleBackColor = false;
+			this->stButton->Click += gcnew System::EventHandler(this, &MyForm::click_stButton);
+			// 
+			// MyForm
+			// 
+			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
+			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
+			this->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->ClientSize = System::Drawing::Size(584, 561);
+			this->Controls->Add(this->stopButton);
+			this->Controls->Add(this->stButton);
+			this->Controls->Add(this->fqMinus);
+			this->Controls->Add(this->fqPlus);
+			this->Controls->Add(this->fqValue);
+			this->Controls->Add(this->fqTitle);
+			this->Controls->Add(this->curMinus);
+			this->Controls->Add(this->curPlus);
+			this->Controls->Add(this->curValue);
+			this->Controls->Add(this->curTitle);
+			this->Controls->Add(this->rampMinus);
+			this->Controls->Add(this->rampPlus);
+			this->Controls->Add(this->rampValue);
+			this->Controls->Add(this->rampTitle);
+			this->Controls->Add(this->newButton);
+			this->Controls->Add(this->repeatButton);
+			this->Controls->Add(this->trainButton);
+			this->Controls->Add(this->thButton);
+			this->Controls->Add(this->xButton);
+			this->Controls->Add(this->statusTitle);
+			this->Controls->Add(this->statusLabel);
+			this->Controls->Add(this->statusMsg);
+			this->Controls->Add(this->manButton);
+			this->Controls->Add(this->backLabel);
+			this->Controls->Add(this->message1);
+			this->Controls->Add(this->start_Button);
+			this->Controls->Add(this->stimTitle);
+			this->Controls->Add(this->exerciseTitle);
+			this->Name = L"MyForm";
+			this->Text = L"Sense-And-Stimulating";
+			this->ResumeLayout(false);
+
+		}
+		
+		void InitializeSASGUI(void)
+		{
+			Move3_gui = Move3_none;
+			user_gui = User_none;
+			trainStart = false;
+			statusList[0] = "Initialization";
+			statusList[1] = "Setting threshold";
+			statusList[2] = "EMG monitoring";
+			statusList[3] = "Tigger FES";
+			statusList[4] = "Stop FES";
+			statusList[5] = "Finish program";
+			statusList[6] = "Manual calibration";
+			statusList[7] = "Automatic calibration\n- stimulating";
+			statusList[8] = "Automatic calibration\n- resting";
+			statusList[9] = "Exercise finished";
+			this->Icon = gcnew System::Drawing::Icon(L"logo_square.ico");
+		}
+
+#pragma endregion
+
+// ---------------- Buttons being pressed ----------------
+	// Start background worker
+	private: System::Void start_pressed(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Started backgroundWorker";
+		this->backgroundWorker1->CancelAsync();
+
+	}
+
+	private: System::Void click_manButton(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed manButton";
+			user_gui = User_CM;
+	}
+
+	private: System::Void click_xButton(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed X button";
+		Move3_gui = Move3_done;
+		//user_gui = User_X;
+	}
+
+	private: System::Void click_trainButton(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed trainstart Button";
+		user_gui = User_st;
+	}
+
+	private: System::Void click_thButton(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed th Button";
+		user_gui = User_th;
+	}
+
+	private: System::Void click_repeatButton(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed repeat Button";
+		user_gui = User_rep;
+	}
+
+	private: System::Void click_newButton(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed new exercise button";
+		user_gui = User_new;
+	}
+
+	private: System::Void click_rampPlus(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed ramp +";
+		Move3_gui = Move3_ramp_more;
+	}
+
+	private: System::Void click_rampMinus(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed ramp -";
+		Move3_gui = Move3_ramp_less;
+	}
+
+	private: System::Void click_curPlus(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed current +";
+		Move3_gui = Move3_incr;
+	}
+
+	private: System::Void click_curMinus(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed current -";
+		Move3_gui = Move3_decr;
+	}
+
+	private: System::Void click_fqPlus(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed fq +";
+		Move3_gui = Move3_Hz_mr;
+	}
+
+	private: System::Void click_fqMinus(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed fq -";
+		Move3_gui = Move3_Hz_ls;
+	}
+
+	private: System::Void click_stButton(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed start Stim";
+		Move3_gui = Move3_start;
+	}
+
+	private: System::Void click_stopButton(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed quit Stim";
+		Move3_gui = Move3_stop;
+	}
+// ---------------- Background worker: be careful when modifying these ----------------
+	// This function runs on a separate thread from the UI
+	private: System::Void launchBackground(System::Object^ sender, DoWorkEventArgs^ e)
+	{
+		// Separate threads cannot access the IU fields, thus the report progress is needed
+		while (!GL_UI.END_GUI) {
+			dummy++;
+			// by updating this field, its associated function shall be called as well (updateBackground)
+			this->backgroundWorker1->ReportProgress(dummy);
+			System::Threading::Thread::Sleep(UPDATE_PERIOD_MS);
+		}
+
+		// If the operation was canceled,
+		// set the DoWorkEventArgs.Cancel property to true.
+		if (this->backgroundWorker1->CancellationPending)
+		{
+			e->Cancel = true;
+		}
+	}
+
+	// This event handler demonstrates how to interpret runs when the background must finish
+	private: System::Void endBackground(System::Object^ sender, RunWorkerCompletedEventArgs^ e)
+	{
+		if (e->Cancelled)
+		{
+			// The user canceled the operation.
+			//MessageBox->Show("Operation was canceled");
+			this->backLabel->Text = L"Operation was canceled";
+		}
+		else if (e->Error)
+		{
+			// There was an error during the operation.
+			//string msg = "An error occurred: {0}" + e.Error.Message;
+			//MessageBox.Show(msg);
+			this->backLabel->Text = L"An error occurred: {0}";
+		}
+		else
+		{
+			// The operation completed normally.
+			//string msg = String.Format("Result = {0}", e.Result);
+			//System::Windows::Forms::MessageBox::Show(msg);
+			this->backLabel->Text = L"Result = {0}";
+		}
+	}
+
+
+	private: System::Void updateBackground(System::Object^ sender, ProgressChangedEventArgs^ e)
+	{
+		// This function can actually access and modify the IU variables 
+		int a = dummy;
+		char intStr[30];
+		itoa(a, intStr, 10);		// itoa(number,string output, radix = 10 decimal, 16 hexadecimal, 2 binary
+		
+		System::String^ v1str = "Phase A: ";
+
+		if (dummy < 2) {
+			v1str = "Background running";
+		}
+		else
+		{
+			v1str = gcnew String(string(intStr).c_str());
+		}
+		//v1str = gcnew String(string(intStr).c_str());
+
+		//
+		//this->backLabel->Text = v1str;
+		//this->backLabel->Text = L"backgroundWorker was here";
+
+
+		// -------------------- Update status (SAS -> GUI) --------------------
+		int local_status = (int)GL_UI.status;
+		state = (state_Type)GL_UI.status;
+		trainStart = GL_UI.trainStart;
+		this->statusLabel->Text = gcnew String(statusList[local_status].c_str());
+		this->statusMsg->Text = gcnew String(GL_UI.screenMessage.c_str());
+		// show stimulation parameters
+		std::stringstream tempValue;
+		tempValue << std::setprecision(2) << GL_UI.ramp << " POINTS";
+		string tempString = tempValue.str();
+		this->rampValue->Text = gcnew String(tempString.c_str());
+
+		//tempValue = to_string(GL_UI.current);
+		//tempValue += " mA";q
+		std::stringstream tempValueCur;
+		tempValueCur << std::setprecision(2) << GL_UI.current << " mA";
+		tempString = tempValueCur.str();
+		this->curValue->Text = gcnew String(tempString.c_str());
+
+		std::stringstream tempValueFq;
+		tempValueFq << std::setprecision(2) << GL_UI.frequency << " Hz";
+		tempString = tempValueFq.str();
+		this->fqValue->Text = gcnew String(tempString.c_str());
+
+		// -------------------- Update requests (GUI->SAS) --------------------
+		bUser = (user_gui != User_none);
+		bMove3 = (Move3_gui != Move3_none);
+		
+		// Set down the buttons commands and flags if the global var was updated 
+		if (bUser) {
+			GL_UI.User_hmi = user_gui;
+			user_gui = User_none;
+		}
+		if (bMove3) {
+			GL_UI.Move3_hmi = Move3_gui;
+			Move3_gui = Move3_none;
+		}
+		itoa(user_gui, intStr, 10);
+		this->backLabel->Text = gcnew String(string(intStr).c_str());
+
+		// Close background task in the next loop
+		if (GL_UI.END_GUI) {
+			this->backgroundWorker1->CancelAsync();
+		}
+
+	}
+
+};
+}

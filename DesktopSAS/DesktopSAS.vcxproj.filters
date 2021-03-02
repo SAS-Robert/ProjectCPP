@@ -15,16 +15,43 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MyForm.cpp">
+    <ClInclude Include="GUI.h">
       <Filter>Source Files</Filter>
-    </ClCompile>
+    </ClInclude>
+    <ClInclude Include="sasGui.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MyForm.h">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Header.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
+    </ClCompile>
+    <ClCompile Include="iir\State.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iir\RBJ.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iir\PoleFilter.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iir\Custom.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iir\ChebyshevII.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iir\ChebyshevI.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iir\Cascade.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iir\Butterworth.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iir\Biquad.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
