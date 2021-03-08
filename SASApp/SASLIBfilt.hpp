@@ -24,37 +24,23 @@ using namespace std;
 const int SAMPLINGRATE = 1000;
 const int AMPLIFICATION = 1000;
 
+// Define Bandpass filter
 const int ORDER_PASS = 4;
 double LOWHZ = 20;
-double HIGHHz = 300;
-const double BFQ= (HIGHHz + LOWHZ) / 2;
+double HIGHHz = 40;
+const double BFQ = (HIGHHz + LOWHZ) / 2;
 const double BFW = (HIGHHz - LOWHZ);
+
 Iir::Butterworth::BandPass<ORDER_PASS> BPass;
 std::vector<double> bPass_result;
 
+// Define Notch filter
 const double B50FQ = 50;
-const double B100FQ = 100;
-const double B150FQ = 150;
-const double B200FQ = 200;
-const double B250FQ = 250;
-
-const double BSTOP_FW = 10;
+const double BSTOP_FW = 4;
 const int ORDER_STOP = 2;
 
 Iir::Butterworth::BandStop<ORDER_STOP> B50;
 std::vector<double> b50_result;
-
-Iir::Butterworth::BandStop<ORDER_STOP> B100;
-std::vector<double> b100_result;
-
-Iir::Butterworth::BandStop<ORDER_STOP> B150;
-std::vector<double> b150_result;
-
-Iir::Butterworth::BandStop<ORDER_STOP> B200;
-std::vector<double> b200_result;
-
-Iir::Butterworth::BandStop<ORDER_STOP> B250;
-std::vector<double> b250_result;
 
 // Processing and threshold pointers
 double THRESHOLD = 0;
@@ -78,294 +64,175 @@ const unsigned int SAMPLE_LIM = 27;
 ofstream fileVALUES, fileFILTERS;
 // ------------------ Functions definition ------------------
 void startup_filters() {
-    // Start filters
-    BPass.setup(SAMPLINGRATE, BFQ, BFW);
-    B50.setup(SAMPLINGRATE, B50FQ, BSTOP_FW);
-    B100.setup(SAMPLINGRATE, B100FQ, BSTOP_FW);
-    B150.setup(SAMPLINGRATE, B150FQ, BSTOP_FW);
-    B200.setup(SAMPLINGRATE, B200FQ, BSTOP_FW);
-    B250.setup(SAMPLINGRATE, B250FQ, BSTOP_FW);
-    // Start internal processing variables
-    bPass_result.clear();
-    b50_result.clear();
-    b100_result.clear();
-    b150_result.clear();
-    b200_result.clear();
-    b250_result.clear();
-    GL_processed = 0;
-    THRESHOLD = 0.0;
-    for (int i = 0; i < FLEX_WINDOW; i++)
-    {
-        old_value[i] = 0;
-        old_nr[i] = 0;
-    }
+	// Start filters
+	BPass.setup(SAMPLINGRATE, BFQ, BFW);
+	B50.setup(SAMPLINGRATE, B50FQ, BSTOP_FW);
+
+	// Start internal processing variables
+	bPass_result.clear();
+	b50_result.clear();
+
+	GL_processed = 0;
+	THRESHOLD = 0.0;
+	for (int i = 0; i < FLEX_WINDOW; i++)
+	{
+		old_value[i] = 0;
+		old_nr[i] = 0;
+	}
 }
+
 // EMG activity
 static double process_data_iir(unsigned long long int v_size, vector<double> raw_data)
 {
-    double mean = 0, temp = 0, value = 0, raw_sample = 0.0;
-    double flex_num = 0.0, flex_den = 0.0;
-    unsigned long long int i = 0;
-    unsigned long long int N_len = v_size - GL_processed;
-    // Filtering + calculate mean
-    for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
-    {
-        raw_sample = raw_data[i] * AMPLIFICATION; // AMPLIFICATION
-        // Filter data
-        bPass_result.push_back(BPass.filter(raw_sample));
-        b50_result.push_back(B50.filter(bPass_result[i]));
-        b100_result.push_back(B100.filter(b50_result[i]));
-        b150_result.push_back(B150.filter(b100_result[i]));
-        b200_result.push_back(B200.filter(b150_result[i]));
-        b250_result.push_back(B250.filter(b200_result[i]));
-        // Savind data in files will be eventually deleted
-        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "," << b100_result[i] << "," << b150_result[i] << "," << b200_result[i] << "," << b250_result[i] << "\n";
+	double mean = 0, value = 0, raw_sample = 0.0;
+	double flex_num = 0.0, flex_den = 0.0;
 
-        // Calculating mean of retified EMG
-        temp = b250_result[i];
-        if (b250_result[i] < 0)
-        {
-            temp = -b250_result[i];
-        }
-        mean = mean + temp;
-    }
-    // Saving results
-    mean = mean / N_len;
+	// Filtering + calculate mean
+	mean = calculate_mean(v_size, raw_data);
 
-    // Complete value: taking into account the old mean(s)
-    flex_num = ((old_value[0] * old_nr[0]) + (old_value[1] * old_nr[1]) + (mean * N_len));
-    flex_den = (old_nr[0] + old_nr[1] + N_len);
-    value = (flex_num) / (flex_den);
+	// Complete value: taking into account the old mean(s)
+	flex_num = ((old_value[0] * old_nr[0]) + (old_value[1] * old_nr[1]) + (mean * N_len));
+	flex_den = (old_nr[0] + old_nr[1] + N_len);
+	value = (flex_num) / (flex_den);
 
-    // Savind data in files will be eventually deleted
-    fileVALUES << mean << ", 0.0, " << GL_processed << "," << v_size << "," << N_len << "\n";
+	// Savind data in files will be eventually deleted
+	fileVALUES << mean << ", 0.0, " << GL_processed << "," << v_size << "," << N_len << "\n";
 
-    // Update GL_processed data parameters
-    GL_processed = i;
-    for (int i = 4; i >= 1 ; i--)
-    {
-        old_value[i] = old_value[i-1];
-        old_nr[i] = old_nr[i-1];
-    }
-    old_value[0] = mean;
-    old_nr[0] = N_len;
+	// Update GL_processed data parameters
+	GL_processed = v_size;
 
-    return value;
+	for (int i = 4; i >= 1; i--)
+	{
+		old_value[i] = old_value[i - 1];
+		old_nr[i] = old_nr[i - 1];
+	}
+	old_value[0] = mean;
+	old_nr[0] = N_len;
+
+	return value;
 }
 
 // Threshold methods
-static double process_th_SD05(unsigned long long int v_size, vector<double> raw_data)
+static double process_th(unsigned long long int v_size, vector<double> raw_data, int factor)
 {
-    double mean = 0, temp = 0, sd = 0, value = 0, raw_sample = 0.0;
-    unsigned long long int i = 0;
-    int th_limit = (int)TH_DISCARD;
-    unsigned long long int N_len = v_size - GL_processed;
-    // Filtering + calculate mean
-    for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
-    {
-        raw_sample = raw_data[i] * AMPLIFICATION; 
-        // Filter data
-        bPass_result.push_back(BPass.filter(raw_sample));
-        b50_result.push_back(B50.filter(bPass_result[i]));
-        b100_result.push_back(B100.filter(b50_result[i]));
-        b150_result.push_back(B150.filter(b100_result[i]));
-        b200_result.push_back(B200.filter(b150_result[i]));
-        b250_result.push_back(B250.filter(b200_result[i]));
-        // Savind data in files will be eventually deleted
-        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "," << b100_result[i] << "," << b150_result[i] << "," << b200_result[i] << "," << b250_result[i] << "\n";
-        // Calculating mean of retified EMG
-        temp = b250_result[i];
-        if (b250_result[i] < 0)
-        {
-            temp = -b250_result[i];
-        }
-        mean = mean + temp;
-    }
-    mean = mean / N_len;
-    if (v_size > TH_DISCARD)
-    {
-        // Calculate standard deviation
-        temp = 0;
-        for (i = GL_processed; i < v_size; ++i)
-        {
-            temp = b250_result[i];
-            if (b250_result[i] < 0)
-            {
-                temp = -b250_result[i];
-            }
-            sd += pow(temp - mean, 2);
-        }
-        sd = sqrt(sd / N_len);
-        // Calculate final threshold value
-        value = (mean + sd / 2) * N_len;
-    }
-    else
-    {
-        GL_thDiscard = v_size;
-    }
+	double sd = 0, value = 0, raw_sample = 0.0;
+	unsigned long long int i = 0, N_len = v_size - GL_processed;
+	int th_limit = (int)TH_DISCARD;
 
-    // Savind data in files will be eventually deleted
-    if (GL_processed <= 10) {
-        fileVALUES << mean << "," << sd << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
-    }
-    else {
-        fileVALUES << mean << "," << sd << "," << THRESHOLD << "," << v_size << "," << value << "\n";
-    }
+	// Filtering + calculate mean
+	double mean = calculate_mean(v_size, raw_data, N_len);
 
-    // Update amount of GL_processed data
-    GL_processed = i;
-    for (int i = 4; i >= 1; i--)
-    {
-        old_value[i] = old_value[i - 1];
-        old_nr[i] = old_nr[i - 1];
-    }
-    old_value[0] = mean;
-    old_nr[0] = N_len;
+	if (v_size > TH_DISCARD)
+	{
+		// Calculate standard deviation
+		sd = calculate_std(v_size, raw_data, mean);
 
-    return value;
+		// Calculate final threshold value
+		value = (mean + sd * factor) * N_len;
+	}
+	else
+	{
+		GL_thDiscard = v_size;
+	}
+
+	// Savind data in files will be eventually deleted
+	if (GL_processed <= 10) {
+		fileVALUES << mean << "," << sd << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
+	}
+	else {
+		fileVALUES << mean << "," << sd << "," << THRESHOLD << "," << v_size << "," << value << "\n";
+	}
+
+	// Update amount of GL_processed data
+	GL_processed = v_size;
+	for (int i = 4; i >= 1; i--)
+	{
+		old_value[i] = old_value[i - 1];
+		old_nr[i] = old_nr[i - 1];
+	}
+	old_value[0] = mean;
+	old_nr[0] = N_len;
+
+	return value;
 }
 
-static double process_th_SD03(unsigned long long int v_size, vector<double> raw_data)
+// Function definition: Calculate Mean
+static double calculate_mean(unsigned long long int v_size, vector<double> raw_data, unsigned long long int N_len)
 {
-    double mean = 0, temp = 0, sd = 0, value = 0, raw_sample = 0.0;
-    unsigned long long int i = 0;
-    int th_limit = (int)TH_DISCARD;
-    unsigned long long int N_len = v_size - GL_processed;
-    // Filtering + calculate mean
-    for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
-    {
-        raw_sample = raw_data[i] * AMPLIFICATION;
-        // Filter data
-        bPass_result.push_back(BPass.filter(raw_sample));
-        b50_result.push_back(B50.filter(bPass_result[i]));
-        b100_result.push_back(B100.filter(b50_result[i]));
-        b150_result.push_back(B150.filter(b100_result[i]));
-        b200_result.push_back(B200.filter(b150_result[i]));
-        b250_result.push_back(B250.filter(b200_result[i]));
-        // Savind data in files will be eventually deleted
-        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "," << b100_result[i] << "," << b150_result[i] << "," << b200_result[i] << "," << b250_result[i] << "\n";
-        // Calculating mean of retified EMG
-        temp = b250_result[i];
-        if (b250_result[i] < 0)
-        {
-            temp = -b250_result[i];
-        }
-        mean = mean + temp;
-    }
-    mean = mean / N_len;
-    if (v_size > TH_DISCARD)
-    {
-        // Calculate standard deviation
-        temp = 0;
-        for (i = GL_processed; i < v_size; ++i)
-        {
-            temp = b250_result[i];
-            if (b250_result[i] < 0)
-            {
-                temp = -b250_result[i];
-            }
-            sd += pow(temp - mean, 2);
-        }
-        sd = sqrt(sd / N_len);
-        // Calculate final threshold value
-        value = (mean + sd / 3) * N_len;
-    }
-    else
-    {
-        GL_thDiscard = v_size;
-    }
+	double raw_sample, temp, mean;
+	int i;
 
-    // Savind data in files will be eventually deleted
-    if (GL_processed <= 10) {
-        fileVALUES << mean << "," << sd << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
-    }
-    else {
-        fileVALUES << mean << "," << sd << "," << THRESHOLD << "," << v_size << "," << value << "\n";
-    }
+	for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
+	{
+		temp = preprocess_data(raw_data[i]);
+		mean += temp;
+	}
+	mean = mean / N_len;
 
-    // Update amount of GL_processed data
-    GL_processed = i;
-    for (int i = 4; i >= 1; i--)
-    {
-        old_value[i] = old_value[i - 1];
-        old_nr[i] = old_nr[i - 1];
-    }
-    old_value[0] = mean;
-    old_nr[0] = N_len;
-
-    return value;
+	return mean;
 }
 
-static double process_th_XX(unsigned long long int v_size, vector<double> raw_data)
+// Function definition: Calculate STD
+static double calculate_std(unsigned long long int v_size, vector<double> raw_data, double mean)
 {
-    double mean = 0, temp = 0, sd = 0, value = 0, raw_sample = 0.0;
-    unsigned long long int i = 0;
-    int th_limit = (int)TH_DISCARD;
-    unsigned long long int N_len = v_size - GL_processed;
-    // Filtering + calculate mean
-    for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
-    {
-        raw_sample = raw_data[i] * AMPLIFICATION;
-        // Filter data
-        bPass_result.push_back(BPass.filter(raw_sample));
-        b50_result.push_back(B50.filter(bPass_result[i]));
-        b100_result.push_back(B100.filter(b50_result[i]));
-        b150_result.push_back(B150.filter(b100_result[i]));
-        b200_result.push_back(B200.filter(b150_result[i]));
-        b250_result.push_back(B250.filter(b200_result[i]));
-        // Savind data in files will be eventually deleted
-        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "," << b100_result[i] << "," << b150_result[i] << "," << b200_result[i] << "," << b250_result[i] << "\n";
-        // Calculating mean of retified EMG
-        temp = b250_result[i];
-        if (b250_result[i] < 0)
-        {
-            temp = -b250_result[i];
-        }
-        mean = mean + temp;
-    }
-    mean = mean / N_len;
-    if (v_size > TH_DISCARD)
-    {
-        // Calculate standard deviation
-        temp = 0;
-        for (i = GL_processed; i < v_size; ++i)
-        {
-            temp = b250_result[i];
-            if (b250_result[i] < 0)
-            {
-                temp = -b250_result[i];
-            }
-            sd += pow(temp - mean, 2);
-        }
-        sd = sqrt(sd / N_len);
-        // Calculate final threshold value
-        value = (mean + sd / 2) * N_len;
-    }
-    else
-    {
-        GL_thDiscard = v_size;
-    }
+	double raw_sample, temp, sd;
+	int i;
+	unsigned long long int N_len = v_size - GL_processed;
 
-    // Savind data in files will be eventually deleted
-    if (GL_processed <= 10) {
-        fileVALUES << mean << "," << sd << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
-    }
-    else {
-        fileVALUES << mean << "," << sd << "," << THRESHOLD << "," << v_size << "," << value << "\n";
-    }
+	for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
+	{
+		temp = preprocess_data(raw_data[i]);
+		sd += pow(temp - mean, 2);
+	}
 
-    // Update amount of GL_processed data
-    GL_processed = i;
-    for (int i = 4; i >= 1; i--)
-    {
-        old_value[i] = old_value[i - 1];
-        old_nr[i] = old_nr[i - 1];
-    }
-    old_value[0] = mean;
-    old_nr[0] = N_len;
+	sd = sqrt(sd / N_len);
 
-    return value;
+	return sd;
 }
+
+// Function definition: Calculate STD
+static double calculate_MVC(unsigned long long int v_size, vector<double> raw_data)
+{
+	double raw_sample, temp, tempMax;
+	int i;
+
+	for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
+	{
+		temp = preprocess_data(raw_data[i]);
+		if (temp > tempMax)
+		{
+			tempMax = temp;
+		}
+	}
+
+	return tempMax;
+}
+
+// Function definition: Filter and rectify data
+static double preprocess_data(double raw_data)
+{
+	double raw_sample, preprocessed_sample;
+	int i = bPass_result.size();
+
+	raw_sample = raw_data * AMPLIFICATION;
+	// Filter data
+	bPass_result.push_back(BPass.filter(raw_sample));
+	b50_result.push_back(B50.filter(bPass_result[i]));
+
+	// Savind data in files will be eventually deleted
+	fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n";
+	// Calculating mean of retified EMG
+	preprocessed_sample = b50_result[i];
+	if (b50_result[i] < 0)
+	{
+		preprocessed_sample = -b50_result[i];
+	}
+
+	return preprocessed_sample;
+}
+
+
+
 // ------------------ Objects definition ------------------
 
 // ------------------------------------------------------------------------

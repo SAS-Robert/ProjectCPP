@@ -1536,13 +1536,13 @@ void recording_sas()
             switch (GL_thMethod)
             {
                 case th_SD05:
-                    temp_value = process_th_SD05(GL_sampleNr, recorder_emg1);
+                    temp_value = process_th(GL_sampleNr, recorder_emg1, 0.5);
                     break;
                 case th_SD03:
-                    temp_value = process_th_SD03(GL_sampleNr, recorder_emg1);
+                    temp_value = process_th(GL_sampleNr, recorder_emg1, 2);
                     break;
                 default:
-                    temp_value = process_th_XX(GL_sampleNr, recorder_emg1);
+                    temp_value = process_th(GL_sampleNr, recorder_emg1, 3);
             }
 
             //printf("%d\n", temp_value);         // debugging stuff
