@@ -56,8 +56,8 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 // ------------------------- Devices handling --------------------------------
 bool stim_ready = false, rec_ready = false, stim_abort = false;
 
-// char PORT_STIM[5] = "COM6";   // Laptop
-char PORT_STIM[5] = "COM3";     // Robot
+char PORT_STIM[5] = "COM5";   // Laptop
+// char PORT_STIM[5] = "COM3";     // Robot
 RehaMove3 stimulator;
 
 // char PORT_REC[5] = "COM4";    // Laptop
@@ -192,17 +192,25 @@ void update_localGui() {
     GL_UI.status = GL_state;
     GL_UI.screenMessage = "Info: ";
     GL_UI.screenMessage += msg_main;
-    GL_UI.screenMessage += "\nUDP status: ";
-    GL_UI.screenMessage += msg_connect;
-    GL_UI.screenMessage += "\nTCP status: ";
-    GL_UI.screenMessage += msg_extGui;
+    //GL_UI.screenMessage += "\nUDP status: ";
+    //GL_UI.screenMessage += msg_connect;
+    //GL_UI.screenMessage += "\nTCP status: ";
+    //GL_UI.screenMessage += msg_extGui;
     GL_UI.screenMessage += "\nSimulator: ";
     GL_UI.screenMessage += msg_stimulating;
     GL_UI.screenMessage += "\nRecorder: ";
     GL_UI.screenMessage += msg_recording;
     GL_UI.END_GUI = MAIN_to_all.end;
 
+    // Exercise settings
+    GL_UI.recReq = rec_status.req;
+    GL_UI.trainStart = start_train;
+    GL_UI.hmi_new = hmi_new;
+    GL_UI.hmi_repeat = hmi_repeat;
+    GL_UI.method = GL_thMethod;
+
     // stimulation parameters
+    GL_UI.stimActive = stimulator.active;
     GL_UI.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
     GL_UI.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
     GL_UI.frequency = stimulator.fq[Smpt_Channel_Red];
@@ -262,13 +270,16 @@ void update_localGui() {
         break;
     }
 
+    if ((GL_state == st_repeat || GL_state == st_init) && !hmi_repeat)
+    {
+        GL_thMethod = GL_UI.next_method;
+    }
     // Pull down command flags
     user_gui = User_none;
     GL_UI.User_hmi = User_none;
     GL_UI.Move3_hmi = Move3_none;
 
 }
-
 
 void robot_thread()
 {
@@ -397,11 +408,14 @@ void screen_thread()
                     break;
                 }
 
-                if ((GL_state == st_repeat || GL_state == st_init) && !hmi_repeat)
-                {
-                    GL_exercise = GL_exhmi;
-                    GL_thMethod = GL_thhmi;
-                }
+                //if ((GL_state == st_repeat || GL_state == st_init) && !hmi_repeat)
+                //{
+                    // From the screen
+                    //GL_exercise = GL_exhmi;
+                    //GL_thMethod = GL_thhmi;
+                    // From the local GUI
+                //    GL_thMethod = GL_UI.next_method;
+                //}
                 if (screen.finish)
                 {
                     MAIN_to_all.end = true;
@@ -1139,10 +1153,14 @@ void stimulating_sas()
             if (stim_done)
             {
                 sprintf(msg_stimulating, "Stimulation set up finished. \nPress set threshold");
+               // sprintf(msg_main_char, "Stimulation set up finished. \nPress set threshold");
+                msg_main = "Stimulation set up finished. \nPress set threshold";
+                
             }
             else
             {
                 sprintf(msg_stimulating, "Stimulation stopped");
+                msg_main = "Stimulation stopped";
             }
         }
 
@@ -1198,6 +1216,7 @@ void stimulating_sas()
         {
             stimulator.pause();
             sprintf(msg_stimulating, "Stimulation stopped");
+            msg_main = "Stimulation stopped";
             stim_fl1 = true;
             // abort exercise
             if (Move3_hmi == Move3_done || Move3_key == Move3_done) {
@@ -1214,6 +1233,7 @@ void stimulating_sas()
         if (!stim_fl2)
         {
             sprintf(msg_stimulating, "Stimulation active");
+            msg_main = "Stimulation active";
 
             time1_end = std::chrono::steady_clock::now();
             time1_diff = time1_end - time1_start;
@@ -1285,6 +1305,7 @@ void stimulating_sas()
         if (stim_timeout)
         {
             sprintf(msg_stimulating, "Stimulation timeout");
+            msg_main = "Stimulation timeout";
         }
     }
     if (!stimulator.active && stim_timing)
@@ -1374,7 +1395,9 @@ void recording_sas()
             if (GL_processed >= TH_NR)
             {
                 THRESHOLD = THRESHOLD / (GL_sampleNr - GL_thDiscard);
-                sprintf(msg_recording,"EMG activity: threshold = %2.6f",THRESHOLD);
+                sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
+                sprintf(msg_main_char, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
+                msg_main = msg_main_char;
                 rec_status.th = true;
                 rec_status.req = false;
             }
@@ -1393,6 +1416,7 @@ void recording_sas()
             if ((mean >= THRESHOLD) && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)
             {
                 sprintf(msg_recording, "EMG activity: threshold overpassed");
+                msg_main = "EMG activity: threshold overpassed";
                 rec_status.start = true;
                 time1_start = std::chrono::steady_clock::now();
                 rec_fl2 = false;
@@ -1406,11 +1430,11 @@ void recording_sas()
                 GL_thWaitCnt = 0;
                 rec_fl2 = false;
             }
-            else if ((GL_thWaitCnt >= TH_WAIT) && !rec_fl2)
-            {
-                sprintf(msg_recording, "EMG activity: now you can push");
-                rec_fl2 = true;
-            }
+          //  else if ((GL_thWaitCnt >= TH_WAIT) && !rec_fl2)
+          //  {
+          //     sprintf(msg_recording, "EMG activity: now you can push");
+          //      rec_fl2 = true;
+          //  }
         }
         break;
 

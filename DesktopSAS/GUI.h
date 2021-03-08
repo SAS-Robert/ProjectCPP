@@ -59,44 +59,56 @@ namespace DesktopSAS {
 		}
 	// Class public fields
 	public: 
-			int dummy;
+			int dummy, nextIndex;
 			const int UPDATE_PERIOD_MS = 100;
 			// SAS <-> GUI fields
 			RehaMove3_Req_Type Move3_gui;
 			User_Req_Type user_gui;
 			state_Type state;
-			bool bUser, bMove3;
+			bool bUser, bMove3, bSetupPressed;
 			bool trainStart, stimA_active, stimM_active, gui_repeat, gui_new;
 
 	public: System::Windows::Forms::Button^ start_Button;
 	     	System::ComponentModel::BackgroundWorker^ backgroundWorker1;
 			System::Windows::Forms::Label^ message1;						// Not necessary, only for testing
 			System::Windows::Forms::Label^ backLabel;						// Not necessary, only for testing
-			System::Windows::Forms::Button^ manButton;
+
 			System::Windows::Forms::Label^ statusMsg;
 			System::Windows::Forms::Label^ statusLabel;
 			System::Windows::Forms::Label^ statusTitle;
 			System::Windows::Forms::Label^ stimTitle;
 			System::Windows::Forms::Label^ exerciseTitle;
-			System::Windows::Forms::Button^ xButton;
+
 			System::Windows::Forms::Button^ trainButton;
 			System::Windows::Forms::Button^ thButton;
 			System::Windows::Forms::Button^ newButton;
 			System::Windows::Forms::Button^ repeatButton;
-	public: System::Windows::Forms::Label^ rampTitle;
-	public: System::Windows::Forms::Label^ rampValue;
-	public: System::Windows::Forms::Button^ rampPlus;
-	public: System::Windows::Forms::Button^ rampMinus;
-	public: System::Windows::Forms::Button^ curMinus;
-	public: System::Windows::Forms::Button^ curPlus;
-	public: System::Windows::Forms::Label^ curValue;
-	public: System::Windows::Forms::Label^ curTitle;
-	public: System::Windows::Forms::Button^ fqMinus;
-	public: System::Windows::Forms::Button^ fqPlus;
-	public: System::Windows::Forms::Label^ fqValue;
-	public: System::Windows::Forms::Label^ fqTitle;
-	public: System::Windows::Forms::Button^ stopButton;
-	public: System::Windows::Forms::Button^ stButton;
+			System::Windows::Forms::Label^ rampTitle;
+			System::Windows::Forms::Label^ rampValue;
+			System::Windows::Forms::Button^ rampPlus;
+			System::Windows::Forms::Button^ rampMinus;
+			System::Windows::Forms::Button^ curMinus;
+			System::Windows::Forms::Button^ curPlus;
+			System::Windows::Forms::Label^ curValue;
+			System::Windows::Forms::Label^ curTitle;
+			System::Windows::Forms::Button^ fqMinus;
+			System::Windows::Forms::Button^ fqPlus;
+			System::Windows::Forms::Label^ fqValue;
+			System::Windows::Forms::Label^ fqTitle;
+
+			System::Windows::Forms::Label^ statusDebug;
+
+
+			System::Windows::Forms::Button^ stimButton;
+			System::Windows::Forms::Button^ setButton;
+			System::Windows::Forms::Label^ currentTitle;
+			System::Windows::Forms::Label^ nextTitle;
+			System::Windows::Forms::Label^ currentLabel;
+			System::Windows::Forms::ComboBox^ methodBox;
+
+
+
+	public:
 
 	protected:
 
@@ -114,13 +126,11 @@ namespace DesktopSAS {
 			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
 			this->message1 = (gcnew System::Windows::Forms::Label());
 			this->backLabel = (gcnew System::Windows::Forms::Label());
-			this->manButton = (gcnew System::Windows::Forms::Button());
 			this->statusMsg = (gcnew System::Windows::Forms::Label());
 			this->statusLabel = (gcnew System::Windows::Forms::Label());
 			this->statusTitle = (gcnew System::Windows::Forms::Label());
 			this->stimTitle = (gcnew System::Windows::Forms::Label());
 			this->exerciseTitle = (gcnew System::Windows::Forms::Label());
-			this->xButton = (gcnew System::Windows::Forms::Button());
 			this->trainButton = (gcnew System::Windows::Forms::Button());
 			this->thButton = (gcnew System::Windows::Forms::Button());
 			this->newButton = (gcnew System::Windows::Forms::Button());
@@ -137,13 +147,18 @@ namespace DesktopSAS {
 			this->fqPlus = (gcnew System::Windows::Forms::Button());
 			this->fqValue = (gcnew System::Windows::Forms::Label());
 			this->fqTitle = (gcnew System::Windows::Forms::Label());
-			this->stopButton = (gcnew System::Windows::Forms::Button());
-			this->stButton = (gcnew System::Windows::Forms::Button());
+			this->statusDebug = (gcnew System::Windows::Forms::Label());
+			this->stimButton = (gcnew System::Windows::Forms::Button());
+			this->setButton = (gcnew System::Windows::Forms::Button());
+			this->currentTitle = (gcnew System::Windows::Forms::Label());
+			this->nextTitle = (gcnew System::Windows::Forms::Label());
+			this->currentLabel = (gcnew System::Windows::Forms::Label());
+			this->methodBox = (gcnew System::Windows::Forms::ComboBox());
 			this->SuspendLayout();
 			// 
 			// start_Button
 			// 
-			this->start_Button->Location = System::Drawing::Point(326, 450);
+			this->start_Button->Location = System::Drawing::Point(305, 503);
 			this->start_Button->Name = L"start_Button";
 			this->start_Button->Size = System::Drawing::Size(109, 23);
 			this->start_Button->TabIndex = 0;
@@ -161,7 +176,7 @@ namespace DesktopSAS {
 			// 
 			// message1
 			// 
-			this->message1->Location = System::Drawing::Point(323, 489);
+			this->message1->Location = System::Drawing::Point(323, 529);
 			this->message1->Name = L"message1";
 			this->message1->Size = System::Drawing::Size(213, 24);
 			this->message1->TabIndex = 1;
@@ -169,29 +184,11 @@ namespace DesktopSAS {
 			// 
 			// backLabel
 			// 
-			this->backLabel->Location = System::Drawing::Point(323, 523);
+			this->backLabel->Location = System::Drawing::Point(22, 523);
 			this->backLabel->Name = L"backLabel";
 			this->backLabel->Size = System::Drawing::Size(213, 13);
 			this->backLabel->TabIndex = 2;
 			this->backLabel->Text = L"backgroundWorker Text";
-			// 
-			// manButton
-			// 
-			this->manButton->BackColor = System::Drawing::SystemColors::Highlight;
-			this->manButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
-				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
-			this->manButton->FlatAppearance->BorderSize = 0;
-			this->manButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
-			this->manButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
-				static_cast<System::Byte>(0)));
-			this->manButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->manButton->Location = System::Drawing::Point(305, 191);
-			this->manButton->Name = L"manButton";
-			this->manButton->Size = System::Drawing::Size(133, 78);
-			this->manButton->TabIndex = 3;
-			this->manButton->Text = L"SET-UP STIMULATION";
-			this->manButton->UseVisualStyleBackColor = false;
-			this->manButton->Click += gcnew System::EventHandler(this, &MyForm::click_manButton);
 			// 
 			// statusMsg
 			// 
@@ -248,24 +245,6 @@ namespace DesktopSAS {
 			this->exerciseTitle->Text = L"EXERCISE SETTINGS";
 			this->exerciseTitle->TextAlign = System::Drawing::ContentAlignment::TopCenter;
 			// 
-			// xButton
-			// 
-			this->xButton->BackColor = System::Drawing::SystemColors::Highlight;
-			this->xButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
-				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
-			this->xButton->FlatAppearance->BorderSize = 0;
-			this->xButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
-			this->xButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
-				static_cast<System::Byte>(0)));
-			this->xButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->xButton->Location = System::Drawing::Point(444, 191);
-			this->xButton->Name = L"xButton";
-			this->xButton->Size = System::Drawing::Size(133, 78);
-			this->xButton->TabIndex = 9;
-			this->xButton->Text = L"END SET-UP";
-			this->xButton->UseVisualStyleBackColor = false;
-			this->xButton->Click += gcnew System::EventHandler(this, &MyForm::click_xButton);
-			// 
 			// trainButton
 			// 
 			this->trainButton->BackColor = System::Drawing::SystemColors::Highlight;
@@ -276,7 +255,7 @@ namespace DesktopSAS {
 			this->trainButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->trainButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->trainButton->Location = System::Drawing::Point(444, 275);
+			this->trainButton->Location = System::Drawing::Point(444, 238);
 			this->trainButton->Name = L"trainButton";
 			this->trainButton->Size = System::Drawing::Size(133, 78);
 			this->trainButton->TabIndex = 11;
@@ -294,7 +273,7 @@ namespace DesktopSAS {
 			this->thButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->thButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->thButton->Location = System::Drawing::Point(305, 275);
+			this->thButton->Location = System::Drawing::Point(305, 238);
 			this->thButton->Name = L"thButton";
 			this->thButton->Size = System::Drawing::Size(133, 78);
 			this->thButton->TabIndex = 10;
@@ -312,7 +291,7 @@ namespace DesktopSAS {
 			this->newButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->newButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->newButton->Location = System::Drawing::Point(444, 359);
+			this->newButton->Location = System::Drawing::Point(444, 330);
 			this->newButton->Name = L"newButton";
 			this->newButton->Size = System::Drawing::Size(133, 78);
 			this->newButton->TabIndex = 13;
@@ -322,7 +301,7 @@ namespace DesktopSAS {
 			// 
 			// repeatButton
 			// 
-			this->repeatButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->repeatButton->BackColor = System::Drawing::SystemColors::ButtonShadow;
 			this->repeatButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->repeatButton->FlatAppearance->BorderSize = 0;
@@ -330,7 +309,7 @@ namespace DesktopSAS {
 			this->repeatButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->repeatButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->repeatButton->Location = System::Drawing::Point(305, 359);
+			this->repeatButton->Location = System::Drawing::Point(305, 330);
 			this->repeatButton->Name = L"repeatButton";
 			this->repeatButton->Size = System::Drawing::Size(133, 78);
 			this->repeatButton->TabIndex = 12;
@@ -515,41 +494,90 @@ namespace DesktopSAS {
 			this->fqTitle->Text = L"FREQUENCY";
 			this->fqTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
-			// stopButton
+			// statusDebug
 			// 
-			this->stopButton->BackColor = System::Drawing::SystemColors::Highlight;
-			this->stopButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+			this->statusDebug->Location = System::Drawing::Point(22, 539);
+			this->statusDebug->Name = L"statusDebug";
+			this->statusDebug->Size = System::Drawing::Size(213, 13);
+			this->statusDebug->TabIndex = 28;
+			this->statusDebug->Text = L"status debug text here";
+			// 
+			// stimButton
+			// 
+			this->stimButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->stimButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
-			this->stopButton->FlatAppearance->BorderSize = 0;
-			this->stopButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
-			this->stopButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->stimButton->FlatAppearance->BorderSize = 0;
+			this->stimButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->stimButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->stopButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->stopButton->Location = System::Drawing::Point(158, 447);
-			this->stopButton->Name = L"stopButton";
-			this->stopButton->Size = System::Drawing::Size(133, 78);
-			this->stopButton->TabIndex = 27;
-			this->stopButton->Text = L"STOP STIMULATION";
-			this->stopButton->UseVisualStyleBackColor = false;
-			this->stopButton->Click += gcnew System::EventHandler(this, &MyForm::click_stopButton);
+			this->stimButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->stimButton->Location = System::Drawing::Point(86, 420);
+			this->stimButton->Name = L"stimButton";
+			this->stimButton->Size = System::Drawing::Size(133, 78);
+			this->stimButton->TabIndex = 31;
+			this->stimButton->Text = L"START/STOP STIMULATION";
+			this->stimButton->UseVisualStyleBackColor = false;
+			this->stimButton->Click += gcnew System::EventHandler(this, &MyForm::click_stimButton);
 			// 
-			// stButton
+			// setButton
 			// 
-			this->stButton->BackColor = System::Drawing::SystemColors::Highlight;
-			this->stButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+			this->setButton->BackColor = System::Drawing::Color::LimeGreen;
+			this->setButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
-			this->stButton->FlatAppearance->BorderSize = 0;
-			this->stButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
-			this->stButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->setButton->FlatAppearance->BorderSize = 0;
+			this->setButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->setButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->stButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->stButton->Location = System::Drawing::Point(19, 447);
-			this->stButton->Name = L"stButton";
-			this->stButton->Size = System::Drawing::Size(133, 78);
-			this->stButton->TabIndex = 26;
-			this->stButton->Text = L"START STIMULATION";
-			this->stButton->UseVisualStyleBackColor = false;
-			this->stButton->Click += gcnew System::EventHandler(this, &MyForm::click_stButton);
+			this->setButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->setButton->Location = System::Drawing::Point(375, 144);
+			this->setButton->Name = L"setButton";
+			this->setButton->Size = System::Drawing::Size(133, 78);
+			this->setButton->TabIndex = 32;
+			this->setButton->Text = L"SET-UP/EXIT STIMULATION";
+			this->setButton->UseVisualStyleBackColor = false;
+			this->setButton->Click += gcnew System::EventHandler(this, &MyForm::click_setButton);
+			// 
+			// currentTitle
+			// 
+			this->currentTitle->Location = System::Drawing::Point(314, 439);
+			this->currentTitle->Name = L"currentTitle";
+			this->currentTitle->Size = System::Drawing::Size(121, 16);
+			this->currentTitle->TabIndex = 33;
+			this->currentTitle->Text = L"CURRENT METHOD:";
+			this->currentTitle->TextAlign = System::Drawing::ContentAlignment::TopRight;
+			// 
+			// nextTitle
+			// 
+			this->nextTitle->Location = System::Drawing::Point(314, 455);
+			this->nextTitle->Name = L"nextTitle";
+			this->nextTitle->Size = System::Drawing::Size(121, 28);
+			this->nextTitle->TabIndex = 34;
+			this->nextTitle->Text = L"METHOD FOR NEXT EXERCISE:";
+			this->nextTitle->TextAlign = System::Drawing::ContentAlignment::TopRight;
+			// 
+			// currentLabel
+			// 
+			this->currentLabel->Location = System::Drawing::Point(441, 439);
+			this->currentLabel->Name = L"currentLabel";
+			this->currentLabel->Size = System::Drawing::Size(121, 16);
+			this->currentLabel->TabIndex = 35;
+			this->currentLabel->Text = L"method name here";
+			// 
+			// methodBox
+			// 
+			this->methodBox->AllowDrop = true;
+			this->methodBox->AutoCompleteCustomSource->AddRange(gcnew cli::array< System::String^  >(3) {
+				L"xi+sd*0.5", L"xi+sd*0.33",
+					L"Another"
+			});
+			this->methodBox->FormattingEnabled = true;
+			this->methodBox->Items->AddRange(gcnew cli::array< System::Object^  >(3) { L"Xi+SD*0.5", L"Xi+SD*0.33", L"Another" });
+			this->methodBox->Location = System::Drawing::Point(441, 458);
+			this->methodBox->Name = L"methodBox";
+			this->methodBox->Size = System::Drawing::Size(136, 21);
+			this->methodBox->TabIndex = 36;
+			this->methodBox->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::methodBox_SelectedIndexChanged);
 			// 
 			// MyForm
 			// 
@@ -557,8 +585,13 @@ namespace DesktopSAS {
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->ClientSize = System::Drawing::Size(584, 561);
-			this->Controls->Add(this->stopButton);
-			this->Controls->Add(this->stButton);
+			this->Controls->Add(this->methodBox);
+			this->Controls->Add(this->currentLabel);
+			this->Controls->Add(this->nextTitle);
+			this->Controls->Add(this->currentTitle);
+			this->Controls->Add(this->setButton);
+			this->Controls->Add(this->stimButton);
+			this->Controls->Add(this->statusDebug);
 			this->Controls->Add(this->fqMinus);
 			this->Controls->Add(this->fqPlus);
 			this->Controls->Add(this->fqValue);
@@ -575,11 +608,9 @@ namespace DesktopSAS {
 			this->Controls->Add(this->repeatButton);
 			this->Controls->Add(this->trainButton);
 			this->Controls->Add(this->thButton);
-			this->Controls->Add(this->xButton);
 			this->Controls->Add(this->statusTitle);
 			this->Controls->Add(this->statusLabel);
 			this->Controls->Add(this->statusMsg);
-			this->Controls->Add(this->manButton);
 			this->Controls->Add(this->backLabel);
 			this->Controls->Add(this->message1);
 			this->Controls->Add(this->start_Button);
@@ -593,9 +624,15 @@ namespace DesktopSAS {
 		
 		void InitializeSASGUI(void)
 		{
+			// Internal handling
+			bSetupPressed = false;
+			trainStart = false;
+			//this->Icon = gcnew System::Drawing::Icon(L"logo_square.ico");
+			this->methodBox->SelectedIndex = 0;
+			// Communication
 			Move3_gui = Move3_none;
 			user_gui = User_none;
-			trainStart = false;
+			// Lists
 			statusList[0] = "Initialization";
 			statusList[1] = "Setting threshold";
 			statusList[2] = "EMG monitoring";
@@ -606,7 +643,10 @@ namespace DesktopSAS {
 			statusList[7] = "Automatic calibration\n- stimulating";
 			statusList[8] = "Automatic calibration\n- resting";
 			statusList[9] = "Exercise finished";
-			this->Icon = gcnew System::Drawing::Icon(L"logo_square.ico");
+
+			methodList[0] = "Xi+SD*0.5";
+			methodList[1] = "Xi+SD*0.3";
+			methodList[2] = "Another";
 		}
 
 #pragma endregion
@@ -619,17 +659,6 @@ namespace DesktopSAS {
 
 	}
 
-	private: System::Void click_manButton(System::Object^ sender, System::EventArgs^ e) {
-		this->message1->Text = L"Pressed manButton";
-			user_gui = User_CM;
-	}
-
-	private: System::Void click_xButton(System::Object^ sender, System::EventArgs^ e) {
-		this->message1->Text = L"Pressed X button";
-		Move3_gui = Move3_done;
-		//user_gui = User_X;
-	}
-
 	private: System::Void click_trainButton(System::Object^ sender, System::EventArgs^ e) {
 		this->message1->Text = L"Pressed trainstart Button";
 		user_gui = User_st;
@@ -637,7 +666,10 @@ namespace DesktopSAS {
 
 	private: System::Void click_thButton(System::Object^ sender, System::EventArgs^ e) {
 		this->message1->Text = L"Pressed th Button";
-		user_gui = User_th;
+		if ((state == st_calM && bSetupPressed) || state != st_calM)
+		{
+			user_gui = User_th;
+		}
 	}
 
 	private: System::Void click_repeatButton(System::Object^ sender, System::EventArgs^ e) {
@@ -680,15 +712,49 @@ namespace DesktopSAS {
 		Move3_gui = Move3_Hz_ls;
 	}
 
-	private: System::Void click_stButton(System::Object^ sender, System::EventArgs^ e) {
-		this->message1->Text = L"Pressed start Stim";
-		Move3_gui = Move3_start;
+	private: System::Void click_stimButton(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed stim Button";
+
+		if (state == st_calM && !GL_UI.stimActive)
+		{
+			// Start stimulation command
+			Move3_gui = Move3_start;
+		}
+		else
+		{
+			// Stop stimulation command
+			Move3_gui = Move3_stop;
+		}
+		
 	}
 
-	private: System::Void click_stopButton(System::Object^ sender, System::EventArgs^ e) {
-		this->message1->Text = L"Pressed quit Stim";
-		Move3_gui = Move3_stop;
+	private: System::Void click_setButton(System::Object^ sender, System::EventArgs^ e) {
+
+		if (state == st_init)
+		{
+			this->message1->Text = L"Pressed set Button";
+			// Start manual calibration
+			user_gui = User_CM;
+		}
+		else
+		{
+			this->message1->Text = L"Pressed XX Button";
+			// Manual calibration has already started
+			Move3_gui = Move3_done;
+		}
+		// Internal handling
+		if (state == st_calM && !bSetupPressed)
+		{
+			bSetupPressed = true;
+		}
+
 	}
+
+	private: System::Void methodBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
+		// Update the selected value
+		nextIndex = this->methodBox->SelectedIndex;
+	}
+
 // ---------------- Background worker: be careful when modifying these ----------------
 	// This function runs on a separate thread from the UI
 	private: System::Void launchBackground(System::Object^ sender, DoWorkEventArgs^ e)
@@ -738,29 +804,9 @@ namespace DesktopSAS {
 	private: System::Void updateBackground(System::Object^ sender, ProgressChangedEventArgs^ e)
 	{
 		// This function can actually access and modify the IU variables 
-		int a = dummy;
-		char intStr[30];
-		itoa(a, intStr, 10);		// itoa(number,string output, radix = 10 decimal, 16 hexadecimal, 2 binary
-		
-		System::String^ v1str = "Phase A: ";
-
-		if (dummy < 2) {
-			v1str = "Background running";
-		}
-		else
-		{
-			v1str = gcnew String(string(intStr).c_str());
-		}
-		//v1str = gcnew String(string(intStr).c_str());
-
-		//
-		//this->backLabel->Text = v1str;
-		//this->backLabel->Text = L"backgroundWorker was here";
-
-
 		// -------------------- Update status (SAS -> GUI) --------------------
 		int local_status = (int)GL_UI.status;
-		state = (state_Type)GL_UI.status;
+		state = GL_UI.status;
 		trainStart = GL_UI.trainStart;
 		this->statusLabel->Text = gcnew String(statusList[local_status].c_str());
 		this->statusMsg->Text = gcnew String(GL_UI.screenMessage.c_str());
@@ -795,6 +841,9 @@ namespace DesktopSAS {
 			GL_UI.Move3_hmi = Move3_gui;
 			Move3_gui = Move3_none;
 		}
+
+		GL_UI.next_method = (threshold_Type)nextIndex;
+
 		itoa(user_gui, intStr, 10);
 		this->backLabel->Text = gcnew String(string(intStr).c_str());
 
@@ -803,7 +852,105 @@ namespace DesktopSAS {
 			this->backgroundWorker1->CancelAsync();
 		}
 
+		// -------------------- Dynamic update (Colors and styles) --------------------
+		// - default blue color: Highlight
+		// - need to be pressed: green -> LimeGreen
+		// - inactive? grey -> ButtonShadow
+		// - STOP (safety-related important) red -> Crimson
+
+		// Debug stuff
+		itoa(GL_UI.status, intStr, 10);
+		this->statusDebug->Text = gcnew String(string(intStr).c_str());
+
+		// Start/Stop stimulation
+		if (state == st_calM && !GL_UI.stimActive)
+		{
+			this->stimButton->BackColor = System::Drawing::Color::LimeGreen;
+			this->stimButton->Text = L"START STIMULATION";
+		}
+		else
+		{
+			this->stimButton->Text = L"STOP STIMULATION";
+			if (GL_UI.stimActive)
+			{
+				this->stimButton->BackColor = System::Drawing::Color::Crimson;
+			}
+			else
+			{
+				this->stimButton->BackColor = System::Drawing::SystemColors::Highlight;
+			}
+		}
+
+		// Set up / Exit set-up
+		if (state == st_init)
+		{
+			this->setButton->Text = L"SET-UP STIMULATION";
+			this->setButton->BackColor = System::Drawing::Color::LimeGreen;
+		}
+		else if (state == st_calM)
+		{
+			this->setButton->Text = L"EXIT SET-UP";
+			if (bSetupPressed)
+			{
+				this->setButton->BackColor = System::Drawing::SystemColors::ButtonShadow;
+			}
+			else
+			{
+				this->setButton->BackColor = System::Drawing::Color::LimeGreen;
+			}
+		}
+		else
+		{
+			this->setButton->Text = L"EXIT EXERCISE";
+			if (state == st_th)
+			{
+				this->setButton->BackColor = System::Drawing::SystemColors::ButtonShadow;
+			}
+			else
+			{
+				this->setButton->BackColor = System::Drawing::SystemColors::Highlight;
+			}
+		}
+		if (state == st_init || state == st_repeat)
+		{
+			bSetupPressed = false;
+		}
+
+		// Set threshold / Start training
+		if (((state == st_calM && bSetupPressed) || (state == st_repeat && GL_UI.hmi_repeat)) && !GL_UI.recReq)
+		{
+			this->thButton->BackColor = System::Drawing::Color::LimeGreen;
+		}
+		else
+		{
+			this->thButton->BackColor = System::Drawing::SystemColors::Highlight;
+		}
+
+		if (state == st_wait && !GL_UI.trainStart)
+		{
+			this->trainButton->BackColor = System::Drawing::Color::LimeGreen;
+		}
+		else
+		{
+			this->trainButton->BackColor = System::Drawing::SystemColors::Highlight;
+		}
+
+		// Repeat / new set-up and threshold
+		if (state == st_repeat && !GL_UI.hmi_new && !GL_UI.hmi_repeat)
+		{
+			this->repeatButton->BackColor = System::Drawing::Color::LimeGreen;
+			this->newButton->BackColor = System::Drawing::Color::LimeGreen;
+		}
+		else 
+		{
+			this->repeatButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->newButton->BackColor = System::Drawing::SystemColors::Highlight;
+		}
+
+		// Current / next method
+		this->currentLabel->Text = gcnew String(methodList[(int)GL_UI.method].c_str());
 	}
+
 
 };
 }

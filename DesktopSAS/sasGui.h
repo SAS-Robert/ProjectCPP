@@ -41,10 +41,11 @@ public:
 	// Status field
 	state_Type status;
 	string screenMessage;
+	bool hmi_repeat, hmi_new;
 	// Exercise parameters
-	bool trainStart;
+	bool trainStart, recReq, stimActive;
 	exercise_Type exercise;
-	threshold_Type method;
+	threshold_Type method, next_method;
 	// Stimulation parameters
 	float current, frequency;
 	int ramp;
@@ -60,8 +61,12 @@ public:
 		// Status
 		status = st_init;
 		screenMessage = " ";
+		hmi_new = false;
+		hmi_repeat = false;
 		// Exercise
 		trainStart = false;
+		recReq = false;
+		stimActive = false;
 		exercise = exCircuit;
 		method = th_SD05;
 		// Stimulation parameters
@@ -81,3 +86,4 @@ mainUI GL_UI;
 
 // Other variables that for some reason could not be created in the GUI declaration
 string statusList[10];
+string methodList[3];
