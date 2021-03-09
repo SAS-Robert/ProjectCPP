@@ -67,13 +67,6 @@ typedef enum
     Move3_en_ch = 12,     //Enable/disable channel
 } RehaMove3_Req_Type;
 
-// For TCP connection
-typedef enum
-{
-    pause = 'P', // 'P' = pause by user-request
-    rep = 'R',   // 'R' = repetition active
-    start = 'S', // 'S' = start of repetition
-} ROB_Type;
 
 typedef enum
 {
@@ -87,6 +80,21 @@ typedef enum
     User_rep = 7,  // Repeat same exercise
     User_new = 8,  // Do a new type of exercise
 } User_Req_Type;
+
+typedef enum
+{
+    exDone = 0,     // Finish everything
+    start = 1,       // Exercise has started
+    repeat = 2,     // Repeat exercise
+    pause = 3,      // Play/Pause button = in pause
+    play = 4,     // Play/Pause button = in play 
+    setDone = 5,    // Repetitions-set finished
+    repStart = 6,   // Start repetition
+    repEnd = 7,     // End repetition
+    finish = 8,     // Close socket
+    msg_none = 9,   // Nothing to do
+    msg_invalid = 10, // You messed up somewhere
+} tcp_msg_Type;
 
 // ------------------ Global variables ------------------
 const int DATE_LENGTH = 32;

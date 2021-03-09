@@ -32,6 +32,32 @@ using std::string;
 #define BUFLEN 512
 using namespace std;
 
+// ------------------ Globals definition ------------------
+typedef struct tcp_msg_struct
+{
+public:
+    const int size = 11;
+    tcp_msg_Type status;
+    string messages[11];
+    // Constructor
+    tcp_msg_struct()
+    {
+        messages[exDone] = "EXERCISE_DONE";
+        messages[start] = "PLAY";
+        messages[repeat] = "REPEAT";
+        messages[pause] = "PAUSE";
+        messages[play] = "RESUME";
+        messages[setDone] = "SET_DONE";
+        messages[repStart] = "CYCLE_START";
+        messages[repEnd] = "CYCLE_DONE";
+        messages[finish] = "ENDTCP";
+        messages[msg_invalid] = " ";
+        messages[msg_none] = " ";
+        status = msg_none;
+    }
+
+};
+tcp_msg_struct msgList;
 // ------------------ Functions definition ------------------
 bool decode_robot(char* message, bool& value1, bool& value2)
 {
@@ -72,86 +98,45 @@ bool decode_robot(char* message, bool& value1, bool& value2)
     return valid_msg;
 }
 
-bool decode_gui(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& user, ROB_Type& status, int& rep, bool& finished, Smpt_Channel& sel_ch, exercise_Type& sel_ex, threshold_Type& sel_th)
+bool decode_extGui(char* message, bool& finished, bool& playPause, tcp_msg_Type& result)
 {
-    int field = 0, nrFields = 8, length = strlen(message);
-    string start_msg = "SCREEN";
-    string finish_msg = "ENDTCP";
-    char temp_status[2] = "0";
-    bool valid[10], valid_msg = true;
-    int value[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int length = strlen(message);
     string messageStr = convert_to_string(message, length);
-    string delimiter = ";";
-    size_t pos = 0;
     string token;
-    // Separate every field on the string
-        while ( ((pos = messageStr.find(delimiter)) != std::string::npos) && !finished) {
-            token = messageStr.substr(0, pos);
-            messageStr.erase(0, pos + delimiter.length());
+    bool valid_msg = false;
 
-            switch (field) {
-                // Start message
-            case 0:
-                finished = (token == finish_msg);
-                valid[field] = (token == start_msg);
-
-                if (finished) {
-                    return valid_msg;
-                }
-                break;
-                // standard command options and repetitions
-            case 1:
-                value[field] = stoi(token);
-                valid[field] = (value[field] >= 0) && (value[field] <= 9);
-                break;
-            case 2:
-                value[field] = stoi(token);
-                valid[field] = (value[field] >= 0) && (value[field] <= 8);
-                break;
-            case 3:
-                strcpy(temp_status, token.c_str());
-                valid[field] = (temp_status[0] >= 'A') && (temp_status[0] <= 'Z');
-                break;
-            case 4:
-                value[field] = stoi(token);
-                valid[field] = (value[field] >= 0) && (value[field] <= 99);
-                break;
-                // Select channel, exercise and method
-            case 5:
-                value[field] = stoi(token);
-                valid[field] = (value[field] >= 0) && (value[field] <= 4);
-                break;
-            case 6:
-                value[field] = stoi(token);
-                valid[field] = (value[field] >= 0) && (value[field] <= 4);
-                break;
-            case 7:
-                value[field] = stoi(token);
-                valid[field] = (value[field] >= 0) && (value[field] <= 3);
-                break;
-            }
-
-            field++;
-        }
-        // Check that all the fields are correct
-        for (int k = 0; k < nrFields; k++)
-        {
-            valid_msg = valid_msg && valid[k];
-        }
-
+    for (int i = 0; i < msgList.size ;i++)
+    {
+        valid_msg = (strcmp(message, msgList.messages[i].c_str()) == 0);
         if (valid_msg)
         {
-            stimulator = (RehaMove3_Req_Type)value[1];
-            user = (User_Req_Type)value[2];
-            status = (ROB_Type)temp_status[0];
-            rep = value[4];
-            sel_ch = (Smpt_Channel)value[5];
-            sel_ex = (exercise_Type)value[6];
-            sel_th = (threshold_Type)value[7];
+            msgList.status = (tcp_msg_Type)i;
+            break;
         }
-        return valid_msg;
-}
+    }
 
+    if (valid_msg)
+    {
+        result = msgList.status;
+        // Update Play-Pause button status
+        if (msgList.status == play)
+        {
+            playPause = true;
+        }
+        else if (msgList.status == pause)
+        {
+            playPause = false;
+        }
+        // In case the program has finished
+        finished = (msgList.status == finish);
+    }
+    //else
+    //{
+    //    result = msg_none;
+    //}
+
+    return valid_msg;
+}
 // ------------------ Objects definition ------------------
 typedef struct UdpClient
 {
@@ -341,7 +326,7 @@ struct UdpServer
   public:
     char recvbuf[BUFLEN];
     char senbuf[BUFLEN];
-    bool error, new_message, finish, display, error_lim;
+    bool error, new_message, finish, display, error_lim, playPause;
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
@@ -351,6 +336,8 @@ struct UdpServer
       nPORT = 30001;
       slen = sizeof(si_other);
       display = false;
+      playPause = true;         // lets assume that it starts like that
+      finish = false;
       nPORT = atoi(PORTc);
       strcpy(SERVERc, S_address);
       ERROR_CNT_LIM = 5;

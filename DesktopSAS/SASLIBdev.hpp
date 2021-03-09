@@ -385,37 +385,14 @@ public:
     };
     void update()
     {
-        fill_ml_update(&device, &ml_update, Smpt_Channel_Red, stim_act[Smpt_Channel_Red], stim[Smpt_Channel_Red]);
+        //stim_act[Smpt_Channel_Red] = true;
+        fill_ml_update(&device, &ml_update, Smpt_Channel_Red, true, stim[Smpt_Channel_Red]);
         smpt_send_ml_update(&device, &ml_update);
 
         fill_ml_get_current_data(&device, &ml_get_current_data);
         smpt_send_ml_get_current_data(&device, &ml_get_current_data);
         active = stim_act[Smpt_Channel_Red];
     };
-    //New: multichannel selection
-    void update2(Smpt_Channel sel_ch)
-    {
-        fill_ml_update(&device, &ml_update, sel_ch, stim_act[sel_ch], stim[sel_ch]);
-        smpt_send_ml_update(&device, &ml_update);
-
-        fill_ml_get_current_data(&device, &ml_get_current_data);
-        smpt_send_ml_get_current_data(&device, &ml_get_current_data);
-        active = stim_act[Smpt_Channel_Red] || stim_act[Smpt_Channel_Blue] || stim_act[Smpt_Channel_Black] || stim_act[Smpt_Channel_White];
-    };
-
-    void enable(Smpt_Channel sel_ch, bool enable)
-    {
-        stim_act[sel_ch] = enable;
-
-        if (enable && display)
-        {
-            sprintf(displayMsg, "Chanel %i is enabled\n", sel_ch);
-        }
-        else if(display)
-        {
-            sprintf(displayMsg, "Chanel %i is not enabled\n", sel_ch);
-        }
-    }
     void pause()
     {
         smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));

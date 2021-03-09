@@ -43,7 +43,7 @@ public:
 	string screenMessage;
 	bool hmi_repeat, hmi_new;
 	// Exercise parameters
-	bool trainStart, recReq, stimActive;
+	bool main_thEN, recReq, stimActive;
 	exercise_Type exercise;
 	threshold_Type method, next_method;
 	// Stimulation parameters
@@ -64,7 +64,7 @@ public:
 		hmi_new = false;
 		hmi_repeat = false;
 		// Exercise
-		trainStart = false;
+		main_thEN = false;
 		recReq = false;
 		stimActive = false;
 		exercise = exCircuit;
