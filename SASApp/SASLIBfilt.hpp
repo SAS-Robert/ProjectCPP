@@ -112,8 +112,8 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
 	return value;
 }
 
-// Threshold methods
-static double process_th(unsigned long long int v_size, vector<double> raw_data, int factor)
+// Threshold methods: SD
+static double process_th_sd(unsigned long long int v_size, vector<double> raw_data, int factor)
 {
 	double sd = 0, value = 0, raw_sample = 0.0;
 	unsigned long long int i = 0, N_len = v_size - GL_processed;
@@ -141,6 +141,50 @@ static double process_th(unsigned long long int v_size, vector<double> raw_data,
 	}
 	else {
 		fileVALUES << mean << "," << sd << "," << THRESHOLD << "," << v_size << "," << value << "\n";
+	}
+
+	// Update amount of GL_processed data
+	GL_processed = v_size;
+	for (int i = 4; i >= 1; i--)
+	{
+		old_value[i] = old_value[i - 1];
+		old_nr[i] = old_nr[i - 1];
+	}
+	old_value[0] = mean;
+	old_nr[0] = N_len;
+
+	return value;
+}
+
+// Threshold methods: MVC
+static double process_th_mvc(unsigned long long int v_size, vector<double> raw_data, int factor)
+{
+	double mvc = 0, value = 0, raw_sample = 0.0;
+	unsigned long long int i = 0, N_len = v_size - GL_processed;
+	int th_limit = (int)TH_DISCARD;
+
+	// Filtering + calculate mean
+	double mean = calculate_mean(v_size, raw_data, N_len);
+
+	if (v_size > TH_DISCARD)
+	{
+		// Calculate standard deviation
+		mvc = calculate_MVC(v_size, raw_data);
+
+		// Calculate final threshold value
+		value = (mean + mvc * factor) * N_len;
+	}
+	else
+	{
+		GL_thDiscard = v_size;
+	}
+
+	// Savind data in files will be eventually deleted
+	if (GL_processed <= 10) {
+		fileVALUES << mean << "," << mvc << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
+	}
+	else {
+		fileVALUES << mean << "," << mvc << "," << THRESHOLD << "," << v_size << "," << value << "\n";
 	}
 
 	// Update amount of GL_processed data

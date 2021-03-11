@@ -29,10 +29,13 @@ st_calA_stop = 8
 st_repeat = 9
 
 # threshold_Type
-global th_SD05, th_SD03, th_other
-th_SD05 = 0
-th_SD03 = 1
-th_other = 2
+global th_SD2, th_SD3, th_SDX
+th_SD3 = 0
+th_SD2 = 1
+th_SDX = 2
+th_MVC5 = 3
+th_MVC10 = 4
+th_MVCX = 5
 
 # RehaMove3_Req_Type
 global Move3_none, Move3_incr, Move3_decr, Move3_ramp_more, Move3_ramp_less, Move3_stop, Move3_start, Move3_done, Move3_en_ch
@@ -87,7 +90,7 @@ rep_cnt = 10
 stim_code = Move3_none
 user_code = User_none
 exercise = EX_LOWERLEG
-method = th_SD05
+method = th_SD3
 status = st_init
 statusMessage = " "
 # ========================== Internal variables ==========================
@@ -130,7 +133,7 @@ ex_select = ["Lower leg flexion", "Upper leg extension", "Other"]
 global status_list
 status_list = ["Initialization", "Setting threshold", "EMG monitoring", "Tigger FES", "Stop FES", "Finish program", "Manual calibration", "Automatic calibration\n- stimulating", "Automatic calibration\n- resting", "Exercise finished"]
 global mth_select, mth_str, mth_current
-mth_select = ["Threshold 1 (SD*0.5)", "Threshold 2 (SD*0.3)", "Threshold 3 (other)"]
+mth_select = ["SD * 3", "SD * 2", "SD * X", "MVC * 5%","MVC * 10%","MVC * X%"]
 
 # Colours
 LIGHT_RED = '#D95319'
@@ -260,7 +263,7 @@ mth_next = Label(select_frame, text='For next exercise:',
 
 # Select method
 mth_str = StringVar(root)
-mth_str.set(mth_select[th_SD05])
+mth_str.set(mth_select[th_SD3])
 mth_box = OptionMenu(select_frame, mth_str, *mth_select)
 mth_box.configure(width=20, font=("Arial Bold", 10),
                  bg=ctr_mid_color, fg=ctr_mid_fg)

@@ -1,6 +1,7 @@
 {
   "ExpandedNodes": [
     "",
+    "\\HMI",
     "\\SASApp"
   ],
   "SelectedNode": "\\SASApp\\SASApp.cpp",

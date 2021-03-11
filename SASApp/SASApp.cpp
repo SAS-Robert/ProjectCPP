@@ -883,7 +883,7 @@ void run_gui()
         if (!screen.error && GL_tcpActive)
         {
             // Normal procedure
-            decode_successful = decode_gui(screen.recvbuf, Move3_hmi, User_cmd, TCP_rob, TCP_rep, screen.finish, hmi_channel, GL_exhmi, GL_thhmi);
+            decode_successful = decode_gui(screen.recvbuf, Move3_hmi, User_cmd, TCP_rob, TCP_rep, screen.finish, hmi_channel, GL_exhmi, & GL_thhmi);
 
             if (decode_successful)
             {
@@ -1535,14 +1535,26 @@ void recording_sas()
             // Select threshold method 
             switch (GL_thMethod)
             {
-                case th_SD05:
-                    temp_value = process_th(GL_sampleNr, recorder_emg1, 0.5);
+                case th_SD3:
+                    temp_value = process_th_sd(GL_sampleNr, recorder_emg1, 3);
                     break;
-                case th_SD03:
-                    temp_value = process_th(GL_sampleNr, recorder_emg1, 2);
+                case th_SD2:
+                    temp_value = process_th_sd(GL_sampleNr, recorder_emg1, 2);
+                    break;
+                case th_SDX:
+                    temp_value = process_th_sd(GL_sampleNr, recorder_emg1, 3);
+                    break;
+                case th_MVC5:
+                    temp_value = process_th_mvc(GL_sampleNr, recorder_emg1, 5);
+                    break;
+                case th_MVC10:
+                    temp_value = process_th_mvc(GL_sampleNr, recorder_emg1, 10);
+                    break;
+                case th_MVCX:
+                    temp_value = process_th_mvc(GL_sampleNr, recorder_emg1, 5);
                     break;
                 default:
-                    temp_value = process_th(GL_sampleNr, recorder_emg1, 3);
+                    temp_value = process_th_sd(GL_sampleNr, recorder_emg1, 3);
             }
 
             //printf("%d\n", temp_value);         // debugging stuff
