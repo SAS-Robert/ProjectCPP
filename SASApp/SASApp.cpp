@@ -1560,11 +1560,39 @@ void recording_sas()
             //printf("%d\n", temp_value);         // debugging stuff
             if (GL_sampleNr >= TH_DISCARD)
             {
-                THRESHOLD = THRESHOLD + temp_value;
+                // Select threshold method 
+                switch (GL_thMethod)
+                {
+                case th_SD3:
+                case th_SD2:
+                case th_SDX:
+                    THRESHOLD = THRESHOLD + temp_value;
+                    break;
+                case th_MVC5:
+                case th_MVC10:
+                case th_MVCX:
+                    if (temp_value > THRESHOLD)
+                    {
+                        THRESHOLD = temp_value;
+                    }
+                    break;
+                default:
+                }
+                
             }
             if (GL_processed >= TH_NR)
             {
-                THRESHOLD = THRESHOLD / (GL_sampleNr - GL_thDiscard);
+                // Select threshold method 
+                switch (GL_thMethod)
+                {
+                case th_SD3:
+                case th_SD2:
+                case th_SDX:
+                    THRESHOLD = THRESHOLD / (GL_sampleNr - GL_thDiscard);
+                    break;
+                default:
+                }
+                
                 screenMessage = "EMG activity: threshold = " + to_string(THRESHOLD);
                 std::cout << screenMessage << endl;
 

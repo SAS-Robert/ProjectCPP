@@ -53,11 +53,15 @@ const unsigned long long int TH_NR = TH_TIME * SAMPLINGRATE; // amount of sample
 const double TH_DISCARD = SAMPLINGRATE * 1.1;                // discard first filtered samples from the threshold
 double GL_thDiscard = 0;
 int TH_WAIT = 20, GL_thWaitCnt = 0; // amount of mean sets before triggering
+std::vector<double> calibration_rest_data;
+std::vector<double> calibration_mvc_data;
+
+threshold_Type GL_thMethod;
 
 // Accumulate old means and sizes for the flexible window
-const unsigned int FLEX_WINDOW = 5;
-double old_value[FLEX_WINDOW] = { 0, 0, 0, 0, 0 };
-unsigned long long int old_nr[FLEX_WINDOW] = { 0, 0, 0, 0, 0 };
+const unsigned int FLEX_WINDOW = 3;
+double old_value[FLEX_WINDOW] = {0, 0, 0};
+unsigned long long int old_nr[FLEX_WINDOW] = {0, 0, 0};
 const unsigned int SAMPLE_LIM = 27;
 
 // Savind data in files will be eventually deleted
@@ -101,7 +105,7 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
 	// Update GL_processed data parameters
 	GL_processed = v_size;
 
-	for (int i = 4; i >= 1; i--)
+	for (int i = 2; i >= 1; i--)
 	{
 		old_value[i] = old_value[i - 1];
 		old_nr[i] = old_nr[i - 1];
@@ -145,7 +149,7 @@ static double process_th_sd(unsigned long long int v_size, vector<double> raw_da
 
 	// Update amount of GL_processed data
 	GL_processed = v_size;
-	for (int i = 4; i >= 1; i--)
+	for (int i = 2; i >= 1; i--)
 	{
 		old_value[i] = old_value[i - 1];
 		old_nr[i] = old_nr[i - 1];
@@ -164,7 +168,7 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
 	int th_limit = (int)TH_DISCARD;
 
 	// Filtering + calculate mean
-	double mean = calculate_mean(v_size, raw_data, N_len);
+	double mean = calculate_mean(v_size, calibration_rest_data, N_len);
 
 	if (v_size > TH_DISCARD)
 	{
@@ -172,7 +176,7 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
 		mvc = calculate_MVC(v_size, raw_data);
 
 		// Calculate final threshold value
-		value = (mean + mvc * factor) * N_len;
+		value = (mean + mvc * factor);
 	}
 	else
 	{
@@ -189,7 +193,7 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
 
 	// Update amount of GL_processed data
 	GL_processed = v_size;
-	for (int i = 4; i >= 1; i--)
+	for (int i = 2; i >= 1; i--)
 	{
 		old_value[i] = old_value[i - 1];
 		old_nr[i] = old_nr[i - 1];
@@ -208,8 +212,19 @@ static double calculate_mean(unsigned long long int v_size, vector<double> raw_d
 
 	for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
 	{
-		temp = preprocess_data(raw_data[i]);
+		temp = preprocess_data(raw_data[i],i);
 		mean += temp;
+
+		// hold on to calibration data
+		if (v_size >= TH_DISCARD && calibration_rest_data.size() < TH_NR && GL_thMethod <= 2)
+		{
+			calibration_rest_data.push_back(temp);
+		}
+		else if (v_size >= TH_DISCARD && calibration_mvc_data.size() < TH_NR && GL_thMethod > 2) 
+		{
+			calibration_mvc_data.push_back(temp);
+		}
+
 	}
 	mean = mean / N_len;
 
@@ -253,10 +268,9 @@ static double calculate_MVC(unsigned long long int v_size, vector<double> raw_da
 }
 
 // Function definition: Filter and rectify data
-static double preprocess_data(double raw_data)
+static double preprocess_data(double raw_data, int i)
 {
 	double raw_sample, preprocessed_sample;
-	int i = bPass_result.size();
 
 	raw_sample = raw_data * AMPLIFICATION;
 	// Filter data

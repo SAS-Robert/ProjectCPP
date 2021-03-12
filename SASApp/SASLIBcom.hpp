@@ -125,7 +125,7 @@ bool decode_gui(char* message, RehaMove3_Req_Type& stimulator, User_Req_Type& us
                 break;
             case 7:
                 value[field] = stoi(token);
-                valid[field] = (value[field] >= 0) && (value[field] <= 3);
+                valid[field] = (value[field] >= 0) && (value[field] <= 5);
                 break;
             }
 

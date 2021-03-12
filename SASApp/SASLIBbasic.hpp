@@ -43,9 +43,12 @@ typedef enum
 
 typedef enum
 {
-    th_SD05 = 0,        // SD*0.5 = Half of the standard deviation
-    th_SD03 = 1,        // SD*0.3 = Third of the standard deviation
-    th_other = 2,       // Other?
+    th_SD3 = 0,         // SD*2 = twice of the standard deviation
+    th_SD2 = 1,         // SD*3 = thrice of the standard deviation
+    th_SDX = 2,         // SD*X = X of the standard deviation
+    th_MVC5 = 3,         // MVC5 = 5% of MVC
+    th_MVC10 = 4,        // MVC10 = 10% of MVC
+    th_MVCX = 5,         // MVCX = X% of MVC
 } threshold_Type;
 
 // User options for stimulation and process

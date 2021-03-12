@@ -29,7 +29,7 @@ st_calA_stop = 8
 st_repeat = 9
 
 # threshold_Type
-global th_SD2, th_SD3, th_SDX
+global th_SD2, th_SD3, th_SDX, th_MVC5, th_MVC10, th_MVCX
 th_SD3 = 0
 th_SD2 = 1
 th_SDX = 2
