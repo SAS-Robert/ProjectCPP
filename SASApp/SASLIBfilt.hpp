@@ -66,6 +66,10 @@ const unsigned int SAMPLE_LIM = 27;
 
 // Savind data in files will be eventually deleted
 ofstream fileVALUES, fileFILTERS;
+
+// Feedback flag
+bool GL_MVC_Begin = true;
+
 // ------------------ Functions definition ------------------
 void startup_filters() {
 	// Start filters
@@ -117,150 +121,72 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
 }
 
 // Threshold methods: SD
-static double process_th_sd(unsigned long long int v_size, vector<double> raw_data, int factor)
+static double process_th_sd(vector<double> data, int factor)
 {
-	double sd = 0, value = 0, raw_sample = 0.0;
-	unsigned long long int i = 0, N_len = v_size - GL_processed;
-	int th_limit = (int)TH_DISCARD;
+	// Calculate mean
+	double mean = calculate_mean(data);
+	
+	// Calculate SD
+	double sd = calculate_std(data, mean);
 
-	// Filtering + calculate mean
-	double mean = calculate_mean(v_size, raw_data, N_len);
-
-	if (v_size > TH_DISCARD)
-	{
-		// Calculate standard deviation
-		sd = calculate_std(v_size, raw_data, mean);
-
-		// Calculate final threshold value
-		value = (mean + sd * factor) * N_len;
-	}
-	else
-	{
-		GL_thDiscard = v_size;
-	}
-
-	// Savind data in files will be eventually deleted
-	if (GL_processed <= 10) {
-		fileVALUES << mean << "," << sd << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
-	}
-	else {
-		fileVALUES << mean << "," << sd << "," << THRESHOLD << "," << v_size << "," << value << "\n";
-	}
-
-	// Update amount of GL_processed data
-	GL_processed = v_size;
-	for (int i = 2; i >= 1; i--)
-	{
-		old_value[i] = old_value[i - 1];
-		old_nr[i] = old_nr[i - 1];
-	}
-	old_value[0] = mean;
-	old_nr[0] = N_len;
-
-	return value;
+	// Calculate final threshold value
+	double threshold = (mean + sd * factor);
+	
+	return threshold;
 }
 
 // Threshold methods: MVC
-static double process_th_mvc(unsigned long long int v_size, vector<double> raw_data, int factor)
+static double process_th_mvc(vector<double> data, int factor)
 {
-	double mvc = 0, value = 0, raw_sample = 0.0;
-	unsigned long long int i = 0, N_len = v_size - GL_processed;
-	int th_limit = (int)TH_DISCARD;
+	// Calculate mean
+	double mean = calculate_mean(data);
 
-	// Filtering + calculate mean
-	double mean = calculate_mean(v_size, calibration_rest_data, N_len);
+	// Calculate MVC
+	double mvc = calculate_MVC(data);
 
-	if (v_size > TH_DISCARD)
-	{
-		// Calculate standard deviation
-		mvc = calculate_MVC(v_size, raw_data);
+	// Calculate final threshold value
+	double threshold = (mean + mvc * factor);
 
-		// Calculate final threshold value
-		value = (mean + mvc * factor);
-	}
-	else
-	{
-		GL_thDiscard = v_size;
-	}
-
-	// Savind data in files will be eventually deleted
-	if (GL_processed <= 10) {
-		fileVALUES << mean << "," << mvc << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
-	}
-	else {
-		fileVALUES << mean << "," << mvc << "," << THRESHOLD << "," << v_size << "," << value << "\n";
-	}
-
-	// Update amount of GL_processed data
-	GL_processed = v_size;
-	for (int i = 2; i >= 1; i--)
-	{
-		old_value[i] = old_value[i - 1];
-		old_nr[i] = old_nr[i - 1];
-	}
-	old_value[0] = mean;
-	old_nr[0] = N_len;
-
-	return value;
+	return threshold;
 }
 
 // Function definition: Calculate Mean
-static double calculate_mean(unsigned long long int v_size, vector<double> raw_data, unsigned long long int N_len)
+static double calculate_mean(vector<double> data)
 {
-	double raw_sample, temp, mean;
-	int i;
-
-	for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
+	double mean;
+	for (unsigned long long int i = 0; i < data.size(); ++i) // Loop for the length of the array
 	{
-		temp = preprocess_data(raw_data[i],i);
-		mean += temp;
-
-		// hold on to calibration data
-		if (v_size >= TH_DISCARD && calibration_rest_data.size() < TH_NR && GL_thMethod <= 2)
-		{
-			calibration_rest_data.push_back(temp);
-		}
-		else if (v_size >= TH_DISCARD && calibration_mvc_data.size() < TH_NR && GL_thMethod > 2) 
-		{
-			calibration_mvc_data.push_back(temp);
-		}
-
+		mean += data[i];
 	}
-	mean = mean / N_len;
+	mean = mean / data.size();
 
 	return mean;
 }
 
 // Function definition: Calculate STD
-static double calculate_std(unsigned long long int v_size, vector<double> raw_data, double mean)
+static double calculate_std( vector<double> data, double mean)
 {
-	double raw_sample, temp, sd;
-	int i;
-	unsigned long long int N_len = v_size - GL_processed;
-
-	for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
+	double sd;
+	for (unsigned long long int i = 0; i < data.size(); ++i) // Loop for the length of the array
 	{
-		temp = preprocess_data(raw_data[i]);
-		sd += pow(temp - mean, 2);
+		sd += pow(data[i] - mean, 2);
 	}
 
-	sd = sqrt(sd / N_len);
+	sd = sqrt(sd / data.size());
 
 	return sd;
 }
 
-// Function definition: Calculate STD
-static double calculate_MVC(unsigned long long int v_size, vector<double> raw_data)
+// Function definition: Calculate MVC
+static double calculate_MVC(vector<double> data)
 {
-	double raw_sample, temp, tempMax;
-	int i;
+	double tempMax = 0;
 
-	for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
+	for (unsigned long long int i = 0; i < data.size(); ++i) // Loop for the length of the array
 	{
-		temp = preprocess_data(raw_data[i]);
-		if (temp > tempMax)
+		if (data[i] > tempMax)
 		{
-			tempMax = temp;
+			tempMax = data[i];
 		}
 	}
 
@@ -285,6 +211,9 @@ static double preprocess_data(double raw_data, int i)
 	{
 		preprocessed_sample = -b50_result[i];
 	}
+
+	// Update processed sample nr.
+	GL_processed = GL_sampleNr;
 
 	return preprocessed_sample;
 }
