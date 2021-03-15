@@ -69,6 +69,10 @@ namespace DesktopSAS {
 			bool trainStart, stimA_active, stimM_active, gui_repeat, gui_new;
 			//char intStr[32];
 
+			// For isMoving testing
+			double isVelocity;
+			const double isDelta = 0.1;
+
 	public: System::Windows::Forms::Button^ start_Button;
 	     	System::ComponentModel::BackgroundWorker^ backgroundWorker1;
 			System::Windows::Forms::Label^ message1;						// Not necessary, only for testing
@@ -79,11 +83,7 @@ namespace DesktopSAS {
 			System::Windows::Forms::Label^ statusTitle;
 			System::Windows::Forms::Label^ stimTitle;
 			System::Windows::Forms::Label^ exerciseTitle;
-
-
 			System::Windows::Forms::Button^ thButton;
-
-
 			System::Windows::Forms::Label^ rampTitle;
 			System::Windows::Forms::Label^ rampValue;
 			System::Windows::Forms::Button^ rampPlus;
@@ -96,23 +96,17 @@ namespace DesktopSAS {
 			System::Windows::Forms::Button^ fqPlus;
 			System::Windows::Forms::Label^ fqValue;
 			System::Windows::Forms::Label^ fqTitle;
-
 			System::Windows::Forms::Label^ statusDebug;
-
-
 			System::Windows::Forms::Button^ stimButton;
-
 			System::Windows::Forms::Label^ currentTitle;
 			System::Windows::Forms::Label^ nextTitle;
 			System::Windows::Forms::Label^ currentLabel;
 			System::Windows::Forms::ComboBox^ methodBox;
-	public: System::Windows::Forms::Label^ methodLabel;
-
-
-
-	public:
-
-	protected:
+			System::Windows::Forms::Label^ methodLabel;
+			System::Windows::Forms::Button^ velMinus;
+			System::Windows::Forms::Button^ velPlus;
+			System::Windows::Forms::Label^ velValue;
+			System::Windows::Forms::Label^ velTitle;
 
 	private:
 		System::ComponentModel::Container ^components;
@@ -153,6 +147,10 @@ namespace DesktopSAS {
 			this->currentLabel = (gcnew System::Windows::Forms::Label());
 			this->methodBox = (gcnew System::Windows::Forms::ComboBox());
 			this->methodLabel = (gcnew System::Windows::Forms::Label());
+			this->velMinus = (gcnew System::Windows::Forms::Button());
+			this->velPlus = (gcnew System::Windows::Forms::Button());
+			this->velValue = (gcnew System::Windows::Forms::Label());
+			this->velTitle = (gcnew System::Windows::Forms::Label());
 			this->SuspendLayout();
 			// 
 			// start_Button
@@ -517,12 +515,75 @@ namespace DesktopSAS {
 			this->methodLabel->Text = L"CHOOSE METHOD";
 			this->methodLabel->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
+			// velMinus
+			// 
+			this->velMinus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->velMinus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->velMinus->FlatAppearance->BorderSize = 0;
+			this->velMinus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->velMinus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F));
+			this->velMinus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->velMinus->Location = System::Drawing::Point(305, 330);
+			this->velMinus->Name = L"velMinus";
+			this->velMinus->Size = System::Drawing::Size(60, 78);
+			this->velMinus->TabIndex = 41;
+			this->velMinus->Text = L"-";
+			this->velMinus->UseVisualStyleBackColor = false;
+			this->velMinus->Click += gcnew System::EventHandler(this, &MyForm::click_velMinus);
+			// 
+			// velPlus
+			// 
+			this->velPlus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->velPlus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
+				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
+			this->velPlus->FlatAppearance->BorderSize = 0;
+			this->velPlus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->velPlus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->velPlus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->velPlus->Location = System::Drawing::Point(512, 330);
+			this->velPlus->Name = L"velPlus";
+			this->velPlus->Size = System::Drawing::Size(60, 78);
+			this->velPlus->TabIndex = 40;
+			this->velPlus->Text = L"+";
+			this->velPlus->UseVisualStyleBackColor = false;
+			this->velPlus->Click += gcnew System::EventHandler(this, &MyForm::click_velPlus);
+			// 
+			// velValue
+			// 
+			this->velValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->velValue->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->velValue->Location = System::Drawing::Point(358, 374);
+			this->velValue->Name = L"velValue";
+			this->velValue->Size = System::Drawing::Size(158, 31);
+			this->velValue->TabIndex = 39;
+			this->velValue->Text = L"isVelocity value";
+			this->velValue->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			// 
+			// velTitle
+			// 
+			this->velTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->velTitle->ForeColor = System::Drawing::SystemColors::ControlText;
+			this->velTitle->Location = System::Drawing::Point(358, 330);
+			this->velTitle->Name = L"velTitle";
+			this->velTitle->Size = System::Drawing::Size(158, 31);
+			this->velTitle->TabIndex = 38;
+			this->velTitle->Text = L"isVelocity";
+			this->velTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->ClientSize = System::Drawing::Size(584, 561);
+			this->Controls->Add(this->velMinus);
+			this->Controls->Add(this->velPlus);
+			this->Controls->Add(this->velValue);
+			this->Controls->Add(this->velTitle);
 			this->Controls->Add(this->methodLabel);
 			this->Controls->Add(this->methodBox);
 			this->Controls->Add(this->currentLabel);
@@ -582,6 +643,14 @@ namespace DesktopSAS {
 			methodList[0] = "Xi+SD*0.5";
 			methodList[1] = "Xi+SD*0.3";
 			methodList[2] = "Another";
+
+			// for isMoving testing
+			isVelocity = 0.8;
+			// Update display
+			std::stringstream tempValue;
+			tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mms/s";
+			string tempString = tempValue.str();
+			this->velValue->Text = gcnew String(tempString.c_str());
 		}
 
 #pragma endregion
@@ -602,18 +671,6 @@ namespace DesktopSAS {
 	private: System::Void click_thButton(System::Object^ sender, System::EventArgs^ e) {
 		this->message1->Text = L"Pressed th Button";
 		user_gui = User_th;
-		/*
-		if (state == st_init)
-		{
-			user_gui = User_CM;
-		}
-		//else if (state == st_calM || state != st_calM)
-		else
-		{
-			user_gui = User_th;
-		}
-		*/
-		// Original: if ((state == st_calM && bSetupPressed) || state != st_calM)
 	}
 
 	private: System::Void click_repeatButton(System::Object^ sender, System::EventArgs^ e) {
@@ -697,6 +754,30 @@ namespace DesktopSAS {
 	private: System::Void methodBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
 		// Update the selected value
 		nextIndex = this->methodBox->SelectedIndex;
+	}
+
+// For isMoving testing
+	private: System::Void click_velMinus(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed vel minus";
+		isVelocity -= isDelta;
+		// Update SAS
+		GL_UI.isVelocity_limit = isVelocity;
+		// Update display
+		std::stringstream tempValue;
+		tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mms/s";
+		string tempString = tempValue.str();
+		this->velValue->Text = gcnew String(tempString.c_str());
+	}
+	private: System::Void click_velPlus(System::Object^ sender, System::EventArgs^ e) {
+		this->message1->Text = L"Pressed vel plus";
+		isVelocity += isDelta;
+		// Update SAS
+		GL_UI.isVelocity_limit = isVelocity;
+		// Update display
+		std::stringstream tempValue;
+		tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mms/s";
+		string tempString = tempValue.str();
+		this->velValue->Text = gcnew String(tempString.c_str());
 	}
 
 // ---------------- Background worker: be careful when modifying these ----------------
@@ -839,6 +920,7 @@ namespace DesktopSAS {
 
 		this->currentLabel->Text = gcnew String(methodList[(int)GL_UI.method].c_str());
 	}
+
 
 };
 }

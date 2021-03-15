@@ -55,6 +55,8 @@ public:
 	User_Req_Type User_hmi;
 	int ch_hmi;
 
+	// for isMoving testing
+	double isVelocity_limit;
 	// Constructor
 	mainUI() {
 		END_GUI = false;
@@ -79,6 +81,8 @@ public:
 		User_hmi = User_none;
 		int ch_hmi = 1;
 
+
+		isVelocity_limit = 0.8;
 	}
 };
 

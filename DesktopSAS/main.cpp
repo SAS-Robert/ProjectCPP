@@ -546,21 +546,12 @@ void mainSAS_thread()
 
                 msg_main = "Stimulator triggered";
 
-               // fileLOGS << "1.0, " << GL_processed << "\n";
+                fileLOGS << "1.0, " << GL_processed << "\n";
 
-                // dummy trigger
-                /*if (!dummyMain)
-                {
-                    dummyMain = true;
-                    tic();
-                    toc_lim = 3;
-                }
-                if (dummyMain && toc())
-                {
-                    GL_state = st_running;
-                }*/
             }
-            if ((robert.Reached && robert.valid_msg) || screen_status == repEnd)
+            // For GUI testing:  screen_status == repEnd
+            // Final version: (robert.Reached && robert.valid_msg)
+            else if (screen_status == repEnd)
             {
                 // Patient has reached end of repetition
                 msg_main = "Received: end of repetition";
@@ -584,7 +575,9 @@ void mainSAS_thread()
                 GL_state = st_stop;
                 fileLOGS << "3.0, " << GL_processed << "\n";
             }
-            if ((robert.Reached && robert.valid_msg) || screen_status == repEnd)
+            // For GUI testing:  screen_status == repEnd
+            // Final version: (robert.Reached && robert.valid_msg)
+            else if (screen_status == repEnd)
             {
                 // Patient has reached end of repetition
                 msg_main = "Received: end of repetition";
@@ -602,8 +595,10 @@ void mainSAS_thread()
         case st_stop:
             devicesReady = stim_status.ready && rec_status.ready;
             robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
+            // For GUI testing: screen_status == repStart && devicesReady, taken out && robotReady
+            // For robot testing ? = devicesReady && robotReady
             // Next repetition
-            if (screen_status == repStart && devicesReady && robotReady)
+            if (screen_status == repStart)
             {
                 msg_main = "Starting next repetition";
 
@@ -637,14 +632,16 @@ void mainSAS_thread()
             }
             // 2. Next set (keep going)
             // Maybe modify to: (screen_status == start || screen_status == repStart)
-            else if (screen_status == start && devicesReady && robotReady)
+            //For GUI testing: taken out && robotReady
+            else if (screen_status == start && devicesReady)
             {
                 msg_main = "Starting next set.";
                 GL_state = st_wait;
             }
             // 3. Repeat exercise with the same settings
             // check here if the person presses the button before the screen updates to == start?
-            else if (screen_status == repeat && devicesReady && robotReady)
+            //For GUI testing: taken out && robotReady
+            else if (screen_status == repeat && devicesReady)
             {
                 msg_main = "Repeat exercise.";
                 GL_UI.hmi_repeat = true;
@@ -659,7 +656,8 @@ void mainSAS_thread()
                 GL_state = st_th;
             }
             // 4. Exercise done. Go back to the beginning
-            else if (screen_status == exDone && devicesReady && robotReady)
+            //For GUI testing: taken out && robotReady
+            else if (screen_status == exDone && devicesReady)
             {
                 msg_main = "Exercise finished.";
                 startup_filters();
@@ -672,6 +670,8 @@ void mainSAS_thread()
         } // State machine
 
         stimulating_sas();
+        // GUI testing: robot error has been taken out
+        /*
         // Process handling: if the robot-connection gets lost
         if (robert.error_lim && MAIN_to_all.ready)
         {
@@ -704,7 +704,7 @@ void mainSAS_thread()
             msg_main = "Connection to the robot restored";
             MAIN_to_all.ready = true;
         }
-
+        */
         // Controlling thread cycle time
         System::Threading::Thread::Sleep(control_thread(MAIN_THREAD, THREAD_END, GL_state));
 
@@ -1152,7 +1152,13 @@ void recording_sas()
         {
             mean = process_data_iir(GL_sampleNr, recorder_emg1);
 
-            st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg; //  && start_train
+             // Original for software 3.0:
+             // st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg; //  && start_train
+             // For GUI testing
+             st_wait_jump = !rec_status.start;
+             // Final version
+             // st_wait_jump = !rec_status.start && (robert.isVelocity > GL_UI.isVelocity_limit) && robert.valid_msg;
+
 
             if ((mean >= THRESHOLD) && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)
             {
