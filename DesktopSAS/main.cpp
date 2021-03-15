@@ -55,7 +55,7 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 // ------------------------- Devices handling --------------------------------
 bool stim_ready = false, rec_ready = false, stim_abort = false;
 
-char PORT_STIM[5] = "COM5";   // Laptop
+char PORT_STIM[5] = "COM9";   // Laptop
 // char PORT_STIM[5] = "COM3";     // Robot
 RehaMove3 stimulator;
 
@@ -186,14 +186,14 @@ void update_localGui() {
     GL_UI.status = GL_state;
     GL_UI.screenMessage = "Info: ";
     GL_UI.screenMessage += msg_main;
-    //GL_UI.screenMessage += "\nUDP status: ";
-    //GL_UI.screenMessage += msg_connect;
+    GL_UI.screenMessage += "\nUDP status: ";
+    GL_UI.screenMessage += msg_connect;
     GL_UI.screenMessage += "\nTCP status: ";
     GL_UI.screenMessage += msg_extGui;
-    GL_UI.screenMessage += "\nSimulator: ";
-    GL_UI.screenMessage += msg_stimulating;
-    GL_UI.screenMessage += "\nRecorder: ";
-    GL_UI.screenMessage += msg_recording;
+    //GL_UI.screenMessage += "\nSimulator: ";
+    //GL_UI.screenMessage += msg_stimulating;
+    //GL_UI.screenMessage += "\nRecorder: ";
+    //GL_UI.screenMessage += msg_recording;
     GL_UI.END_GUI = MAIN_to_all.end;
 
     // Exercise settings
@@ -228,6 +228,9 @@ void update_localGui() {
     user_gui = User_none;
     GL_UI.User_hmi = User_none;
     GL_UI.Move3_hmi = Move3_none;
+
+    // For isMoving testing
+    GL_UI.isVelocity = robert.isVelocity;
 
 }
 
@@ -1155,9 +1158,9 @@ void recording_sas()
              // Original for software 3.0:
              // st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg; //  && start_train
              // For GUI testing
-             st_wait_jump = !rec_status.start;
+             //st_wait_jump = !rec_status.start;
              // Final version
-             // st_wait_jump = !rec_status.start && (robert.isVelocity > GL_UI.isVelocity_limit) && robert.valid_msg;
+             st_wait_jump = !rec_status.start && (robert.isVelocity < GL_UI.isVelocity_limit) && robert.valid_msg;
 
 
             if ((mean >= THRESHOLD) && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)

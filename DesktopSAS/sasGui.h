@@ -56,6 +56,7 @@ public:
 	int ch_hmi;
 
 	// for isMoving testing
+	double isVelocity;
 	double isVelocity_limit;
 	// Constructor
 	mainUI() {
@@ -81,7 +82,8 @@ public:
 		User_hmi = User_none;
 		int ch_hmi = 1;
 
-
+		// For isMoving testing
+		isVelocity = 0.0;
 		isVelocity_limit = 0.8;
 	}
 };

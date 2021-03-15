@@ -59,15 +59,17 @@ public:
 };
 tcp_msg_struct msgList;
 // ------------------ Functions definition ------------------
-bool decode_robot(char* message, bool& value1, bool& value2)
+bool decode_robot(char* message, double& value1, bool& value2)
 {
     int field = 0, nrFields = 2, length = strlen(message)+1;
-    bool valid[10], valid_msg = true;
+    bool valid[10], valid_msg = false;
     bool value[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     string messageStr = convert_to_string(message, length) + ";---;";
     string delimiter = ";";
     size_t pos = 0;
     string token;
+    double tempVal = 1.987654;
+    const double tempMin = 0, tempMax = 100;
     // Separate every field on the string
     while ((pos = messageStr.find(delimiter)) != std::string::npos) {
         token = messageStr.substr(0, pos);
@@ -75,24 +77,23 @@ bool decode_robot(char* message, bool& value1, bool& value2)
 
         switch (field) {
         case 0:
-            value[field] = (token == "true");
-            valid[field] = (token == "true") || (token == "false");
+            // Convert string to double here
+            std::string::size_type sz;     // alias of size_t
+            tempVal = std::stod(token, &sz);
+            valid[0] = (tempVal >= tempMin) && (tempVal <= tempMax);
         case 1:
-            value[field] = (token == "true");
-            valid[field] = (token == "true") || (token == "false");
+            value[1] = (token == "true");
+            valid[1] = (token == "true") || (token == "false");
             break;
         }
         field++;
     }
     // Check that all the fields are correct
-    for (int k = 0; k < nrFields; k++)
-    {
-        valid_msg = valid_msg && valid[k];
-    }
+    valid_msg = valid[0] && valid[1];
 
     if (valid_msg)
     {
-        value1 = value[0];
+        value1 = tempVal;
         value2 = value[1];
     }
     return valid_msg;
@@ -159,6 +160,7 @@ public:
   bool display;
   // Robot variables
   bool isMoving;
+  double isVelocity;
   bool Reached;
   bool valid_msg;
   string displayMsg;
@@ -274,15 +276,18 @@ public:
       int length = sizeof(SERVERc);
       recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *)&si_other, &slen);
       // Decode message here
-      valid_msg = decode_robot(buf, isMoving, Reached);
+      valid_msg = decode_robot(buf, isVelocity, Reached);
       if (valid_msg)
       {
         error_cnt = 0;
         if (display)
         {
-            itoa(isMoving, itoaNr, 10);
-            displayMsg = "UDP Received: isMoving=";
-            displayMsg += string(itoaNr).c_str();
+            // show stimulation parameters
+            std::stringstream tempValue;
+            tempValue << std::setprecision(7) << isVelocity;
+            string tempString = tempValue.str();
+            displayMsg = "UDP Received: isVelocity=";
+            displayMsg += tempString.c_str();
             itoa(Reached, itoaNr, 10);
             displayMsg += ",Reached=";
             displayMsg += string(itoaNr).c_str();

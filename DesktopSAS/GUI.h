@@ -107,6 +107,7 @@ namespace DesktopSAS {
 			System::Windows::Forms::Button^ velPlus;
 			System::Windows::Forms::Label^ velValue;
 			System::Windows::Forms::Label^ velTitle;
+	public: System::Windows::Forms::Label^ velDisplay;
 
 	private:
 		System::ComponentModel::Container ^components;
@@ -151,6 +152,7 @@ namespace DesktopSAS {
 			this->velPlus = (gcnew System::Windows::Forms::Button());
 			this->velValue = (gcnew System::Windows::Forms::Label());
 			this->velTitle = (gcnew System::Windows::Forms::Label());
+			this->velDisplay = (gcnew System::Windows::Forms::Label());
 			this->SuspendLayout();
 			// 
 			// start_Button
@@ -574,12 +576,23 @@ namespace DesktopSAS {
 			this->velTitle->Text = L"isVelocity";
 			this->velTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
+			// velDisplay
+			// 
+			this->velDisplay->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 11.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->velDisplay->Location = System::Drawing::Point(309, 416);
+			this->velDisplay->Name = L"velDisplay";
+			this->velDisplay->Size = System::Drawing::Size(263, 28);
+			this->velDisplay->TabIndex = 42;
+			this->velDisplay->Text = L"current isVelocity from robot";
+			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->ClientSize = System::Drawing::Size(584, 561);
+			this->Controls->Add(this->velDisplay);
 			this->Controls->Add(this->velMinus);
 			this->Controls->Add(this->velPlus);
 			this->Controls->Add(this->velValue);
@@ -919,8 +932,13 @@ namespace DesktopSAS {
 		}
 
 		this->currentLabel->Text = gcnew String(methodList[(int)GL_UI.method].c_str());
-	}
 
+		// For isMoving testing
+		std::stringstream tempVelocity;
+		tempVelocity << std::setprecision(7) << "isVelocity from Robot: " << GL_UI.isVelocity << " mm/s";
+		tempString = tempVelocity.str();
+		this->velDisplay->Text = gcnew String(tempString.c_str());
+	}
 
 };
 }
