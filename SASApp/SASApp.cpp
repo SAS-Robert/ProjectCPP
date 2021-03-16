@@ -80,6 +80,7 @@ RehaIngest recorder;
 bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
 bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false;
 bool main_fl0 = false, main_fl1 = false, main_init = false;
+bool rec_emg = true;
 
 // ------------------------- UDP / TCP  ------------------------
 int udp_cnt = 0;
@@ -1531,73 +1532,194 @@ void recording_sas()
 		}
 
 		GL_sampleNr = recorder_emg1.size();
-		if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
+
+		switch (GL_thMethod)
 		{
-			// Select threshold method 
-			for (i = GL_processed; i < GL_sampleNr; ++i) // Loop for the length of the array
+		case th_SD3:
+		case th_SD2:
+		case th_SDX:
+			if (SD == 0)
 			{
-				double temp = preprocess_data(recorder_emg1, i);
-				calibration_rest_data.push_back(temp);
+				rec_emg = true;
+				MEAN = 0;
 			}
-
-			switch (GL_thMethod)
+			break;
+		case th_MVC5:
+		case th_MVC10:
+		case th_MVCX:
+			if (MVC == 0)
 			{
-			case th_SD3:
-			case th_SD2:
-			case th_SDX:
-				TH_NR = TH_TIME * SAMPLINGRATE;
-				break;
-			case th_MVC5:
-			case th_MVC10:
-			case th_MVCX:
-				TH_NR = TH_TIME * SAMPLINGRATE * 3;
-				break;
-			default:
-				TH_NR = TH_TIME * SAMPLINGRATE;
+				rec_emg = true;
+				MEAN = 0;
 			}
+			break;
+		default:
+			rec_emg = true;
+		}
 
-			if (GL_processed > 5 * SAMPLINGRATE && GL_MVC_Begin == true)
+		if (rec_emg == true)
+		{
+			if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
 			{
-				GL_MVC_Begin = false;
-				// Beep indicating to begin MVC part of recording. 
-				Beep(500, 500);
-			}
+				switch (GL_thMethod)
+				{
+				case th_SD3:
+				case th_SD2:
+				case th_SDX:
+					TH_NR = TH_TIME * SAMPLINGRATE;
+					break;
+				case th_MVC5:
+				case th_MVC10:
+				case th_MVCX:
+					TH_NR = TH_TIME * SAMPLINGRATE * 3;
+					break;
+				default:
+					TH_NR = TH_TIME * SAMPLINGRATE;
+				}
 
-			if (GL_processed >= TH_NR)
-			{
+				if (GL_processed > 5 * SAMPLINGRATE && GL_MVC_Begin == true)
+				{
+					GL_MVC_Begin = false;
+					// Beep indicating to begin MVC part of recording. 
+					Beep(500, 500);
+				}
+
 				// Select threshold method 
 				switch (GL_thMethod)
 				{
 				case th_SD3:
-					THRESHOLD = process_th_sd(calibration_rest_data, 3);
+					temp_value = process_th_sd(GL_sampleNr, recorder_emg1, 3);
 					break;
 				case th_SD2:
-					THRESHOLD = process_th_sd(calibration_rest_data, 2);
+					temp_value = process_th_sd(GL_sampleNr, recorder_emg1, 2);
 					break;
 				case th_SDX:
-					THRESHOLD = process_th_sd(calibration_rest_data, 3);
+					temp_value = process_th_sd(GL_sampleNr, recorder_emg1, 3);
 					break;
 				case th_MVC5:
-					THRESHOLD = process_th_mvc(calibration_rest_data, 5);
+					temp_value = process_th_mvc(GL_sampleNr, recorder_emg1, 5);
 					break;
 				case th_MVC10:
-					THRESHOLD = process_th_mvc(calibration_rest_data, 10);
+					temp_value = process_th_mvc(GL_sampleNr, recorder_emg1, 10);
 					break;
 				case th_MVCX:
-					THRESHOLD = process_th_mvc(calibration_rest_data, 5);
+					temp_value = process_th_mvc(GL_sampleNr, recorder_emg1, 5);
 					break;
 				default:
-					THRESHOLD = process_th_sd(calibration_rest_data, 3);
+					temp_value = process_th_sd(GL_sampleNr, recorder_emg1, 3);
 				}
 
-				screenMessage = "EMG activity: threshold = " + to_string(THRESHOLD);
-				std::cout << screenMessage << endl;
+				//printf("%d\n", temp_value);         // debugging stuff
+				//if (GL_sampleNr >= TH_DISCARD)
+				//{
+				//    // Select threshold method 
+				//    switch (GL_thMethod)
+				//    {
+				//    case th_SD3:
+				//    case th_SD2:
+				//    case th_SDX:
+				//        THRESHOLD = THRESHOLD + temp_value;
+				//        break;
+				//    case th_MVC5:
+				//    case th_MVC10:
+				//    case th_MVCX:
+				//        if (temp_value > THRESHOLD)
+				//        {
+				//            THRESHOLD = temp_value;
+				//        }
+				//        break;
+				//    default:
+				//    }
+				//    
+				//}
+				if (GL_processed >= TH_NR)
+				{
+					N_len = GL_sampleNr - GL_thDiscard;
 
-				//std::cout << "Reha Ingest message: threshold = " << THRESHOLD << ", old m = " << old_value[0] << ", old nr = " << old_nr[0] << endl;
-				rec_status.th = true;
-				rec_status.req = false;
+					// Select threshold method 
+					switch (GL_thMethod)
+					{
+					case th_SD3:
+						MEAN = MEAN / N_len;
+						SD = sqrt(SD / N_len)
+							THRESHOLD = MEAN + SD * 3;
+						break;
+					case th_SD2:
+						MEAN = MEAN / N_len;
+						SD = sqrt(SD / N_len)
+							THRESHOLD = MEAN + SD * 2;
+						break;
+					case th_SDX:
+						MEAN = MEAN / N_len;
+						SD = sqrt(SD / N_len)
+							THRESHOLD = MEAN + SD * 3;
+						break;
+					case th_MVC5:
+						MEAN = MEAN / N_len;
+						THRESHOLD = MEAN + MVC * 0.05;
+						break;
+					case th_MVC10:
+						MEAN = MEAN / N_len;
+						THRESHOLD = MEAN + MVC * 0.10;
+						break;
+					case th_MVCX:
+						MEAN = MEAN / N_len;
+						THRESHOLD = MEAN + MVC * 0.05;
+						break;
+					default:
+						MEAN = MEAN / N_len;
+						SD = sqrt(SD / N_len)
+							THRESHOLD = MEAN + SD * 3;
+					}
+
+					screenMessage = "EMG activity: threshold = " + to_string(THRESHOLD);
+					std::cout << screenMessage << endl;
+
+					//std::cout << "Reha Ingest message: threshold = " << THRESHOLD << ", old m = " << old_value[0] << ", old nr = " << old_nr[0] << endl;
+					rec_status.th = true;
+					rec_status.req = false;
+
+					rec_emg = false;
+				}
 			}
 		}
+
+		else
+
+		{
+			// Select threshold method 
+			switch (GL_thMethod)
+			{
+			case th_SD3:
+				THRESHOLD = MEAN + SD * 3;
+				break;
+			case th_SD2:
+				THRESHOLD = MEAN + SD * 2;
+				break;
+			case th_SDX:
+				THRESHOLD = MEAN + SD * 3;
+				break;
+			case th_MVC5:
+				THRESHOLD = MEAN / N_len + MVC * 0.05;
+				break;
+			case th_MVC10:
+				THRESHOLD = MEAN / N_len + MVC * 0.10;
+				break;
+			case th_MVCX:
+				THRESHOLD = MEAN / N_len + MVC * 0.05;
+				break;
+			default:
+				THRESHOLD = MEAN + SD * 3;
+			}
+
+			screenMessage = "EMG activity: threshold = " + to_string(THRESHOLD);
+			std::cout << screenMessage << endl;
+
+			//std::cout << "Reha Ingest message: threshold = " << THRESHOLD << ", old m = " << old_value[0] << ", old nr = " << old_nr[0] << endl;
+			rec_status.th = true;
+			rec_status.req = false;
+		}
+
 		break;
 
 	case st_wait:
