@@ -32,7 +32,7 @@
 #include <vector>
 #include <complex>
 #include <math.h>
-#include <Windows.h>
+//#include <Windows.h>
 // User - defined libraries
 #include "SASLIB.hpp"
 
@@ -56,9 +56,6 @@ struct device_to_device
 exercise_Type GL_exercise = exCircuit, GL_exercise_old = exCircuit; // upperLeg_extexCircuit;
 exercise_Type GL_exhmi = exCircuit;
 
-threshold_Type GL_thMethod = th_SD05, GL_thMethod_old = th_SD05; // upperLeg_extexCircuit;
-threshold_Type GL_thhmi = th_SD05;
-
 // User options
 RehaMove3_Req_Type Move3_cmd = Move3_none;
 RehaMove3_Req_Type Move3_hmi = Move3_none;
@@ -69,7 +66,7 @@ User_Req_Type User_cmd = User_none;
 bool stim_ready = false, rec_ready = false, stim_abort = false;
 
 // char PORT_STIM[5] = "COM6";   // Laptop
-char PORT_STIM[5] = "COM3";     // Robot
+char PORT_STIM[5] = "COM5";     // Robot
 RehaMove3 stimulator;
 
 // char PORT_REC[5] = "COM4";    // Laptop
@@ -885,7 +882,7 @@ void run_gui()
 		if (!screen.error && GL_tcpActive)
 		{
 			// Normal procedure
-			decode_successful = decode_gui(screen.recvbuf, Move3_hmi, User_cmd, TCP_rob, TCP_rep, screen.finish, hmi_channel, GL_exhmi, &GL_thhmi);
+			decode_successful = decode_gui(screen.recvbuf, Move3_hmi, User_cmd, TCP_rob, TCP_rep, screen.finish, hmi_channel, GL_exhmi, GL_thhmi);
 
 			if (decode_successful)
 			{
@@ -1634,25 +1631,25 @@ void recording_sas()
 				//}
 				if (GL_processed >= TH_NR)
 				{
-					N_len = GL_sampleNr - GL_thDiscard;
+					unsigned long long int N_len = GL_sampleNr - GL_thDiscard;
 
 					// Select threshold method 
 					switch (GL_thMethod)
 					{
 					case th_SD3:
 						MEAN = MEAN / N_len;
-						SD = sqrt(SD / N_len)
+						SD = sqrt(SD / N_len);
 							THRESHOLD = MEAN + SD * 3;
 						break;
 					case th_SD2:
 						MEAN = MEAN / N_len;
-						SD = sqrt(SD / N_len)
+						SD = sqrt(SD / N_len);
 							THRESHOLD = MEAN + SD * 2;
 						break;
 					case th_SDX:
 						MEAN = MEAN / N_len;
-						SD = sqrt(SD / N_len)
-							THRESHOLD = MEAN + SD * 3;
+						SD = sqrt(SD / N_len);
+							 THRESHOLD = MEAN + SD * 3;
 						break;
 					case th_MVC5:
 						MEAN = MEAN / N_len;
@@ -1668,7 +1665,7 @@ void recording_sas()
 						break;
 					default:
 						MEAN = MEAN / N_len;
-						SD = sqrt(SD / N_len)
+						SD = sqrt(SD / N_len);
 							THRESHOLD = MEAN + SD * 3;
 					}
 
@@ -1700,13 +1697,13 @@ void recording_sas()
 				THRESHOLD = MEAN + SD * 3;
 				break;
 			case th_MVC5:
-				THRESHOLD = MEAN / N_len + MVC * 0.05;
+				THRESHOLD = MEAN + MVC * 0.05;
 				break;
 			case th_MVC10:
-				THRESHOLD = MEAN / N_len + MVC * 0.10;
+				THRESHOLD = MEAN + MVC * 0.10;
 				break;
 			case th_MVCX:
-				THRESHOLD = MEAN / N_len + MVC * 0.05;
+				THRESHOLD = MEAN + MVC * 0.05;
 				break;
 			default:
 				THRESHOLD = MEAN + SD * 3;
