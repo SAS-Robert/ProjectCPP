@@ -26,7 +26,7 @@
 
 #define BUFLEN 512 //Max length of buffer
 //#define PORT 8888	//The port on which to listen for incoming data
-#define PORT 30007 //Robert port number
+#define PORT 30009 //Robert port number
 // char ROBERT[15] = "172.31.1.147";
 char ROBERT[15] = "127.0.0.1";
 #define DEFAULT_PORT "30002" //Screen port number
@@ -371,23 +371,19 @@ void UDPInterface()
 			{
 			case 1:
 				printf("Reset signals <--- \n");
-				//strcpy(message, "ROBERT;0;0;");
-				strcpy(message, "false;false;");
+				strcpy(message, "0.0;false;");
 				break;
 			case 2:
 				printf("Only Is Moving <---\n");
-				//strcpy(message, "ROBERT;1;0;");
-				strcpy(message, "true;false;");
+				strcpy(message, "5.123;false;");
 				break;
 			case 3:
 				printf("Only End Of Point <---\n");
-				//strcpy(message, "ROBERT;0;1;");
-				strcpy(message, "false;true;");
+				strcpy(message, "0.0;true;");
 				break;
 			case 4:
 				printf("Set signals <---\n");
-				//strcpy(message, "ROBERT;1;1;");
-				strcpy(message, "true;true;");
+				strcpy(message, "94.012345678;true;");
 				break;
 			}
 		}
@@ -402,8 +398,7 @@ int main()
 	//UDPServer();
 	//TCPRunning();
 	memset(message, '\0', BUFLEN);
-	//strcpy(message, "ROBERT;0;0;");
-	strcpy(message, "false;false;");
+	strcpy(message, "0.0;false;");
 
 	printf("=========== ROBERT emulation controllers ===========\n");
 	printf("-1: Is Moving and End Of Point Reached (EOPR) both reset to 0.\n");
