@@ -28,7 +28,7 @@ using namespace std;
 #pragma warning disable
 
 //#define SERVER "127.0.0.1"	//ip address of udp server
-#define SERVER "127.0.0.1"
+#define SERVER "172.31.1.202"
 #define BUFLEN 512 //Max length of buffer
 
 int rep_nr = 1; // Repetition number
@@ -558,7 +558,7 @@ void runTCP()
 void runUDP_30()
 {
 	// Start up
-	char SCREEN_ADDRESS[15] = "127.0.0.1";
+	char SCREEN_ADDRESS[15] = "172.31.1.200";
 	uint32_t SCREEN_PORT = 30002;
 	UdpClient touchPanel(SCREEN_ADDRESS, SCREEN_PORT);
 	

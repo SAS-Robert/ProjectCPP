@@ -26,7 +26,7 @@
 
 #define BUFLEN 512 //Max length of buffer
 //#define PORT 8888	//The port on which to listen for incoming data
-#define PORT 30007 //Robert port number
+#define PORT 30009 //Robert port number
 // char ROBERT[15] = "172.31.1.147";
 char ROBERT[15] = "127.0.0.1";
 #define DEFAULT_PORT "30002" //Screen port number
