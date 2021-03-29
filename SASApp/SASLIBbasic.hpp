@@ -43,12 +43,9 @@ typedef enum
 
 typedef enum
 {
-    th_SD3 = 0,         // SD*2 = twice of the standard deviation
-    th_SD2 = 1,         // SD*3 = thrice of the standard deviation
-    th_SDX = 2,         // SD*X = X of the standard deviation
-    th_MVC5 = 3,         // MVC5 = 5% of MVC
-    th_MVC10 = 4,        // MVC10 = 10% of MVC
-    th_MVCX = 5,         // MVCX = X% of MVC
+    th_SD05 = 0,        // SD*0.5 = Half of the standard deviation
+    th_SD03 = 1,        // SD*0.3 = Third of the standard deviation
+    th_other = 2,       // Other?
 } threshold_Type;
 
 // User options for stimulation and process
@@ -134,7 +131,7 @@ void generate_date(char* outStr)
     }
 }
 
-string convert_to_string(char *a, int size)
+string convert_to_string(char* a, int size)
 {
     int i;
     string s = "";
@@ -145,7 +142,7 @@ string convert_to_string(char *a, int size)
     return s;
 }
 
-void get_dir(int argc, char *argv[], string &Outdir)
+void get_dir(int argc, char* argv[], string& Outdir)
 {
     //Gets the current directory of the programme, but for files
     std::stringstream sst(argv[0]);
@@ -195,17 +192,18 @@ bool toc()
 
 void control_thread(int thread_nr, bool start, state_Type state)
 {
-    if (start){
+    if (start) {
         // Start thread: start counting time
-        switch(thread_nr){
-            case 1:
-                th1_st = std::chrono::steady_clock::now();
-                break;
-            case 2:
-                th2_st = std::chrono::steady_clock::now();
-                break;
+        switch (thread_nr) {
+        case 1:
+            th1_st = std::chrono::steady_clock::now();
+            break;
+        case 2:
+            th2_st = std::chrono::steady_clock::now();
+            break;
         }
-    }else{
+    }
+    else {
         // End thread: checks the current cycle time
         switch (thread_nr)
         {
