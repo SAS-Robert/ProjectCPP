@@ -1479,7 +1479,7 @@ void stimulating_sas()
 void recording_sas()
 {
     int iterator = 0;
-    double mean = 0, temp_value = 0;
+    double mean = 0, temp_value = 0, mvc = 0;
     double static value = 0, value_cnt = 0;
     bool st_wait_jump = false;
 
@@ -1533,26 +1533,79 @@ void recording_sas()
         if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
         {
             // Select threshold method 
-            switch (GL_thMethod)
-            {
-            case th_SD05:
-                temp_value = process_th_SD05(GL_sampleNr, recorder_emg1);
-                break;
-            case th_SD03:
-                temp_value = process_th_SD03(GL_sampleNr, recorder_emg1);
-                break;
-            default:
-                temp_value = process_th_XX(GL_sampleNr, recorder_emg1);
-            }
+            //switch (GL_thMethod)
+            //{
+            //case th_SD05:
+            //    temp_value = process_th_SD05(GL_sampleNr, recorder_emg1);
+            //    break;
+            //case th_SD03:
+            //    temp_value = process_th_SD03(GL_sampleNr, recorder_emg1);
+            //    break;
+            //default:
+            //    temp_value = process_th_XX(GL_sampleNr, recorder_emg1);
+            //}
+
+            temp_value = process_th_mean(GL_sampleNr, recorder_emg1);
 
             //printf("%d\n", temp_value);         // debugging stuff
             if (GL_sampleNr >= TH_DISCARD)
             {
-                THRESHOLD = THRESHOLD + temp_value;
+                MEAN = MEAN + temp_value;
             }
             if (GL_processed >= TH_NR)
             {
-                THRESHOLD = THRESHOLD / (GL_sampleNr - GL_thDiscard);
+                // Select threshold method 
+				switch (GL_thMethod)
+				{
+				case th_SD05:
+					THRESHOLD = process_th_sd(GL_sampleNr, 3);
+					break;
+				case th_SD03:
+					THRESHOLD = process_th_sd(GL_sampleNr, 2);
+					break;
+				default:
+                    THRESHOLD = MEAN;
+				}
+                
+                screenMessage = "EMG activity: threshold = " + to_string(THRESHOLD);
+                std::cout << screenMessage << endl;
+
+                //std::cout << "Reha Ingest message: threshold = " << THRESHOLD << ", old m = " << old_value[0] << ", old nr = " << old_nr[0] << endl;
+                rec_status.th = true;
+                rec_status.req = false;
+            }
+        }
+        break;
+
+    case st_MVC:
+        recorder.record();
+        if (recorder.data_received && recorder.data_start && !fileFILTERS.is_open())
+        {
+            //printf("Data found\n");         // debugging stuff
+            fileFILTERS.open(filter_s);
+            fileVALUES.open(th_s);
+        }
+
+        GL_sampleNr = recorder_emg1.size();
+        if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
+        {
+            mvc = process_th_mvc(GL_sampleNr, recorder_emg1);
+
+            if (GL_processed >= TH_NR)
+            {
+                // Select threshold method 
+                switch (GL_thMethod)
+                {
+                case th_MVC05:
+                    THRESHOLD = MEAN + mvc * 0.05;
+                    break;
+                case th_MVC10:
+                    THRESHOLD = MEAN + mvc * 0.10;
+                    break;
+                default:
+                    THRESHOLD = MEAN;
+                }
+
                 screenMessage = "EMG activity: threshold = " + to_string(THRESHOLD);
                 std::cout << screenMessage << endl;
 
