@@ -2,10 +2,21 @@
 
 ### How to modify the program ###
 
-Requesites:
+##### Requesites #####
 
 * Visual Studio 2019 or later.
 * Complementary dependencies for CLR Project, such as Net Framework 3.72.
+
+An easy way to check in Visual Studio if those dependencies have been installed, the following project template should be avaliable:
+
+![](howTo/startVS_clr.png)
+
+Otherwise, open the VS installer and check if the following components are installed:
+
+![](howTo/startVS_installer.png)
+
+
+##### Solution set up #####
 
 Setting the SAS libraries the project in Visual Studio:
 
@@ -51,7 +62,6 @@ In case of using another VS project with a GUI (using as template "CLR Empty pro
 
 ![](howTo/setVS_advanced.png)
 
-
 ### How to run the program in another computer ###
 
 On the other computer:
@@ -73,9 +83,9 @@ A set of files are generated for every exercise, they are located in the SAS_v3_
 
 * NAME_filter_DATE_TIME.txt: EMG recording. It includes both raw and filtered data. Every row has the format:
 
-´´´
+```
 raw_data, output_filter1, output_filter2, ... output_filterN
-´´´
+```
 
 * NAME_th_DATE_TIME.txt: threshold set up and EMG activity. It contains information about the mean values used for the threshold, the final threshold value and the averga EMG afterwards. Its format per row may vary depending on if the data was discard, used for the threshold or for monitoring.
 
@@ -83,9 +93,9 @@ raw_data, output_filter1, output_filter2, ... output_filterN
 
 * NAME_time_DATE_TIME.txt: main thread duty cycle. Every row has hte format:
 
-´´´
+```
 duty_cycle, state;
-´´´
+```
 
 To plot the data on Matlab, copy, export or include the files within MATLAB's workspace. The use the given functions in "Matlab scripts" as shown in Matlab\Example_script.m
 

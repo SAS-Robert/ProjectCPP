@@ -299,13 +299,22 @@ void UDPServer()
 		}
 
 		//-------------------------------------------------
-		//memset(buf, '\0', BUFLEN);
-		strcpy(buf, message);
+		// Send weight
+		if (buf[2] == 'W')
+		{
+			strcpy(buf, "14.4569");
+		}
+		// Normal behavior
+		else
+		{
+			strcpy(buf, message);
+		}
+
 		if (display_msg)
 		{
 			printf("UDP Sending: %s\n", buf);
 		}
-		if (sendto(s, buf, BUFLEN, 0, (struct sockaddr *)&si_other, slen) == SOCKET_ERROR)
+		if (sendto(s, buf, BUFLEN, 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR)
 		{
 			if (display_msg)
 			{
@@ -316,6 +325,7 @@ void UDPServer()
 		memset(buf, '\0', BUFLEN);
 		Sleep(10);
 		i++;
+
 	}
 
 	closesocket(s);
@@ -371,19 +381,27 @@ void UDPInterface()
 			{
 			case 1:
 				printf("Reset signals <--- \n");
-				strcpy(message, "0.0;false;");
+				strcpy(message, "0.0;false;false;");
 				break;
 			case 2:
 				printf("Only Is Moving <---\n");
-				strcpy(message, "5.123;false;");
+				strcpy(message, "5.123;false;false;");
 				break;
 			case 3:
 				printf("Only End Of Point <---\n");
-				strcpy(message, "0.0;true;");
+				strcpy(message, "0.0;true;false;");
 				break;
 			case 4:
 				printf("Set signals <---\n");
-				strcpy(message, "94.012345678;true;");
+				strcpy(message, "94.012345678;true;false;");
+				break;
+			case 5:
+				printf("Reset Play Pause <---\n");
+				strcpy(message, "0.0;true;false;");
+				break;
+			case 6:
+				printf("Set Play Pause\n");
+				strcpy(message, "0.0;true;true;");
 				break;
 			}
 		}

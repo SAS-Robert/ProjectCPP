@@ -106,12 +106,15 @@ namespace SASv30 {
 		System::Windows::Forms::Label^ nextExTitle;
 		System::Windows::Forms::Label^ currentExTitle;
 	public: System::Windows::Forms::Label^ velCurrent;
+	private: System::Windows::Forms::BindingSource^ bindingSource1;
+	public:
+	private: System::ComponentModel::IContainer^ components;
 
 	private:
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
-		System::ComponentModel::Container ^components;
+
 
 #pragma region Windows Form Designer generated code
 		/// <summary>
@@ -120,6 +123,7 @@ namespace SASv30 {
 		/// </summary>
 		void InitializeComponent(void)
 		{
+			this->components = (gcnew System::ComponentModel::Container());
 			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
 			this->statusMsg = (gcnew System::Windows::Forms::Label());
 			this->statusLabel = (gcnew System::Windows::Forms::Label());
@@ -156,6 +160,8 @@ namespace SASv30 {
 			this->nextExTitle = (gcnew System::Windows::Forms::Label());
 			this->currentExTitle = (gcnew System::Windows::Forms::Label());
 			this->velCurrent = (gcnew System::Windows::Forms::Label());
+			this->bindingSource1 = (gcnew System::Windows::Forms::BindingSource(this->components));
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->bindingSource1))->BeginInit();
 			this->SuspendLayout();
 			// 
 			// backgroundWorker1
@@ -663,6 +669,7 @@ namespace SASv30 {
 			this->Controls->Add(this->exerciseTitle);
 			this->Name = L"MyForm";
 			this->Text = L"Sense-And-Stimulating";
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->bindingSource1))->EndInit();
 			this->ResumeLayout(false);
 
 		}
@@ -761,7 +768,7 @@ namespace SASv30 {
 
 	private: System::Void click_stimButton(System::Object^ sender, System::EventArgs^ e) {
 
-		if (state == st_calM && !GL_UI.stimActive)
+		if ((state == st_calM || state == st_running) && !GL_UI.stimActive && GL_UI.playPause)
 		{
 			// Start stimulation command
 			Move3_gui = Move3_start;
@@ -826,7 +833,7 @@ namespace SASv30 {
 		this->velValue->Text = gcnew String(tempString.c_str());
 	}
 
-		   // ---------------- Background worker: be careful when modifying these ----------------
+// ---------------- Background worker: be careful when modifying these ----------------
 			   // This function runs on a separate thread from the UI
 	private: System::Void launchBackground(System::Object^ sender, DoWorkEventArgs^ e)
 	{
@@ -856,7 +863,6 @@ namespace SASv30 {
 		this->statusLabel->Text = L"Backgroundworker finish. Close program.";
 	}
 
-
 	private: System::Void updateBackground(System::Object^ sender, ProgressChangedEventArgs^ e)
 	{
 		// This function can actually access and modify the IU variables 
@@ -875,7 +881,7 @@ namespace SASv30 {
 		//tempValue = to_string(GL_UI.current);
 		//tempValue += " mA";q
 		std::stringstream tempValueCur;
-		tempValueCur << std::setprecision(2) << GL_UI.current << " mA";
+		tempValueCur << std::setprecision(4) << GL_UI.current << " mA";
 		tempString = tempValueCur.str();
 		this->curValue->Text = gcnew String(tempString.c_str());
 
@@ -917,23 +923,42 @@ namespace SASv30 {
 		this->statusDebug->Text = gcnew String(string(intStr).c_str());
 
 		// Start/Stop stimulation
-		if (state == st_calM && !GL_UI.stimActive && !GL_UI.main_thEN)
+		if (GL_UI.playPause)
 		{
-			this->stimButton->BackColor = System::Drawing::Color::LimeGreen;
-			this->stimButton->Text = L"START STIMULATION";
-		}
-		else
-		{
-			this->stimButton->Text = L"STOP STIMULATION";
-			if (GL_UI.stimActive)
+			// Normal behavior
+			if ((state == st_calM || state == st_running) && !GL_UI.stimActive && !GL_UI.main_thEN)
 			{
-				this->stimButton->BackColor = System::Drawing::Color::Crimson;
+				this->stimButton->BackColor = System::Drawing::Color::LimeGreen;
+				if (state == st_calM)
+				{
+					this->stimButton->Text = L"START STIMULATION";
+				}
+				else
+				{
+					this->stimButton->Text = L"RESUME STIMULATION";
+				}
+				
 			}
 			else
 			{
-				this->stimButton->BackColor = System::Drawing::SystemColors::Highlight;
+				this->stimButton->Text = L"STOP STIMULATION";
+				if (GL_UI.stimActive)
+				{
+					this->stimButton->BackColor = System::Drawing::Color::Crimson;
+				}
+				else
+				{
+					this->stimButton->BackColor = System::Drawing::SystemColors::Highlight;
+				}
 			}
 		}
+		else
+		{
+			// Button disabled
+			this->stimButton->BackColor = System::Drawing::SystemColors::InactiveCaption;
+			this->stimButton->Text = L"STIMULATION DISABLED";
+		}
+
 
 		// Set threshold and method
 		if (state == st_th && !GL_UI.recReq && GL_UI.main_thEN)

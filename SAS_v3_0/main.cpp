@@ -54,8 +54,8 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 // ------------------------- Devices handling --------------------------------
 bool stim_ready = false, rec_ready = false, stim_abort = false;
 
-// char PORT_STIM[5] = "COM6";   // Laptop
-char PORT_STIM[5] = "COM5";     // Robot
+char PORT_STIM[5] = "COM3";   // Laptop
+// char PORT_STIM[5] = "COM5";     // Robot
 RehaMove3 stimulator;
 
 // char PORT_REC[5] = "COM4";    // Laptop
@@ -73,7 +73,7 @@ int udp_cnt = 0;
 char ROBOT_IP_E[15] = "127.0.0.1";
 char ROBOT_IP[15] = "172.31.1.147";
 uint32_t ROBOT_PORT = 30009;
-UdpClient robert(ROBOT_IP, ROBOT_PORT);
+UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
 
 char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address
 char SCREEN_PORT[15] = "30002";
@@ -87,7 +87,7 @@ bool start_train = false;
 Smpt_Channel hmi_channel = Smpt_Channel_Red;
 // State process variables
 bool stim_done = false,
-stim_userX = false, stim_auto_done = false;
+stim_userX = false, stim_auto_done = false, stim_pause = false;
 
 // Stimulation timing settings
 double stimA_cycle = 8.0; // how long the stimulator is allowed to be active (seconds)
@@ -97,6 +97,7 @@ auto stimA_end = std::chrono::steady_clock::now();
 bool stimA_start_b = false, stimA_end_b = false;
 bool stimA_active = false, stimM_active = false;
 bool stim_timing = false, stim_timeout = false;
+
 // ------------------------------ Timing -------------------
 // Dummies - Measuring time:
 //-time 1 = from when threshold has been passed until the stimulator starts (FES_cnt)
@@ -114,10 +115,10 @@ auto time3_end = std::chrono::steady_clock::now();
 char date[DATE_LENGTH];
 char folder[DATE_LENGTH] = "files\\";
 char Sname[DATE_LENGTH] = "subject";
-char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256];
+char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256], stim_s[256];
 char time3_s[256];
 
-ofstream fileLOGS;
+ofstream fileLOGS, stimFile;
 bool dummyMain = false, dummyMain2 = false;
 // ---------------------------- Functions declaration  -----------------------------
 // Dummies
@@ -197,6 +198,7 @@ void update_localGui() {
     GL_UI.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
     GL_UI.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
     GL_UI.frequency = stimulator.fq[Smpt_Channel_Red];
+    GL_UI.playPause = robert.playPause;
 
     // ------------- gui -> sas -------------
     // Keys
@@ -244,10 +246,19 @@ void robot_thread()
         control_thread(INTERFACE_THREAD, THREAD_START, GL_state);
 
         // UDP Update:
-        udp_cnt++;
-        sprintf(robert.message, "%d;STATUS", udp_cnt);
-        robert.get();
-
+        if(GL_state == st_th) // !robert.legSaved &&
+        {
+            // st_th is the safest moment to get the leg weight data
+            udp_cnt++;
+            sprintf(robert.message, "1;WEIGHT", udp_cnt);
+            robert.getWeight();
+        }
+        else
+        {
+            udp_cnt++;
+            sprintf(robert.message, "%d;STATUS", udp_cnt);
+            robert.get();
+        }
         // local GUI update
         update_localGui();
 
@@ -282,13 +293,13 @@ void screen_thread()
 
         if (!screen.error && GL_tcpActive)
         {
-            decode_successful = decode_extGui(screen.recvbuf, screen.finish, screen.playPause, screen_status);
+            decode_successful = decode_extGui(screen.recvbuf, screen.finish, screen.playPause, screen.level, screen_status);
 
             if (decode_successful)
             {
                 if (screen.display)
                 {
-                    sprintf(longMsg, "From SCREEN received: finish = %d, button= %d, status = %d, msg = %s ", screen.finish, screen.playPause, screen_status, screen.recvbuf);
+                    sprintf(longMsg, "From SCREEN received: finish = %d, button= %d, status = %d, level = %d, msg = %s ", screen.finish, screen.playPause, screen_status, screen.level, screen.recvbuf);
                     msg_extGui = string(longMsg).c_str();
                 }
                 // Actions related to what is has been received
@@ -341,9 +352,10 @@ void start_files()
     sprintf(time3_s, "%s%s_time_%s.txt", folder, Sname, date);
     sprintf(th_s, "%s%s_th_%s.txt", folder, Sname, date);
     sprintf(logs_s, "%s%s_log_%s.txt", folder, Sname, date);
+    sprintf(stim_s, "%s%s_stim_%s.txt", folder, Sname, date);
 
     fileLOGS.open(logs_s);
-
+    stimFile.open(stim_s);
 }
 
 void end_files()
@@ -351,6 +363,7 @@ void end_files()
     fileFILTERS.close();
     fileVALUES.close();
     fileLOGS.close();
+    stimFile.close();
     // Safe here the time samples on a file
     time3_f.open(time3_s);
     if (time3_f.is_open() && time3_v.size() >= 2)
@@ -359,7 +372,7 @@ void end_files()
         {
             time3_f << time3_v[k] << ", " << time3_v2[k] << ";" << endl;
         }
-        printf("Main: time measurement t3 saved in file.\n");
+       // printf("Main: time measurement t3 saved in file.\n");
     }
     else
     {
@@ -456,11 +469,12 @@ void mainSAS_thread()
             {
                 msg_main = "Threshold saved. Press start training button. Waiting for stimulator to be triggered.";
                 // Update exercise settings
+                robert.playPause = false; // start the first set with the stimulation disabled
                 GL_state = st_wait;
                 main_1stSet = false;
                 main_thEN = false;
             }
-            else if (!rec_status.req && rec_status.th)
+            else if (!rec_status.req && !rec_status.th)
             {
                 //msg_main = "Choose a method and press SET THRESHOLD";
                 GL_thMethod = GL_UI.next_method;
@@ -476,7 +490,7 @@ void mainSAS_thread()
                 GL_state = st_stop;
                 fileLOGS << "2.0, " << GL_processed << "\n";
             }
-            else if (rec_status.start)
+            else if (rec_status.start && robert.playPause)
             {
                 // normal trigger
                 GL_state = st_running;
@@ -512,9 +526,9 @@ void mainSAS_thread()
                 GL_state = st_stop;
                 fileLOGS << "3.0, " << GL_processed << "\n";
             }
-            // For GUI testing:  screen_status == repEnd
+            // For GUI testing:  (screen_status == repEnd)
             // Final version: (robert.Reached && robert.valid_msg)
-            else if (screen_status == repEnd)
+            else if (robert.Reached && robert.valid_msg)
             {
                 // Patient has reached end of repetition
                 msg_main = "Received: end of repetition";
@@ -554,6 +568,8 @@ void mainSAS_thread()
             {
                 GL_UI.hmi_repeat = false;
                 msg_main = "Set finished. Waiting for next set or for exercise to finish.";
+                // update leg weight value
+                robert.legSaved = false;
                 //GL_state = st_end;
                 GL_state = st_init;
             }
@@ -828,7 +844,7 @@ void stimulating_sas()
         break;
 
     case st_calM:
-        Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start) && (Move3_key != Move3_en_ch);
+        Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start);
         //Update stimulation parameters if a key associated with parameters has been pressed
         if (Move3_user_key)
         {
@@ -836,7 +852,7 @@ void stimulating_sas()
         }
 
         // Quit
-        if (((Move3_key == Move3_stop || stim_timeout || screen_status == setDone) && stimulator.active) || !robert.playPause)
+        if (((Move3_key == Move3_stop || stim_timeout || screen_status == setDone || !robert.playPause || robert.Reached) && stimulator.active))
         {
             stimulator.pause();
             stim_done = !stimulator.active && stim_timeout;
@@ -855,8 +871,14 @@ void stimulating_sas()
             }
         }
 
-        if ((stimulator.active || Move3_hmi == Move3_start || Move3_key == Move3_start) && !stim_timeout)
+        if ((stimulator.active || Move3_hmi == Move3_start || Move3_key == Move3_start) && !stim_timeout && robert.playPause)
         {
+            if (Move3_hmi == Move3_start || Move3_key == Move3_start)
+            {
+                stimulator.stim_act[Smpt_Channel_Red] = true;
+            }
+            msg_main = "Stimulation active";
+
             stimulator.update();
         }
         break;
@@ -881,7 +903,7 @@ void stimulating_sas()
 
     case st_running:
         // modify parameters if a button is pressed
-        Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start) && (Move3_key != Move3_en_ch);
+        Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start);
 
         if (Move3_user_key)
         {
@@ -891,12 +913,13 @@ void stimulating_sas()
 
         // Stop stimulation
 
-        if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || stim_timeout) && stimulator.active || screen_status == exDone || !robert.playPause)
+        if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || stim_timeout || !robert.playPause) && stimulator.active || screen_status == exDone)
         {
             stimulator.pause();
             sprintf(msg_stimulating, "Stimulation stopped");
             msg_main = "Stimulation stopped";
             stim_fl1 = true;
+            stim_pause = !robert.playPause;
             // abort exercise
             if (screen_status == exDone) {
                 stim_abort = true;
@@ -908,6 +931,18 @@ void stimulating_sas()
         {
             stimulator.update();
         }
+        // Maybe re-take the stimulation if the play is pressed again?
+        if (robert.playPause && stim_fl1 && stim_pause && Move3_key == Move3_start)
+        {
+            stim_pause = false;
+            stim_fl1 = false;
+            sprintf(msg_stimulating, "Stimulation restored");
+        }
+        else if (robert.playPause && stim_fl1 && !stim_pause && Move3_key == Move3_start)
+        {
+            stim_fl1 = false;
+            sprintf(msg_stimulating, "Stimulation resumed");
+        }
 
         // things to do only once
         if (!stim_fl2)
@@ -918,6 +953,12 @@ void stimulating_sas()
             stim_status.ready = false;
         }
 
+        // Recording stimulation
+        if (stimulator.active)
+        {
+            stimFile << (float)stimulator.stim[Smpt_Channel_Red].points[0].current << ", " << (int)stimulator.stim[Smpt_Channel_Red].ramp << ", " << (float)stimulator.fq[Smpt_Channel_Red] << ", ";
+            stimFile << GL_exercise << ", " << robert.isVelocity << ", " << robert.legWeight << ", " << screen.level << "\n";
+        }
         break;
 
     case st_stop:
@@ -990,7 +1031,7 @@ void stimulating_sas()
         stim_timeout = false;
     }
 
-} //void thread_ml_stimulation
+}
 //================================================
 
 void recording_sas()
@@ -1095,7 +1136,7 @@ void recording_sas()
             //st_wait_jump = !rec_status.start;
             // Final version
             robert.isMoving = robert.isVelocity >= GL_UI.isVelocity_limit;
-            st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg;
+            st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg && robert.playPause;
 
 
             if ((mean >= THRESHOLD) && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)

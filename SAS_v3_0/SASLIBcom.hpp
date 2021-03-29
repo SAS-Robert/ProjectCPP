@@ -122,7 +122,50 @@ bool decode_robot(char* message, double& value1, bool& value2, bool& value3)
     return valid_msg;
 }
 
-bool decode_extGui(char* message, bool& finished, bool& playPause, tcp_msg_Type& result)
+bool decode_robot_weight(char* message, double& value1)
+{
+    int field = 0, nrFields = 2, length = strlen(message) + 1;
+    bool valid[10], valid_msg = false;
+    bool value[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    string messageStr = convert_to_string(message, length) + ";---;";
+    string delimiter = ";", emptyStr = "";
+    size_t pos = 0;
+    string token;
+    double tempVal = 0.0;
+    const double tempMin = 0, tempMax = 100;
+    // Separate every field on the string
+    while ((pos = messageStr.find(delimiter)) != std::string::npos) {
+        token = messageStr.substr(0, pos);
+        messageStr.erase(0, pos + delimiter.length());
+
+        switch (field) {
+        case 0:
+            if (strcmp(token.c_str(), emptyStr.c_str()) != 0)
+            {
+                // Convert string to double here
+                std::string::size_type sz;     // alias of size_t
+                tempVal = std::stod(token, &sz);
+            }
+            else
+            {
+                tempVal = -1;
+            }
+
+            valid[0] = (tempVal >= tempMin) && (tempVal <= tempMax);
+        }
+        field++;
+    }
+    // Check that all the fields are correct
+    valid_msg = valid[0];
+
+    if (valid_msg)
+    {
+        value1 = tempVal;
+    }
+    return valid_msg;
+}
+
+bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, tcp_msg_Type& result)
 {
     int length = strlen(message);
     string messageStr = convert_to_string(message, length);
@@ -150,6 +193,11 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, tcp_msg_Type&
         else if (msgList.status == pause)
         {
             playPause = false;
+        }
+        // resistance level update 
+        if (msgList.status >= res1 && msgList.status <= res10)
+        {
+            level = ((int)msgList.status) - 10;
         }
         // In case the program has finished
         finished = (msgList.status == finish);
@@ -183,10 +231,11 @@ public:
   bool display;
   // Robot variables
   bool isMoving, playPause, buttonPressed;
-  double isVelocity;
+  double isVelocity, legWeight;
   bool Reached;
   bool valid_msg;
   string displayMsg;
+  bool legSaved;
 
   // Constructor 
   UdpClient(char* S_address, uint32_t port) {
@@ -206,6 +255,9 @@ public:
       strcpy(SERVERc, S_address);
       PORTn = port;
       displayMsg = " ";
+
+      legWeight = -1.0;
+      legSaved = false;
   }
   //Functions
   void start()
@@ -258,6 +310,7 @@ public:
     {
       error = true;
     }
+    legSaved = false;
   };
   void get()
   {
@@ -353,6 +406,84 @@ public:
         displayMsg = "UDP Client connection closed";
     }
   };
+
+  void getWeight()
+  {
+      legSaved = false;
+      error = false;
+      memset(buf, '\0', BUFLEN);
+      valid_msg = false;
+      if (display)
+      {
+          displayMsg = "UPD: Requesting status...";
+      }
+      if (sendto(s, message, strlen(message), 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR)
+      {
+          if (display)
+          {
+              itoa(WSAGetLastError(), itoaNr, 10);
+              displayMsg = "sendto() failed with error code : ";
+              displayMsg += string(itoaNr).c_str();
+          }
+          error = true;
+          error_cnt++;
+      }
+      // Wait until timeout or data received.
+      FD_ZERO(&fds);
+      FD_SET(s, &fds);
+      n = select(s, &fds, NULL, NULL, &timeout);
+      if ((n == 0) || (n == -1))
+      {
+          if (n == 0 && display)
+          {
+              displayMsg = "Timeout - ";
+              displayMsg += message;
+          }
+          else if (display)
+          {
+              displayMsg = "Error while receiving.";
+          }
+          error = true;
+          error_cnt++;
+      }
+
+      if (!error)
+      {
+          int length = sizeof(SERVERc);
+          recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*)&si_other, &slen);
+          // Decode message here
+          valid_msg = decode_robot_weight(buf, legWeight);
+          if (valid_msg)
+          {
+              error_cnt = 0;
+              if (legWeight > 0.1)
+              {
+                  legSaved = true;
+              }
+
+              if (display)
+              {
+                  // show stimulation parameters
+                  std::stringstream tempValue;
+                  tempValue << std::setprecision(7) << legWeight;
+                  string tempString = tempValue.str();
+                  displayMsg = "UDP Received: legWeight=";
+                  displayMsg += tempString.c_str();
+              }
+          }
+          else
+          {
+              if (display)
+              {
+                  displayMsg = "UDP message not valid - Received: ";
+                  displayMsg += string(buf).c_str();
+              }
+              error_cnt++;
+          }
+      }
+      error_lim = error_cnt >= 10;
+  };
+
 };
 
 struct UdpServer
@@ -374,6 +505,7 @@ struct UdpServer
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
+    int level;
     // constructor
     UdpServer(char *S_address, char *PORTc)
     {
@@ -386,6 +518,7 @@ struct UdpServer
       strcpy(SERVERc, S_address);
       ERROR_CNT_LIM = 5;
       displayMsg = " ";
+      level = 5;
   }
   // methods
   void start()

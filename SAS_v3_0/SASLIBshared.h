@@ -41,7 +41,7 @@ public:
 	// Status field
 	state_Type status;
 	string screenMessage;
-	bool hmi_repeat, hmi_new;
+	bool hmi_repeat, hmi_new, playPause;
 	// Exercise parameters
 	bool main_thEN, recReq, stimActive;
 	threshold_Type method, next_method;

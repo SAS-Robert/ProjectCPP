@@ -33,7 +33,7 @@ const int MS_TO_HZ = 1000;
 
 // Current and ramp increments
 // Manual mode = the user can only do 1 incremet at the time and with these values
-const float D_CUR_MAN = 0.5, D_FQ_MAN = 1.0;
+const float D_CUR_MAN = 1.0, D_FQ_MAN = 1.0;
 const uint8_t D_RAMP_MAN = 1, D_POINT_MAN = 1;
 const uint16_t D_WIDTH = 10; // us increment
 // Automatic the increment vary depending on the current stimulation values,
@@ -214,7 +214,7 @@ static bool handle_dl_packet_global(Smpt_device *const device)
     return output;
 }
 
-// New functions
+// Different exercises profiles
 void load_stim_settings() {
     // This function just initializes the stimulation values for different profiles:
 
@@ -222,20 +222,20 @@ void load_stim_settings() {
     UPPERLEG_SET.number_of_points = 3; 
     UPPERLEG_SET.ramp = 3;             
     UPPERLEG_SET.period = 33;               // 1/frequency (ms)
-    UPPERLEG_SET.points[0].current = 25;    // amplitude (mA)
+    UPPERLEG_SET.points[0].current = 5;    // amplitude (mA)
     UPPERLEG_SET.points[0].time = 200;
     UPPERLEG_SET.points[1].time = 200;
-    UPPERLEG_SET.points[2].current = -25;   // amplitude (bipolar)
+    UPPERLEG_SET.points[2].current = -5;   // amplitude (bipolar)
     UPPERLEG_SET.points[2].time = 200;
 
     // Lower leg extension
     LOWERLEG_SET.number_of_points = 3;
     LOWERLEG_SET.ramp = 3;
     LOWERLEG_SET.period = 33;
-    LOWERLEG_SET.points[0].current = 15;
+    LOWERLEG_SET.points[0].current = 5;
     LOWERLEG_SET.points[0].time = 200;
     LOWERLEG_SET.points[1].time = 200;
-    LOWERLEG_SET.points[2].current = -15;
+    LOWERLEG_SET.points[2].current = -5;
     LOWERLEG_SET.points[2].time = 200;
 
     // Electrical circuit
@@ -385,13 +385,12 @@ public:
     };
     void update()
     {
-        //stim_act[Smpt_Channel_Red] = true;
         fill_ml_update(&device, &ml_update, Smpt_Channel_Red, true, stim[Smpt_Channel_Red]);
         smpt_send_ml_update(&device, &ml_update);
 
         fill_ml_get_current_data(&device, &ml_get_current_data);
         smpt_send_ml_get_current_data(&device, &ml_get_current_data);
-        active = stim_act[Smpt_Channel_Red];
+        active = true;
     };
     void pause()
     {

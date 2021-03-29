@@ -27,8 +27,8 @@ using namespace std;
 #pragma comment(lib, "ws2_32.lib") //Winsock Library
 #pragma warning disable
 
-//#define SERVER "127.0.0.1"	//ip address of udp server
-#define SERVER "172.31.1.202"
+#define SERVER "127.0.0.1"	//ip address of udp server
+//#define SERVER "172.31.1.202"
 #define BUFLEN 512 //Max length of buffer
 
 int rep_nr = 1; // Repetition number
@@ -63,8 +63,18 @@ enum tcp_msg_Type
 	repStart = 6,   // Start repetition
 	repEnd = 7,     // End repetition
 	finish = 8,     // Close socket
-	msg_none = 9,   // Nothing to do
-	msg_invalid = 10, // You messed up somewhere
+	msgEnd = 9,   // exercise has been aborted
+	msg_none = 10, // You messed up somewhere
+	res1 = 11,       // A resistance value has been received
+	res2 = 12,
+	res3 = 13,
+	res4 = 14,
+	res5 = 15,
+	res6 = 16,
+	res7 = 17,
+	res8 = 18,
+	res9 = 19,
+	res10 = 20,
 } ;
 
 struct tcp_msg_struct
@@ -72,7 +82,7 @@ struct tcp_msg_struct
 public:
 	const int size = 11;
 	tcp_msg_Type status;
-	string messages[11];
+	string messages[30];
 	// Constructor
 	tcp_msg_struct()
 	{
@@ -85,8 +95,18 @@ public:
 		messages[repStart] = "CYCLE_START";
 		messages[repEnd] = "CYCLE_DONE";
 		messages[finish] = "ENDTCP";
-		messages[msg_invalid] = " ";
+		messages[msgEnd] = "END";
 		messages[msg_none] = " ";
+		messages[res1] = "RESISTANCE;1";
+		messages[res2] = "RESISTANCE;2";
+		messages[res3] = "RESISTANCE;3";
+		messages[res4] = "RESISTANCE;4";
+		messages[res5] = "RESISTANCE;5";
+		messages[res6] = "RESISTANCE;6";
+		messages[res7] = "RESISTANCE;7";
+		messages[res8] = "RESISTANCE;8";
+		messages[res9] = "RESISTANCE;9";
+		messages[res10] = "RESISTANCE;10";
 		status = msg_none;
 	}
 
@@ -425,7 +445,25 @@ void keyboard()
 		msgList.status = exDone;
 		break;
 	case 'I':
-		msgList.status = msg_invalid;
+		msgList.status = msg_none;
+		break;
+	case 'F':
+		msgList.status = res1;
+		break;
+	case 'G':
+		msgList.status = res2;
+		break;
+	case 'H':
+		msgList.status = res3;
+		break;
+	case 'J':
+		msgList.status = res4;
+		break;
+	case 'K':
+		msgList.status = res5;
+		break;
+	case 'L':
+		msgList.status = res6;
 		break;
 	}
 	if (ch >= '1' && ch <= '9')
@@ -558,7 +596,7 @@ void runTCP()
 void runUDP_30()
 {
 	// Start up
-	char SCREEN_ADDRESS[15] = "172.31.1.200";
+	char SCREEN_ADDRESS[15] = "127.0.0.1";
 	uint32_t SCREEN_PORT = 30002;
 	UdpClient touchPanel(SCREEN_ADDRESS, SCREEN_PORT);
 	
