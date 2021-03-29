@@ -1,0 +1,2 @@
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\x64\Debug\SASApp.exe
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\x64\Debug\SASApp.pdb

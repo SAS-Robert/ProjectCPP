@@ -24,37 +24,23 @@ using namespace std;
 const int SAMPLINGRATE = 1000;
 const int AMPLIFICATION = 1000;
 
+// Define Bandpass Filter
 const int ORDER_PASS = 4;
 double LOWHZ = 20;
-double HIGHHz = 300;
+double HIGHHz = 40;
 const double BFQ = (HIGHHz + LOWHZ) / 2;
 const double BFW = (HIGHHz - LOWHZ);
+
 Iir::Butterworth::BandPass<ORDER_PASS> BPass;
 std::vector<double> bPass_result;
 
+// Define Notch filter
 const double B50FQ = 50;
-const double B100FQ = 100;
-const double B150FQ = 150;
-const double B200FQ = 200;
-const double B250FQ = 250;
-
-const double BSTOP_FW = 10;
+const double BSTOP_FW = 4;
 const int ORDER_STOP = 2;
 
 Iir::Butterworth::BandStop<ORDER_STOP> B50;
 std::vector<double> b50_result;
-
-Iir::Butterworth::BandStop<ORDER_STOP> B100;
-std::vector<double> b100_result;
-
-Iir::Butterworth::BandStop<ORDER_STOP> B150;
-std::vector<double> b150_result;
-
-Iir::Butterworth::BandStop<ORDER_STOP> B200;
-std::vector<double> b200_result;
-
-Iir::Butterworth::BandStop<ORDER_STOP> B250;
-std::vector<double> b250_result;
 
 // Processing and threshold pointers
 double THRESHOLD = 0;
@@ -81,17 +67,11 @@ void startup_filters() {
     // Start filters
     BPass.setup(SAMPLINGRATE, BFQ, BFW);
     B50.setup(SAMPLINGRATE, B50FQ, BSTOP_FW);
-    B100.setup(SAMPLINGRATE, B100FQ, BSTOP_FW);
-    B150.setup(SAMPLINGRATE, B150FQ, BSTOP_FW);
-    B200.setup(SAMPLINGRATE, B200FQ, BSTOP_FW);
-    B250.setup(SAMPLINGRATE, B250FQ, BSTOP_FW);
+
     // Start internal processing variables
     bPass_result.clear();
     b50_result.clear();
-    b100_result.clear();
-    b150_result.clear();
-    b200_result.clear();
-    b250_result.clear();
+
     GL_processed = 0;
     THRESHOLD = 0.0;
     for (int i = 0; i < FLEX_WINDOW; i++)
@@ -114,18 +94,15 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
         // Filter data
         bPass_result.push_back(BPass.filter(raw_sample));
         b50_result.push_back(B50.filter(bPass_result[i]));
-        b100_result.push_back(B100.filter(b50_result[i]));
-        b150_result.push_back(B150.filter(b100_result[i]));
-        b200_result.push_back(B200.filter(b150_result[i]));
-        b250_result.push_back(B250.filter(b200_result[i]));
+
         // Savind data in files will be eventually deleted
-        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "," << b100_result[i] << "," << b150_result[i] << "," << b200_result[i] << "," << b250_result[i] << "\n";
+        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n";
 
         // Calculating mean of retified EMG
-        temp = b250_result[i];
-        if (b250_result[i] < 0)
+        temp = b50_result[i];
+        if (b50_result[i] < 0)
         {
-            temp = -b250_result[i];
+            temp = -b50_result[i];
         }
         mean = mean + temp;
     }
@@ -167,17 +144,14 @@ static double process_th_SD05(unsigned long long int v_size, vector<double> raw_
         // Filter data
         bPass_result.push_back(BPass.filter(raw_sample));
         b50_result.push_back(B50.filter(bPass_result[i]));
-        b100_result.push_back(B100.filter(b50_result[i]));
-        b150_result.push_back(B150.filter(b100_result[i]));
-        b200_result.push_back(B200.filter(b150_result[i]));
-        b250_result.push_back(B250.filter(b200_result[i]));
+
         // Savind data in files will be eventually deleted
-        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "," << b100_result[i] << "," << b150_result[i] << "," << b200_result[i] << "," << b250_result[i] << "\n";
+        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n";
         // Calculating mean of retified EMG
-        temp = b250_result[i];
-        if (b250_result[i] < 0)
+        temp = b50_result[i];
+        if (b50_result[i] < 0)
         {
-            temp = -b250_result[i];
+            temp = -b50_result[i];
         }
         mean = mean + temp;
     }
@@ -188,10 +162,10 @@ static double process_th_SD05(unsigned long long int v_size, vector<double> raw_
         temp = 0;
         for (i = GL_processed; i < v_size; ++i)
         {
-            temp = b250_result[i];
-            if (b250_result[i] < 0)
+            temp = b50_result[i];
+            if (b50_result[i] < 0)
             {
-                temp = -b250_result[i];
+                temp = -b50_result[i];
             }
             sd += pow(temp - mean, 2);
         }
@@ -238,17 +212,14 @@ static double process_th_SD03(unsigned long long int v_size, vector<double> raw_
         // Filter data
         bPass_result.push_back(BPass.filter(raw_sample));
         b50_result.push_back(B50.filter(bPass_result[i]));
-        b100_result.push_back(B100.filter(b50_result[i]));
-        b150_result.push_back(B150.filter(b100_result[i]));
-        b200_result.push_back(B200.filter(b150_result[i]));
-        b250_result.push_back(B250.filter(b200_result[i]));
+
         // Savind data in files will be eventually deleted
-        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "," << b100_result[i] << "," << b150_result[i] << "," << b200_result[i] << "," << b250_result[i] << "\n";
+        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n";
         // Calculating mean of retified EMG
-        temp = b250_result[i];
-        if (b250_result[i] < 0)
+        temp = b50_result[i];
+        if (b50_result[i] < 0)
         {
-            temp = -b250_result[i];
+            temp = -b50_result[i];
         }
         mean = mean + temp;
     }
@@ -259,10 +230,10 @@ static double process_th_SD03(unsigned long long int v_size, vector<double> raw_
         temp = 0;
         for (i = GL_processed; i < v_size; ++i)
         {
-            temp = b250_result[i];
-            if (b250_result[i] < 0)
+            temp = b50_result[i];
+            if (b50_result[i] < 0)
             {
-                temp = -b250_result[i];
+                temp = -b50_result[i];
             }
             sd += pow(temp - mean, 2);
         }
@@ -309,17 +280,14 @@ static double process_th_XX(unsigned long long int v_size, vector<double> raw_da
         // Filter data
         bPass_result.push_back(BPass.filter(raw_sample));
         b50_result.push_back(B50.filter(bPass_result[i]));
-        b100_result.push_back(B100.filter(b50_result[i]));
-        b150_result.push_back(B150.filter(b100_result[i]));
-        b200_result.push_back(B200.filter(b150_result[i]));
-        b250_result.push_back(B250.filter(b200_result[i]));
+
         // Savind data in files will be eventually deleted
-        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "," << b100_result[i] << "," << b150_result[i] << "," << b200_result[i] << "," << b250_result[i] << "\n";
+        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n";
         // Calculating mean of retified EMG
-        temp = b250_result[i];
-        if (b250_result[i] < 0)
+        temp = b50_result[i];
+        if (b50_result[i] < 0)
         {
-            temp = -b250_result[i];
+            temp = -b50_result[i];
         }
         mean = mean + temp;
     }
@@ -330,10 +298,10 @@ static double process_th_XX(unsigned long long int v_size, vector<double> raw_da
         temp = 0;
         for (i = GL_processed; i < v_size; ++i)
         {
-            temp = b250_result[i];
-            if (b250_result[i] < 0)
+            temp = b50_result[i];
+            if (b50_result[i] < 0)
             {
-                temp = -b250_result[i];
+                temp = -b50_result[i];
             }
             sd += pow(temp - mean, 2);
         }
