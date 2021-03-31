@@ -40,7 +40,7 @@ struct device_to_device
 //MAIN_to_all: the main function writes here and all threads read
 
 // Exercise and method settings
-exercise_Type GL_exercise = exCircuit; // upperLeg_extexCircuit;
+exercise_Type GL_exercise = kneeExt; // upperLeg_extexCircuit;
 
 threshold_Type GL_thMethod = th_SD05; // upperLeg_extexCircuit;
 threshold_Type GL_thhmi = th_SD05;
@@ -54,7 +54,7 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 // ------------------------- Devices handling --------------------------------
 bool stim_ready = false, rec_ready = false, stim_abort = false;
 
-char PORT_STIM[5] = "COM3";   // Laptop
+char PORT_STIM[5] = "COM6";   // Laptop
 // char PORT_STIM[5] = "COM5";     // Robot
 RehaMove3 stimulator;
 
@@ -73,7 +73,7 @@ int udp_cnt = 0;
 char ROBOT_IP_E[15] = "127.0.0.1";
 char ROBOT_IP[15] = "172.31.1.147";
 uint32_t ROBOT_PORT = 30009;
-UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
+UdpClient robert(ROBOT_IP, ROBOT_PORT);
 
 char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address
 char SCREEN_PORT[15] = "30002";
@@ -175,16 +175,16 @@ void update_localGui() {
     // ------------- sas -> gui -------------
     // status
     GL_UI.status = GL_state;
-    GL_UI.screenMessage = "Info: ";
+    GL_UI.screenMessage = "INFO: ";
     GL_UI.screenMessage += msg_main;
-    GL_UI.screenMessage += "\nRobot-IP status: ";
-    GL_UI.screenMessage += msg_connect;
-    GL_UI.screenMessage += "\nScreen-IP status: ";
-    GL_UI.screenMessage += msg_extGui;
-    GL_UI.screenMessage += "\nSimulator: ";
-    GL_UI.screenMessage += msg_stimulating;
-    GL_UI.screenMessage += "\nRecorder: ";
-    GL_UI.screenMessage += msg_recording;
+    //GL_UI.screenMessage += "\nRobot-IP status: ";
+    //GL_UI.screenMessage += msg_connect;
+    //GL_UI.screenMessage += "\nScreen-IP status: ";
+    //GL_UI.screenMessage += msg_extGui;
+    //GL_UI.screenMessage += "\nRehaMove3: ";
+    //GL_UI.screenMessage += msg_stimulating;
+    //GL_UI.screenMessage += "\nRehaIngest: ";
+    //GL_UI.screenMessage += msg_recording;
     GL_UI.END_GUI = MAIN_to_all.end;
 
     // Exercise settings
@@ -402,8 +402,8 @@ void mainSAS_thread()
     MAIN_to_all.start = true;
     MAIN_to_all.ready = true;
 
-    msg_main = "Starting up stimulator and recorder.";
-
+    //msg_main = "Starting up stimulator and recorder.";
+    msg_main = "Starting up connection with ROBERT.";
     // Waiting for the connection in the other threads to be stablished
     while ((!connect_thread_ready || !run_extGui_ready) && !MAIN_to_all.end) {
         System::Threading::Thread::Sleep(200);
@@ -433,12 +433,21 @@ void mainSAS_thread()
             // Edit: choosing method on the threshold state
             if (devicesReady && screen_status == start)
             {
-                msg_main = "Setting up stimulation. Finish set to start exercise.";
+                msg_main = "Set up stimulation parameters.\n- Complete first set to start exercise.";
                 GL_state = st_calM;
+                screen_status = msg_none; // update screen status if the state is updated
             }
             else if (devicesReady && !screen_status == start)
             {
-                msg_main = "Devices ready. Waiting for robot to start.";
+                msg_main = "Stimulator and recorder ready.\n- Select and exercise.\n";
+                msg_main += "- Plan on ROBERT a calibration set + at least one exercise set.";
+            }
+            else if (!devicesReady)
+            {
+                msg_main = "RehaMove3: ";
+                msg_main += msg_stimulating;
+                msg_main += "\nRehaIngest: ";
+                msg_main += msg_recording;
             }
 
             GL_exercise = GL_UI.next_exercise;
@@ -448,12 +457,20 @@ void mainSAS_thread()
             // New: set up done when the first set up finishes
             if (rec_status.ready && screen_status == setDone && !stimulator.active)
             {
-                msg_main = "Finished calibration set. Waiting to start 2nd set";
+                msg_main = "Calibration set completed. Waiting to start exercise set.";
+                statusList[(int)st_th] = "On hold";
                 GL_state = st_th;
             }
             else if (screen_status == exDone || screen_status == msgEnd)
             {
                 GL_state = st_stop;
+                screen_status = msg_none; // update screen status if the state is updated
+            }
+            else if (screen_status != setDone && screen_status != exDone)
+            {
+                msg_main = "Set up stimulation parameters.\n";
+                msg_main += msg_stimulating; // add the stimulator messages
+                msg_main += "\n- Complete first set to start exercise.";
             }
             break;
 
@@ -462,17 +479,29 @@ void mainSAS_thread()
             // New: wait until the user is at the beginning of a repetition
             if (screen_status == start && !main_thEN)
             {
-                msg_main = "2nd set started. Select a method and press SET THRESHOLD";
+                statusList[(int)st_th] = "Setting threshold";
+                msg_main = "Select a method and press SET THRESHOLD";
                 main_thEN = true;
             }
+            //else if (screen_status == repeat && !main_thEN)
+            //{
+                //msg_main = "Repeating exercise. Select a method and press SET THRESHOLD";
+                //main_thEN = true;
+            //}
             if (rec_status.th) // && screen_status == repStart
             {
-                msg_main = "Threshold saved. Press start training button. Waiting for stimulator to be triggered.";
+                msg_main = "Threshold saved. Press patient button to begin exercise.";
                 // Update exercise settings
                 robert.playPause = false; // start the first set with the stimulation disabled
                 GL_state = st_wait;
                 main_1stSet = false;
                 main_thEN = false;
+                //screen_status = msg_none; // update screen status if the state is updated
+            }
+            else if (rec_status.req && !rec_status.th)
+            {
+                statusList[(int)st_th] = "Recording threshold";
+                msg_main = "Recording threshold.";
             }
             else if (!rec_status.req && !rec_status.th)
             {
@@ -485,7 +514,7 @@ void mainSAS_thread()
             if (screen_status == exDone || screen_status == msgEnd)
             {
                 // Exercise has been aborted
-                msg_main = "Received: exercise_done";
+                msg_main = "Exercise done.";
 
                 GL_state = st_stop;
                 fileLOGS << "2.0, " << GL_processed << "\n";
@@ -494,8 +523,8 @@ void mainSAS_thread()
             {
                 // normal trigger
                 GL_state = st_running;
-
-                msg_main = "Stimulator triggered";
+                screen_status = msg_none; // update screen status if the state is updated
+                msg_main = "Stimulation triggered";
 
                 fileLOGS << "1.0, " << GL_processed << "\n";
 
@@ -505,7 +534,7 @@ void mainSAS_thread()
             else if (screen_status == repEnd || screen_status == msgEnd)
             {
                 // Patient has reached end of repetition
-                msg_main = "Received: end of repetition";
+                msg_main = "End-Point reached";
 
                 if (robert.Reached || robert.isMoving)
                 {
@@ -513,7 +542,18 @@ void mainSAS_thread()
                 }
 
                 GL_state = st_stop;
+                screen_status = msg_none; // update screen status if the state is updated
                 fileLOGS << "2.0, " << GL_processed << "\n";
+            }
+
+            // screen message on the run
+            if (robert.playPause)
+            {
+                msg_main = "Waiting for trigger.";
+            }
+            if (msg_main == "Waiting for trigger." && !robert.playPause)
+            {
+                msg_main = "Press patient button to allow stimulation.";
             }
             break;
 
@@ -521,7 +561,7 @@ void mainSAS_thread()
             if (screen_status == exDone || screen_status == msgEnd)
             {
                 // Exercise has been aborted
-                msg_main = "Received: exercise_done";
+                msg_main = "Exercise done";
 
                 GL_state = st_stop;
                 fileLOGS << "3.0, " << GL_processed << "\n";
@@ -531,7 +571,7 @@ void mainSAS_thread()
             else if (robert.Reached && robert.valid_msg)
             {
                 // Patient has reached end of repetition
-                msg_main = "Received: end of repetition";
+                msg_main = "End-Point reached";
 
                 if (robert.Reached || robert.isMoving)
                 {
@@ -539,7 +579,15 @@ void mainSAS_thread()
                 }
 
                 GL_state = st_stop;
+                screen_status = msg_none; // update screen status if the state is updated
+
                 fileLOGS << "3.0, " << GL_processed << "\n";
+            }
+
+            // screen message on the run
+            if (!(screen_status == exDone || screen_status == msgEnd) && !robert.Reached)
+            {
+                msg_main = msg_stimulating;
             }
             break;
 
@@ -560,14 +608,14 @@ void mainSAS_thread()
             else if ((screen_status == setDone) && stim_status.ready && rec_status.ready)
             {
                 GL_UI.hmi_repeat = false;
-                msg_main = "Set finished. Waiting for next set or for exercise to finish.";
+                msg_main = "Set finished. Waiting for next set or next exercise.";
                 //GL_state = st_end;
                 GL_state = st_repeat;
             }
             else if ((screen_status == exDone) && stim_status.ready && rec_status.ready)
             {
                 GL_UI.hmi_repeat = false;
-                msg_main = "Set finished. Waiting for next set or for exercise to finish.";
+                msg_main = "Exercise finished. Waiting for next one.";
                 // update leg weight value
                 robert.legSaved = false;
                 //GL_state = st_end;
@@ -601,7 +649,8 @@ void mainSAS_thread()
             //For GUI testing: taken out && robotReady
             else if (screen_status == repeat && devicesReady)
             {
-                msg_main = "Repeat exercise.";
+                msg_main = "Repeating exercise.";
+                main_thEN = false;
                 GL_UI.hmi_repeat = true;
                 // Repeat same type of exercise
                 startup_filters();
@@ -611,6 +660,7 @@ void mainSAS_thread()
                 end_files();
                 start_files();
 
+                statusList[(int)st_th] = "On hold";
                 GL_state = st_th;
             }
             // 4. Exercise done. Go back to the beginning
@@ -830,6 +880,7 @@ void stimulating_sas()
         // initialization
         if (!stimulator.ready)
         {
+            sprintf(msg_stimulating, "Starting stimulator on port %s", PORT_STIM);
             // Choose an exercise
             load_stim_settings();
             stimulator.display = true;
@@ -838,12 +889,18 @@ void stimulating_sas()
         }
         else
         {
-            sprintf(msg_stimulating, "Reha Move3 ready");
+            sprintf(msg_stimulating, "Stimulator ready");
         }
         stim_status.ready = stimulator.ready;
         break;
 
     case st_calM:
+        // Do once at the beginning
+        if (!stim_fl2)
+        {
+            sprintf(msg_stimulating, " ");
+            stim_fl2 = true;
+        }
         Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start);
         //Update stimulation parameters if a key associated with parameters has been pressed
         if (Move3_user_key)
@@ -856,19 +913,28 @@ void stimulating_sas()
         {
             stimulator.pause();
             stim_done = !stimulator.active && stim_timeout;
-            Move3_hmi = Move3_none;
-            Move3_key = Move3_none;
-            if (stim_done)
-            {
-                sprintf(msg_stimulating, "Stimulation set up finished. \nPress set threshold");
-                msg_main = "Stimulation set up finished. \nPress set threshold";
 
-            }
-            else
+           // if(!stim_done)
+           // {
+           //     sprintf(msg_stimulating, "Stimulation stopped");
+           // }
+
+            // screen message
+            if (Move3_key == Move3_stop || screen_status == setDone)
             {
                 sprintf(msg_stimulating, "Stimulation stopped");
-                msg_main = "Stimulation stopped";
             }
+            else if (!robert.playPause)
+            {
+                sprintf(msg_stimulating, "Stimulation stopped by the patient");
+            }
+            else if (stim_timeout)
+            {
+                sprintf(msg_stimulating, "Stimulation timeout");
+            }
+
+            Move3_hmi = Move3_none;
+            Move3_key = Move3_none;
         }
 
         if ((stimulator.active || Move3_hmi == Move3_start || Move3_key == Move3_start) && !stim_timeout && robert.playPause)
@@ -877,7 +943,7 @@ void stimulating_sas()
             {
                 stimulator.stim_act[Smpt_Channel_Red] = true;
             }
-            msg_main = "Stimulation active";
+            sprintf(msg_stimulating, "Stimulation active");
 
             stimulator.update();
         }
@@ -909,46 +975,63 @@ void stimulating_sas()
         {
             modify_stimulation(Move3_key, Smpt_Channel_Red);
             stim_fl1 = false;
+            // testing
+            Move3_hmi = Move3_none;
+            Move3_key = Move3_none;
         }
 
         // Stop stimulation
-
-        if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || stim_timeout || !robert.playPause) && stimulator.active || screen_status == exDone)
+        if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || stim_timeout || !robert.playPause || robert.Reached) && stimulator.active || screen_status == exDone)
         {
             stimulator.pause();
-            sprintf(msg_stimulating, "Stimulation stopped");
-            msg_main = "Stimulation stopped";
             stim_fl1 = true;
             stim_pause = !robert.playPause;
             // abort exercise
             if (screen_status == exDone) {
                 stim_abort = true;
             }
+            // screen message
+            if (Move3_hmi == Move3_stop || Move3_key == Move3_stop)
+            {
+                sprintf(msg_stimulating, "Stimulation stopped");
+            }
+            else if (!robert.playPause)
+            {
+                sprintf(msg_stimulating, "Stimulation stopped by the patient");
+            }
+            else if (stim_timeout)
+            {
+                sprintf(msg_stimulating, "Stimulation timeout");
+            }
+
             Move3_hmi = Move3_none;
             Move3_key = Move3_none;
         }
-        if (robert.playPause && !stim_timeout && !stim_fl1) // !stim_fl1 necessary?
+
+        // Stimulate
+        if (robert.playPause && !stim_timeout && !stim_fl1) 
         {
+            sprintf(msg_stimulating, "Stimulation active");
             stimulator.update();
         }
+
         // Maybe re-take the stimulation if the play is pressed again?
         if (robert.playPause && stim_fl1 && stim_pause && Move3_key == Move3_start)
         {
             stim_pause = false;
             stim_fl1 = false;
-            sprintf(msg_stimulating, "Stimulation restored");
+            //sprintf(msg_stimulating, "Stimulation re-enabled");
         }
         else if (robert.playPause && stim_fl1 && !stim_pause && Move3_key == Move3_start)
         {
             stim_fl1 = false;
-            sprintf(msg_stimulating, "Stimulation resumed");
+           // sprintf(msg_stimulating, "Stimulation resumed");
         }
 
         // things to do only once
         if (!stim_fl2)
         {
-            sprintf(msg_stimulating, "Stimulation active");
-            msg_main = "Stimulation active";
+            //sprintf(msg_stimulating, "Stimulation active");
             stim_fl2 = true;
             stim_status.ready = false;
         }
@@ -1022,7 +1105,7 @@ void stimulating_sas()
         if (stim_timeout)
         {
             sprintf(msg_stimulating, "Stimulation timeout");
-            msg_main = "Stimulation timeout";
+            //msg_main = "Stimulation timeout";
         }
     }
     if (!stimulator.active && stim_timing)
@@ -1047,7 +1130,7 @@ void recording_sas()
     case st_init:
         if (!recorder.ready)
         {
-            if (recorder.display) { sprintf(msg_recording, "Reha Ingest message: Starting recorder."); }
+            if (recorder.display) { sprintf(msg_recording, "Starting recorder on port %s.", PORT_REC); }
             Sleep(2500);
             recorder.display = true;
             recorder.init(PORT_REC);
@@ -1059,7 +1142,7 @@ void recording_sas()
             }
             else
             {
-                sprintf(msg_recording, "Reha Ingest ready");
+                sprintf(msg_recording, "Recorder ready");
             }
         }
         startup_filters();
@@ -1109,8 +1192,8 @@ void recording_sas()
                 {
                     THRESHOLD = THRESHOLD / (GL_sampleNr - GL_thDiscard);
                     sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
-                    sprintf(msg_main_char, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
-                    msg_main = msg_main_char;
+                    //sprintf(msg_main_char, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
+                    //msg_main = msg_main_char;
                     rec_status.th = true;
                     rec_status.req = false;
                 }
@@ -1142,7 +1225,7 @@ void recording_sas()
             if ((mean >= THRESHOLD) && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)
             {
                 sprintf(msg_recording, "EMG activity: threshold overpassed");
-                msg_main = "EMG activity: threshold overpassed";
+                //msg_main = "EMG activity: threshold overpassed";
                 rec_status.start = true;
                 rec_fl2 = false;
             }

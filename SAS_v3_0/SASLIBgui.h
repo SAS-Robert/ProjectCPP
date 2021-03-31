@@ -91,23 +91,25 @@ namespace SASv30 {
 		System::Windows::Forms::Label^ fqTitle;
 		System::Windows::Forms::Label^ statusDebug;
 		System::Windows::Forms::Button^ stimButton;
-		System::Windows::Forms::Label^ currentTitle;
+
 		System::Windows::Forms::Label^ nextTitle;
-		System::Windows::Forms::Label^ currentLabel;
+
 		System::Windows::Forms::ComboBox^ methodBox;
-		System::Windows::Forms::Label^ methodLabel;
+
 		System::Windows::Forms::Button^ velMinus;
 		System::Windows::Forms::Button^ velPlus;
 		System::Windows::Forms::Label^ velValue;
 		System::Windows::Forms::Label^ velTitle;
-		System::Windows::Forms::Label^ exerciseLabel;
+
 		System::Windows::Forms::ComboBox^ exerciseBox;
-		System::Windows::Forms::Label^ currentExLabel;
+
 		System::Windows::Forms::Label^ nextExTitle;
-		System::Windows::Forms::Label^ currentExTitle;
-	public: System::Windows::Forms::Label^ velCurrent;
-	private: System::Windows::Forms::BindingSource^ bindingSource1;
-	public:
+
+		System::Windows::Forms::Label^ velCurrent;
+		System::Windows::Forms::BindingSource^ bindingSource1;
+	public: System::Windows::Forms::Label^ stimInfo;
+
+
 	private: System::ComponentModel::IContainer^ components;
 
 	private:
@@ -145,22 +147,17 @@ namespace SASv30 {
 			this->fqTitle = (gcnew System::Windows::Forms::Label());
 			this->statusDebug = (gcnew System::Windows::Forms::Label());
 			this->stimButton = (gcnew System::Windows::Forms::Button());
-			this->currentTitle = (gcnew System::Windows::Forms::Label());
 			this->nextTitle = (gcnew System::Windows::Forms::Label());
-			this->currentLabel = (gcnew System::Windows::Forms::Label());
 			this->methodBox = (gcnew System::Windows::Forms::ComboBox());
-			this->methodLabel = (gcnew System::Windows::Forms::Label());
 			this->velMinus = (gcnew System::Windows::Forms::Button());
 			this->velPlus = (gcnew System::Windows::Forms::Button());
 			this->velValue = (gcnew System::Windows::Forms::Label());
 			this->velTitle = (gcnew System::Windows::Forms::Label());
-			this->exerciseLabel = (gcnew System::Windows::Forms::Label());
 			this->exerciseBox = (gcnew System::Windows::Forms::ComboBox());
-			this->currentExLabel = (gcnew System::Windows::Forms::Label());
 			this->nextExTitle = (gcnew System::Windows::Forms::Label());
-			this->currentExTitle = (gcnew System::Windows::Forms::Label());
 			this->velCurrent = (gcnew System::Windows::Forms::Label());
 			this->bindingSource1 = (gcnew System::Windows::Forms::BindingSource(this->components));
+			this->stimInfo = (gcnew System::Windows::Forms::Label());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->bindingSource1))->BeginInit();
 			this->SuspendLayout();
 			// 
@@ -174,42 +171,45 @@ namespace SASv30 {
 			// 
 			// statusMsg
 			// 
-			this->statusMsg->Location = System::Drawing::Point(249, 12);
+			this->statusMsg->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->statusMsg->Location = System::Drawing::Point(15, 49);
 			this->statusMsg->Name = L"statusMsg";
-			this->statusMsg->Size = System::Drawing::Size(323, 86);
+			this->statusMsg->Size = System::Drawing::Size(556, 102);
 			this->statusMsg->TabIndex = 4;
 			this->statusMsg->Text = L"status message here";
 			// 
 			// statusLabel
 			// 
-			this->statusLabel->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 9.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->statusLabel->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->statusLabel->Location = System::Drawing::Point(12, 40);
+			this->statusLabel->Location = System::Drawing::Point(301, 4);
 			this->statusLabel->Name = L"statusLabel";
-			this->statusLabel->Size = System::Drawing::Size(213, 51);
+			this->statusLabel->Size = System::Drawing::Size(284, 36);
 			this->statusLabel->TabIndex = 5;
 			this->statusLabel->Text = L"status Label here";
+			this->statusLabel->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
 			// 
 			// statusTitle
 			// 
-			this->statusTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->statusTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->statusTitle->ForeColor = System::Drawing::SystemColors::Highlight;
 			this->statusTitle->Location = System::Drawing::Point(7, 9);
 			this->statusTitle->Name = L"statusTitle";
-			this->statusTitle->Size = System::Drawing::Size(236, 31);
+			this->statusTitle->Size = System::Drawing::Size(288, 31);
 			this->statusTitle->TabIndex = 6;
 			this->statusTitle->Text = L"PROGRAM STATUS:";
 			// 
 			// stimTitle
 			// 
 			this->stimTitle->BorderStyle = System::Windows::Forms::BorderStyle::FixedSingle;
-			this->stimTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->stimTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->stimTitle->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->stimTitle->Location = System::Drawing::Point(-1, 104);
+			this->stimTitle->Location = System::Drawing::Point(1, 151);
 			this->stimTitle->Name = L"stimTitle";
-			this->stimTitle->Size = System::Drawing::Size(300, 461);
+			this->stimTitle->Size = System::Drawing::Size(273, 509);
 			this->stimTitle->TabIndex = 7;
 			this->stimTitle->Text = L"STIMULATION";
 			this->stimTitle->TextAlign = System::Drawing::ContentAlignment::TopCenter;
@@ -217,12 +217,12 @@ namespace SASv30 {
 			// exerciseTitle
 			// 
 			this->exerciseTitle->BorderStyle = System::Windows::Forms::BorderStyle::FixedSingle;
-			this->exerciseTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->exerciseTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->exerciseTitle->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->exerciseTitle->Location = System::Drawing::Point(298, 104);
+			this->exerciseTitle->Location = System::Drawing::Point(272, 151);
 			this->exerciseTitle->Name = L"exerciseTitle";
-			this->exerciseTitle->Size = System::Drawing::Size(300, 461);
+			this->exerciseTitle->Size = System::Drawing::Size(311, 509);
 			this->exerciseTitle->TabIndex = 8;
 			this->exerciseTitle->Text = L"EXERCISE SETTINGS";
 			this->exerciseTitle->TextAlign = System::Drawing::ContentAlignment::TopCenter;
@@ -234,12 +234,12 @@ namespace SASv30 {
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->thButton->FlatAppearance->BorderSize = 0;
 			this->thButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
-			this->thButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->thButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->thButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->thButton->Location = System::Drawing::Point(321, 332);
+			this->thButton->Location = System::Drawing::Point(285, 507);
 			this->thButton->Name = L"thButton";
-			this->thButton->Size = System::Drawing::Size(251, 78);
+			this->thButton->Size = System::Drawing::Size(286, 78);
 			this->thButton->TabIndex = 10;
 			this->thButton->Text = L"SET THRESHOLD";
 			this->thButton->UseVisualStyleBackColor = false;
@@ -247,24 +247,24 @@ namespace SASv30 {
 			// 
 			// rampTitle
 			// 
-			this->rampTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->rampTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->rampTitle->ForeColor = System::Drawing::SystemColors::ControlText;
-			this->rampTitle->Location = System::Drawing::Point(68, 144);
+			this->rampTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->rampTitle->Location = System::Drawing::Point(61, 205);
 			this->rampTitle->Name = L"rampTitle";
-			this->rampTitle->Size = System::Drawing::Size(175, 31);
+			this->rampTitle->Size = System::Drawing::Size(152, 31);
 			this->rampTitle->TabIndex = 14;
 			this->rampTitle->Text = L"RAMP";
 			this->rampTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
 			// rampValue
 			// 
-			this->rampValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->rampValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->rampValue->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->rampValue->Location = System::Drawing::Point(68, 188);
+			this->rampValue->ForeColor = System::Drawing::SystemColors::ControlText;
+			this->rampValue->Location = System::Drawing::Point(70, 249);
 			this->rampValue->Name = L"rampValue";
-			this->rampValue->Size = System::Drawing::Size(175, 31);
+			this->rampValue->Size = System::Drawing::Size(131, 31);
 			this->rampValue->TabIndex = 15;
 			this->rampValue->Text = L"RAMP";
 			this->rampValue->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
@@ -279,7 +279,7 @@ namespace SASv30 {
 			this->rampPlus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->rampPlus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->rampPlus->Location = System::Drawing::Point(232, 144);
+			this->rampPlus->Location = System::Drawing::Point(206, 205);
 			this->rampPlus->Name = L"rampPlus";
 			this->rampPlus->Size = System::Drawing::Size(60, 78);
 			this->rampPlus->TabIndex = 16;
@@ -296,7 +296,7 @@ namespace SASv30 {
 			this->rampMinus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
 			this->rampMinus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F));
 			this->rampMinus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->rampMinus->Location = System::Drawing::Point(15, 144);
+			this->rampMinus->Location = System::Drawing::Point(7, 205);
 			this->rampMinus->Name = L"rampMinus";
 			this->rampMinus->Size = System::Drawing::Size(60, 78);
 			this->rampMinus->TabIndex = 17;
@@ -313,7 +313,7 @@ namespace SASv30 {
 			this->curMinus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
 			this->curMinus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F));
 			this->curMinus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->curMinus->Location = System::Drawing::Point(15, 238);
+			this->curMinus->Location = System::Drawing::Point(7, 299);
 			this->curMinus->Name = L"curMinus";
 			this->curMinus->Size = System::Drawing::Size(60, 78);
 			this->curMinus->TabIndex = 21;
@@ -331,7 +331,7 @@ namespace SASv30 {
 			this->curPlus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->curPlus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->curPlus->Location = System::Drawing::Point(232, 238);
+			this->curPlus->Location = System::Drawing::Point(206, 299);
 			this->curPlus->Name = L"curPlus";
 			this->curPlus->Size = System::Drawing::Size(60, 78);
 			this->curPlus->TabIndex = 20;
@@ -341,24 +341,24 @@ namespace SASv30 {
 			// 
 			// curValue
 			// 
-			this->curValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->curValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->curValue->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->curValue->Location = System::Drawing::Point(68, 282);
+			this->curValue->ForeColor = System::Drawing::SystemColors::ControlText;
+			this->curValue->Location = System::Drawing::Point(70, 343);
 			this->curValue->Name = L"curValue";
-			this->curValue->Size = System::Drawing::Size(175, 31);
+			this->curValue->Size = System::Drawing::Size(131, 31);
 			this->curValue->TabIndex = 19;
 			this->curValue->Text = L"CURRENT";
 			this->curValue->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
 			// curTitle
 			// 
-			this->curTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->curTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->curTitle->ForeColor = System::Drawing::SystemColors::ControlText;
-			this->curTitle->Location = System::Drawing::Point(68, 238);
+			this->curTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->curTitle->Location = System::Drawing::Point(62, 299);
 			this->curTitle->Name = L"curTitle";
-			this->curTitle->Size = System::Drawing::Size(175, 31);
+			this->curTitle->Size = System::Drawing::Size(151, 31);
 			this->curTitle->TabIndex = 18;
 			this->curTitle->Text = L"AMPLITUDE";
 			this->curTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
@@ -372,7 +372,7 @@ namespace SASv30 {
 			this->fqMinus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
 			this->fqMinus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F));
 			this->fqMinus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->fqMinus->Location = System::Drawing::Point(15, 330);
+			this->fqMinus->Location = System::Drawing::Point(7, 391);
 			this->fqMinus->Name = L"fqMinus";
 			this->fqMinus->Size = System::Drawing::Size(60, 78);
 			this->fqMinus->TabIndex = 25;
@@ -390,7 +390,7 @@ namespace SASv30 {
 			this->fqPlus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->fqPlus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->fqPlus->Location = System::Drawing::Point(232, 330);
+			this->fqPlus->Location = System::Drawing::Point(206, 391);
 			this->fqPlus->Name = L"fqPlus";
 			this->fqPlus->Size = System::Drawing::Size(60, 78);
 			this->fqPlus->TabIndex = 24;
@@ -400,31 +400,31 @@ namespace SASv30 {
 			// 
 			// fqValue
 			// 
-			this->fqValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->fqValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->fqValue->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->fqValue->Location = System::Drawing::Point(68, 374);
+			this->fqValue->ForeColor = System::Drawing::SystemColors::ControlText;
+			this->fqValue->Location = System::Drawing::Point(70, 435);
 			this->fqValue->Name = L"fqValue";
-			this->fqValue->Size = System::Drawing::Size(175, 31);
+			this->fqValue->Size = System::Drawing::Size(131, 31);
 			this->fqValue->TabIndex = 23;
 			this->fqValue->Text = L"HZ";
 			this->fqValue->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
 			// fqTitle
 			// 
-			this->fqTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->fqTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->fqTitle->ForeColor = System::Drawing::SystemColors::ControlText;
-			this->fqTitle->Location = System::Drawing::Point(68, 330);
+			this->fqTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->fqTitle->Location = System::Drawing::Point(62, 391);
 			this->fqTitle->Name = L"fqTitle";
-			this->fqTitle->Size = System::Drawing::Size(175, 31);
+			this->fqTitle->Size = System::Drawing::Size(151, 31);
 			this->fqTitle->TabIndex = 22;
 			this->fqTitle->Text = L"FREQUENCY";
 			this->fqTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
 			// statusDebug
 			// 
-			this->statusDebug->Location = System::Drawing::Point(22, 539);
+			this->statusDebug->Location = System::Drawing::Point(277, 594);
 			this->statusDebug->Name = L"statusDebug";
 			this->statusDebug->Size = System::Drawing::Size(213, 13);
 			this->statusDebug->TabIndex = 28;
@@ -437,42 +437,28 @@ namespace SASv30 {
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->stimButton->FlatAppearance->BorderSize = 0;
 			this->stimButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
-			this->stimButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->stimButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->stimButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->stimButton->Location = System::Drawing::Point(28, 416);
+			this->stimButton->Location = System::Drawing::Point(7, 507);
 			this->stimButton->Name = L"stimButton";
-			this->stimButton->Size = System::Drawing::Size(251, 78);
+			this->stimButton->Size = System::Drawing::Size(259, 78);
 			this->stimButton->TabIndex = 31;
 			this->stimButton->Text = L"START/STOP STIMULATION";
 			this->stimButton->UseVisualStyleBackColor = false;
 			this->stimButton->Click += gcnew System::EventHandler(this, &MyForm::click_stimButton);
 			// 
-			// currentTitle
-			// 
-			this->currentTitle->Location = System::Drawing::Point(309, 262);
-			this->currentTitle->Name = L"currentTitle";
-			this->currentTitle->Size = System::Drawing::Size(121, 16);
-			this->currentTitle->TabIndex = 33;
-			this->currentTitle->Text = L"CURRENT METHOD:";
-			this->currentTitle->TextAlign = System::Drawing::ContentAlignment::TopRight;
-			// 
 			// nextTitle
 			// 
-			this->nextTitle->Location = System::Drawing::Point(309, 278);
+			this->nextTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->nextTitle->Location = System::Drawing::Point(283, 299);
 			this->nextTitle->Name = L"nextTitle";
-			this->nextTitle->Size = System::Drawing::Size(121, 28);
+			this->nextTitle->Size = System::Drawing::Size(290, 26);
 			this->nextTitle->TabIndex = 34;
-			this->nextTitle->Text = L"METHOD FOR NEXT EXERCISE:";
-			this->nextTitle->TextAlign = System::Drawing::ContentAlignment::TopRight;
-			// 
-			// currentLabel
-			// 
-			this->currentLabel->Location = System::Drawing::Point(436, 262);
-			this->currentLabel->Name = L"currentLabel";
-			this->currentLabel->Size = System::Drawing::Size(121, 16);
-			this->currentLabel->TabIndex = 35;
-			this->currentLabel->Text = L"method name here";
+			this->nextTitle->Text = L"SELECTED METHOD:";
+			this->nextTitle->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
 			// 
 			// methodBox
 			// 
@@ -481,24 +467,16 @@ namespace SASv30 {
 				L"xi+sd*0.5", L"xi+sd*0.33",
 					L"Another"
 			});
+			this->methodBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->methodBox->ForeColor = System::Drawing::SystemColors::WindowText;
 			this->methodBox->FormattingEnabled = true;
 			this->methodBox->Items->AddRange(gcnew cli::array< System::Object^  >(3) { L"Xi+SD*0.5", L"Xi+SD*0.33", L"Another" });
-			this->methodBox->Location = System::Drawing::Point(436, 281);
+			this->methodBox->Location = System::Drawing::Point(283, 328);
 			this->methodBox->Name = L"methodBox";
-			this->methodBox->Size = System::Drawing::Size(136, 21);
+			this->methodBox->Size = System::Drawing::Size(290, 39);
 			this->methodBox->TabIndex = 36;
 			this->methodBox->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::methodBox_SelectedIndexChanged);
-			// 
-			// methodLabel
-			// 
-			this->methodLabel->BackColor = System::Drawing::Color::LimeGreen;
-			this->methodLabel->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->methodLabel->Location = System::Drawing::Point(318, 238);
-			this->methodLabel->Name = L"methodLabel";
-			this->methodLabel->Size = System::Drawing::Size(254, 20);
-			this->methodLabel->TabIndex = 37;
-			this->methodLabel->Text = L"CHOOSE METHOD";
-			this->methodLabel->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
 			// velMinus
 			// 
@@ -509,7 +487,7 @@ namespace SASv30 {
 			this->velMinus->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
 			this->velMinus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F));
 			this->velMinus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->velMinus->Location = System::Drawing::Point(305, 424);
+			this->velMinus->Location = System::Drawing::Point(288, 391);
 			this->velMinus->Name = L"velMinus";
 			this->velMinus->Size = System::Drawing::Size(60, 78);
 			this->velMinus->TabIndex = 41;
@@ -527,7 +505,7 @@ namespace SASv30 {
 			this->velPlus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->velPlus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->velPlus->Location = System::Drawing::Point(512, 424);
+			this->velPlus->Location = System::Drawing::Point(511, 388);
 			this->velPlus->Name = L"velPlus";
 			this->velPlus->Size = System::Drawing::Size(60, 78);
 			this->velPlus->TabIndex = 40;
@@ -537,116 +515,103 @@ namespace SASv30 {
 			// 
 			// velValue
 			// 
-			this->velValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->velValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->velValue->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->velValue->Location = System::Drawing::Point(358, 468);
+			this->velValue->Location = System::Drawing::Point(341, 435);
 			this->velValue->Name = L"velValue";
-			this->velValue->Size = System::Drawing::Size(158, 31);
+			this->velValue->Size = System::Drawing::Size(179, 31);
 			this->velValue->TabIndex = 39;
 			this->velValue->Text = L"isVelocity value";
 			this->velValue->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
 			// velTitle
 			// 
-			this->velTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->velTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->velTitle->ForeColor = System::Drawing::SystemColors::ControlText;
-			this->velTitle->Location = System::Drawing::Point(358, 424);
+			this->velTitle->Location = System::Drawing::Point(341, 391);
 			this->velTitle->Name = L"velTitle";
-			this->velTitle->Size = System::Drawing::Size(158, 31);
+			this->velTitle->Size = System::Drawing::Size(179, 31);
 			this->velTitle->TabIndex = 38;
-			this->velTitle->Text = L"isVelocity";
+			this->velTitle->Text = L"MIN. VELOCITY";
 			this->velTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
-			// 
-			// exerciseLabel
-			// 
-			this->exerciseLabel->BackColor = System::Drawing::Color::LimeGreen;
-			this->exerciseLabel->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->exerciseLabel->Location = System::Drawing::Point(318, 144);
-			this->exerciseLabel->Name = L"exerciseLabel";
-			this->exerciseLabel->Size = System::Drawing::Size(254, 20);
-			this->exerciseLabel->TabIndex = 46;
-			this->exerciseLabel->Text = L"CHOOSE EXERCISE";
-			this->exerciseLabel->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
 			// exerciseBox
 			// 
-			this->exerciseBox->AllowDrop = true;
 			this->exerciseBox->AutoCompleteCustomSource->AddRange(gcnew cli::array< System::String^  >(5) {
-				L"Lower-leg flexion", L"Upper-leg extension",
-					L"Electrical circuit", L"Some weird exercise", L"Christians\' ideas here"
+				L"Knee extension", L"Knee flexion",
+					L"Planta flexion", L"Dorsal flexion", L"Other"
 			});
+			this->exerciseBox->Enabled = false;
+			this->exerciseBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
 			this->exerciseBox->FormattingEnabled = true;
 			this->exerciseBox->Items->AddRange(gcnew cli::array< System::Object^  >(5) {
-				L"Lower-leg flexion", L"Upper-leg extension",
-					L"Electrical circuit", L"Some weird exercise", L"Christians\' ideas here"
+				L"Knee extension", L"Knee flexion", L"Planta flexion",
+					L"Dorsal flexion", L"Other"
 			});
-			this->exerciseBox->Location = System::Drawing::Point(436, 187);
+			this->exerciseBox->Location = System::Drawing::Point(280, 238);
 			this->exerciseBox->Name = L"exerciseBox";
-			this->exerciseBox->Size = System::Drawing::Size(136, 21);
+			this->exerciseBox->Size = System::Drawing::Size(294, 39);
 			this->exerciseBox->TabIndex = 45;
 			this->exerciseBox->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::exerciseBox_SelectedIndexChanged);
 			// 
-			// currentExLabel
-			// 
-			this->currentExLabel->Location = System::Drawing::Point(436, 168);
-			this->currentExLabel->Name = L"currentExLabel";
-			this->currentExLabel->Size = System::Drawing::Size(121, 16);
-			this->currentExLabel->TabIndex = 44;
-			this->currentExLabel->Text = L"exercise name here";
-			// 
 			// nextExTitle
 			// 
-			this->nextExTitle->Location = System::Drawing::Point(309, 184);
+			this->nextExTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->nextExTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->nextExTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->nextExTitle->Location = System::Drawing::Point(280, 205);
 			this->nextExTitle->Name = L"nextExTitle";
-			this->nextExTitle->Size = System::Drawing::Size(121, 28);
+			this->nextExTitle->Size = System::Drawing::Size(294, 30);
 			this->nextExTitle->TabIndex = 43;
-			this->nextExTitle->Text = L"METHOD FOR NEXT EXERCISE:";
-			this->nextExTitle->TextAlign = System::Drawing::ContentAlignment::TopRight;
-			// 
-			// currentExTitle
-			// 
-			this->currentExTitle->Location = System::Drawing::Point(309, 168);
-			this->currentExTitle->Name = L"currentExTitle";
-			this->currentExTitle->Size = System::Drawing::Size(121, 16);
-			this->currentExTitle->TabIndex = 42;
-			this->currentExTitle->Text = L"CURRENT EXERCISE:";
-			this->currentExTitle->TextAlign = System::Drawing::ContentAlignment::TopRight;
+			this->nextExTitle->Text = L"SELECTED EXERCISE:";
+			this->nextExTitle->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
 			// 
 			// velCurrent
 			// 
 			this->velCurrent->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->velCurrent->ForeColor = System::Drawing::Color::DarkRed;
-			this->velCurrent->Location = System::Drawing::Point(358, 521);
+			this->velCurrent->Location = System::Drawing::Point(413, 469);
 			this->velCurrent->Name = L"velCurrent";
-			this->velCurrent->Size = System::Drawing::Size(158, 31);
+			this->velCurrent->Size = System::Drawing::Size(158, 23);
 			this->velCurrent->TabIndex = 47;
 			this->velCurrent->Text = L"isVelocity value";
 			this->velCurrent->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
 			// 
+			// stimInfo
+			// 
+			this->stimInfo->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Italic, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->stimInfo->ForeColor = System::Drawing::Color::DimGray;
+			this->stimInfo->Location = System::Drawing::Point(12, 587);
+			this->stimInfo->Name = L"stimInfo";
+			this->stimInfo->Size = System::Drawing::Size(242, 44);
+			this->stimInfo->TabIndex = 48;
+			this->stimInfo->Text = L"PRESS PATIENT BUTTON TO ENABLE STIMULATION";
+			this->stimInfo->TextAlign = System::Drawing::ContentAlignment::BottomCenter;
+			// 
 			// MyForm
 			// 
+			this->AllowDrop = true;
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->ClientSize = System::Drawing::Size(584, 561);
+			this->ClientSize = System::Drawing::Size(624, 761);
+			this->ControlBox = false;
+			this->Controls->Add(this->stimInfo);
 			this->Controls->Add(this->velCurrent);
-			this->Controls->Add(this->exerciseLabel);
 			this->Controls->Add(this->exerciseBox);
-			this->Controls->Add(this->currentExLabel);
 			this->Controls->Add(this->nextExTitle);
-			this->Controls->Add(this->currentExTitle);
 			this->Controls->Add(this->velMinus);
 			this->Controls->Add(this->velPlus);
 			this->Controls->Add(this->velValue);
 			this->Controls->Add(this->velTitle);
-			this->Controls->Add(this->methodLabel);
 			this->Controls->Add(this->methodBox);
-			this->Controls->Add(this->currentLabel);
 			this->Controls->Add(this->nextTitle);
-			this->Controls->Add(this->currentTitle);
 			this->Controls->Add(this->stimButton);
 			this->Controls->Add(this->statusDebug);
 			this->Controls->Add(this->fqMinus);
@@ -667,7 +632,11 @@ namespace SASv30 {
 			this->Controls->Add(this->statusMsg);
 			this->Controls->Add(this->stimTitle);
 			this->Controls->Add(this->exerciseTitle);
+			this->MaximizeBox = false;
+			this->MinimizeBox = false;
 			this->Name = L"MyForm";
+			this->StartPosition = System::Windows::Forms::FormStartPosition::Manual;
+			this->Tag = L"0;0";
 			this->Text = L"Sense-And-Stimulating";
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->bindingSource1))->EndInit();
 			this->ResumeLayout(false);
@@ -688,14 +657,14 @@ namespace SASv30 {
 			// Lists
 			statusList[0] = "Initialization";
 			statusList[1] = "Setting threshold";
-			statusList[2] = "EMG monitoring";
-			statusList[3] = "Tigger FES";
-			statusList[4] = "Stop FES";
+			statusList[2] = "Waiting for trigger";
+			statusList[3] = "FES triggered";
+			statusList[4] = "End of repetition";
 			statusList[5] = "Finish program";
-			statusList[6] = "Manual calibration";
+			statusList[6] = "Stimulation set-up";
 			statusList[7] = "Automatic calibration\n- stimulating";
 			statusList[8] = "Automatic calibration\n- resting";
-			statusList[9] = "Exercise finished";
+			statusList[9] = "Set finished";
 
 			methodList[0] = "Xi+SD*0.5";
 			methodList[1] = "Xi+SD*0.3";
@@ -773,7 +742,7 @@ namespace SASv30 {
 			// Start stimulation command
 			Move3_gui = Move3_start;
 		}
-		else
+		else if (GL_UI.playPause)
 		{
 			// Stop stimulation command
 			Move3_gui = Move3_stop;
@@ -926,6 +895,7 @@ namespace SASv30 {
 		if (GL_UI.playPause)
 		{
 			// Normal behavior
+			this->stimInfo->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
 			if ((state == st_calM || state == st_running) && !GL_UI.stimActive && !GL_UI.main_thEN)
 			{
 				this->stimButton->BackColor = System::Drawing::Color::LimeGreen;
@@ -957,6 +927,7 @@ namespace SASv30 {
 			// Button disabled
 			this->stimButton->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->stimButton->Text = L"STIMULATION DISABLED";
+			this->stimInfo->ForeColor = System::Drawing::SystemColors::InactiveCaption;
 		}
 
 
@@ -964,27 +935,35 @@ namespace SASv30 {
 		if (state == st_th && !GL_UI.recReq && GL_UI.main_thEN)
 		{
 			this->thButton->BackColor = System::Drawing::Color::LimeGreen;
-			this->methodLabel->BackColor = System::Drawing::Color::LimeGreen;
+			this->nextTitle->BackColor = System::Drawing::Color::LimeGreen;
+			this->nextTitle->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->nextTitle->Text = L"SELECT METHOD:";
+			this->methodBox->Enabled = true;
 		}
 		else
 		{
 			this->thButton->BackColor = System::Drawing::SystemColors::Highlight;
-			this->methodLabel->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->nextTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->nextTitle->Text = L"SELECTED METHOD:";
+			this->methodBox->Enabled = false;
 		}
 
-		this->currentLabel->Text = gcnew String(methodList[(int)GL_UI.method].c_str());
-
 		// Select exercise
-		if (state == st_init || state == st_repeat)
+		if (state == st_init)
 		{
-			this->exerciseLabel->BackColor = System::Drawing::Color::LimeGreen;
+			this->nextExTitle->BackColor = System::Drawing::Color::LimeGreen;
+			this->nextExTitle->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->nextExTitle->Text = L"SELECT EXERCISE:";
+			this->exerciseBox->Enabled = true;
 		}
 		else
 		{
-			this->exerciseLabel->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->nextExTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->nextExTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->nextExTitle->Text = L"SELECTED EXERCISE:";
+			this->exerciseBox->Enabled = false;
 		}
-
-		this->currentExLabel->Text = gcnew String(exerciseList[(int)GL_UI.exercise].c_str());
 
 		// For isVelocity testing
 		std::stringstream tempVelocity;

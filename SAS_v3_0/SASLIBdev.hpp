@@ -254,12 +254,22 @@ void set_stimulation(exercise_Type profile, Smpt_ml_channel_config &settings, do
     Smpt_ml_channel_config new_settings = CIRCUIT_SET;
     switch (profile) 
     {
-        case lowerLeg_flex:
-            new_settings = LOWERLEG_SET;
-            break;
-        case upperLeg_ext:
+        case kneeExt:
             new_settings = UPPERLEG_SET;
             break;
+        case kneeFlex:
+            new_settings = UPPERLEG_SET;
+            break;
+
+        case plantFlex:
+            new_settings = LOWERLEG_SET;
+            break;
+        case dorFlex:
+            new_settings = LOWERLEG_SET;
+            break;
+        case exOther:
+            new_settings = UPPERLEG_SET;
+            break;        
     }
     // Update values
     new_settings.period = float(MS_TO_HZ / frequency);

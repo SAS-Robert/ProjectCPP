@@ -37,11 +37,11 @@ typedef enum
 typedef enum
 {
     exInvalid = -1,     // Invalid exercise
-    lowerLeg_flex = 0,  // Lower leg flexion
-    upperLeg_ext = 1,   // Upper leg extension
-    exCircuit = 2,     // The simulator is connected to an electrical circuit
-    exWeird = 3,        // Some weird exercise
-    exChris = 4,        // Because why not
+    kneeExt = 0,        // Knee extension
+    kneeFlex = 1,       // Knee flexion
+    plantFlex = 2,      // Planta flexion
+    dorFlex = 3,        // Dorsal flexion
+    exOther = 4,        // Because why not
 } exercise_Type;
 
 typedef enum

@@ -72,7 +72,7 @@ public:
 		main_thEN = false;
 		recReq = false;
 		stimActive = false;
-		exercise = exCircuit;
+		exercise = kneeExt;
 		method = th_SD05;
 		// Stimulation parameters
 		current = 0.0;
