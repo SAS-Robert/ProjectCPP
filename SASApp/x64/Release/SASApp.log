@@ -1,1 +1,35 @@
-﻿  SASApp.vcxproj -> D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\x64\Release\SASApp.exe
+﻿  Biquad.cpp
+  Butterworth.cpp
+  Cascade.cpp
+  ChebyshevI.cpp
+  ChebyshevII.cpp
+  Custom.cpp
+  PoleFilter.cpp
+  RBJ.cpp
+  State.cpp
+  SASApp.cpp
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBcom.hpp(36,62): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBcom.hpp(75,58): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBcom.hpp(306,2): warning C4091: 'typedef ': ignored on left of 'UdpClient' when no variable is declared
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBcom.hpp(206,24): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBcom.hpp(231,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBcom.hpp(245,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBcom.hpp(623,2): warning C4091: 'typedef ': ignored on left of 'TcpClient' when no variable is declared
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBcom.hpp(560,20): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBcom.hpp(849,2): warning C4091: 'typedef ': ignored on left of 'TcpServer' when no variable is declared
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBfilt.hpp(116,39): warning C4244: '=': conversion from 'unsigned __int64' to 'double', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBfilt.hpp(180,24): warning C4244: '=': conversion from 'unsigned __int64' to 'double', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBfilt.hpp(208,31): warning C4244: 'initializing': conversion from 'double' to 'unsigned __int64', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBfilt.hpp(210,11): warning C4244: '=': conversion from 'double' to 'unsigned __int64', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASLIBfilt.hpp(271,24): warning C4244: '=': conversion from 'unsigned __int64' to 'double', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASApp.cpp(876,59): warning C4101: 'guiMsg': unreferenced local variable
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASApp.cpp(1154,36): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASApp.cpp(1158,36): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASApp.cpp(1188,36): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\SASApp.cpp(1193,36): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+     Creating library C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\x64\Release\SASApp.lib and object C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\x64\Release\SASApp.exp
+  Generating code
+  Previous IPDB was built with incompatible compiler, fall back to full compilation.
+  All 1009 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  SASApp.vcxproj -> C:\Users\kkl\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\x64\Release\SASApp.exe
