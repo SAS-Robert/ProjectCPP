@@ -46,6 +46,7 @@ struct device_to_device
     bool start = false;
     bool end = false;
     bool th = false;
+    bool th2 = false;
     bool ready = false;
     bool req = false;
 } rec_status, MAIN_to_all, stim_status;
@@ -77,8 +78,8 @@ RehaIngest recorder;
 
 // Flag variables
 bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
-bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false;
-bool main_fl0 = false, main_fl1 = false, main_init = false;
+bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false, rec_fl5 = false;
+bool main_fl0 = false, main_fl1 = false, main_init = false, main_fl2 = false;
 
 // ------------------------- UDP / TCP  ------------------------
 int udp_cnt = 0;
@@ -86,7 +87,7 @@ int udp_cnt = 0;
 char ROBOT_IP_E[15] = "127.0.0.1";
 char ROBOT_IP[15] = "172.31.1.147";
 uint32_t ROBOT_PORT = 30007;
-UdpClient robert(ROBOT_IP, ROBOT_PORT);
+UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
 
 char SCREEN_ADDRESS[15] = "127.0.0.1";
 char SCREEN_PORT[15] = "30002";
@@ -100,7 +101,7 @@ int TCP_rep = 2;
 string screenMessage = "";
 
 ROB_Type screen_status;
-bool start_train = false, hmi_repeat = false, hmi_new = false;
+bool start_train = false, hmi_repeat = false, hmi_new = false, set_MVC = false;
 
 // ------------------------- Stimulator calibration  ------------------------
 Smpt_Channel hmi_channel = Smpt_Channel_Red;
@@ -402,21 +403,50 @@ int main(int argc, char* argv[])
             {
                 if (GL_tcpActive)
                 {
-                    //printf("SAS PROGRAMME: Threshold saved. Press start training button. Waiting for stimulator to be triggered.\n");
-                    screenMessage = "Threshold saved. \nPress start training button. \nWaiting for stimulator to be triggered.";
-                    std::cout << screenMessage << endl;
+ 
+                    if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && !main_fl2)
+                    {
+                        //printf("SAS PROGRAMME: Threshold saved. Press start training button. Waiting for stimulator to be triggered.\n");
+                        screenMessage = "Threshold saved. \nPress P for MVC. \nWaiting to record 2nd threshold.";
+                        std::cout << screenMessage << endl;
+                        std::cout << "\n===================================" << endl;
+                    }
+                    else if (!main_fl2){
+                        //printf("SAS PROGRAMME: Threshold saved. Press start training button. Waiting for stimulator to be triggered.\n");
+                        screenMessage = "Threshold saved. \nPress start training button. \nWaiting for stimulator to be triggered.";
+                        std::cout << screenMessage << endl;
+                        std::cout << "\n===================================" << endl;
+                    }
+                    main_fl2 = true;
                 }
                 else
                 {
                     printf("Threshold saved. \nPress 1 to start training. \nWaiting for stimulator to be triggered.\n");
+                    std::cout << "\n===================================" << endl;
                 }
-                std::cout << "\n===================================" << endl;
+                
                 // Update exercise
                 GL_exercise_old = GL_exercise;
                 GL_thMethod_old = GL_thMethod;
 
+                if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && set_MVC)
+                {
+                    GL_state = st_MVC;
+                }
+                else if (GL_thMethod != th_MVC05 && GL_thMethod != th_MVC10) {
+                    GL_state = st_wait;
+
+                }
+            }
+            break;
+
+        case st_MVC:
+
+            if (rec_status.th2)
+            {
                 GL_state = st_wait;
             }
+
             break;
 
         case st_wait:
@@ -506,6 +536,8 @@ int main(int argc, char* argv[])
                 GL_exercise_old = GL_exercise;
                 GL_thMethod_old = GL_thMethod;
                 GL_state = st_repeat;
+                main_fl2 = false;
+                set_MVC = false;
             }
             break;
 
@@ -831,6 +863,13 @@ void get_keyboard()
         }
         break;
 
+    // Kasper stuff
+    case 'P':
+        if (GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10)
+        {
+            set_MVC = true;
+        }
+        break;
     case '0':
         MAIN_to_all.end = true;
         break;
@@ -1519,6 +1558,9 @@ void recording_sas()
         // Discard data
         recorder.record();
         recorder_emg1.clear();
+        MEAN = 0; 
+        rec_fl4 = false;
+        rec_fl5 = false;
         break;
     case st_th:
         recorder.record();
@@ -1544,16 +1586,18 @@ void recording_sas()
             //default:
             //    temp_value = process_th_XX(GL_sampleNr, recorder_emg1);
             //}
-
+            unsigned long long int N_len = GL_sampleNr - GL_processed;
             temp_value = process_th_mean(GL_sampleNr, recorder_emg1);
 
             //printf("%d\n", temp_value);         // debugging stuff
-            if (GL_sampleNr >= TH_DISCARD)
+            if (GL_sampleNr >= TH_DISCARD && !rec_status.th)
             {
-                MEAN = MEAN + temp_value;
+                MEAN = MEAN + temp_value*N_len;
             }
-            if (GL_processed >= TH_NR)
+            if (GL_processed >= TH_NR && !rec_fl4)
             {
+                unsigned long long int tot_len = GL_sampleNr - GL_thDiscard;
+                MEAN = MEAN / tot_len;
                 // Select threshold method 
 				switch (GL_thMethod)
 				{
@@ -1568,30 +1612,33 @@ void recording_sas()
 				}
                 
                 screenMessage = "EMG activity: threshold = " + to_string(THRESHOLD);
+                std::cout << "MEAN = " << MEAN << " THRESHOLD = " << THRESHOLD << endl;
                 std::cout << screenMessage << endl;
 
                 //std::cout << "Reha Ingest message: threshold = " << THRESHOLD << ", old m = " << old_value[0] << ", old nr = " << old_nr[0] << endl;
                 rec_status.th = true;
                 rec_status.req = false;
+                rec_fl4 = true;
             }
         }
         break;
 
     case st_MVC:
         recorder.record();
-        if (recorder.data_received && recorder.data_start && !fileFILTERS.is_open())
+        if (!rec_fl5)
         {
-            //printf("Data found\n");         // debugging stuff
-            fileFILTERS.open(filter_s);
-            fileVALUES.open(th_s);
+            GL_processed_MVC = GL_processed + 2*TH_NR;
+            std::cout << "MCV samples needed = " << GL_processed_MVC <<" , Current processed samples = " << GL_processed << endl;
+            rec_fl5 = true;
         }
 
         GL_sampleNr = recorder_emg1.size();
         if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
         {
             mvc = process_th_mvc(GL_sampleNr, recorder_emg1);
+            std::cout << "Processed, now pointer on " << GL_processed << endl;
 
-            if (GL_processed >= TH_NR)
+            if (GL_processed >= GL_processed_MVC)
             {
                 // Select threshold method 
                 switch (GL_thMethod)
@@ -1608,9 +1655,10 @@ void recording_sas()
 
                 screenMessage = "EMG activity: threshold = " + to_string(THRESHOLD);
                 std::cout << screenMessage << endl;
+                std::cout << "MEAN = "<< MEAN << " mvc = " << mvc << " THRESHOLD = " << THRESHOLD << endl;
 
                 //std::cout << "Reha Ingest message: threshold = " << THRESHOLD << ", old m = " << old_value[0] << ", old nr = " << old_nr[0] << endl;
-                rec_status.th = true;
+                rec_status.th2 = true;
                 rec_status.req = false;
             }
         }
@@ -1625,7 +1673,9 @@ void recording_sas()
 
             st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg && start_train;
 
-            if ((mean >= THRESHOLD) && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)
+            //std::cout << "current mean = " << mean << " threshold = " << MVC << endl;
+
+            if ((mean >= THRESHOLD)  && st_wait_jump) // && (GL_thWaitCnt > TH_WAIT)
             {
                 screenMessage = "EMG activity: threshold overpassed";
                 std::cout << screenMessage << endl;
@@ -1633,6 +1683,7 @@ void recording_sas()
                 time1_start = std::chrono::steady_clock::now();
                 rec_fl2 = false;
             }
+            /*
             else if (mean < THRESHOLD)
             {
                 GL_thWaitCnt++;
@@ -1648,6 +1699,7 @@ void recording_sas()
                 std::cout << screenMessage << endl;
                 rec_fl2 = true;
             }
+            */
         }
         break;
 
@@ -1673,6 +1725,10 @@ void recording_sas()
         }
         rec_status.ready = true;
         rec_status.th = false;
+        rec_status.th2 = false;
+        MEAN = 0;
+        rec_fl5 = false;
+        rec_fl4 = false;
         break;
 
     case st_repeat:

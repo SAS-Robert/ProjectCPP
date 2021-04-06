@@ -29,13 +29,12 @@ st_calA_stop = 8
 st_repeat = 9
 
 # threshold_Type
-global th_SD2, th_SD3, th_SDX, th_MVC5, th_MVC10, th_MVCX
-th_SD3 = 0
-th_SD2 = 1
-th_SDX = 2
-th_MVC5 = 3
-th_MVC10 = 4
-th_MVCX = 5
+global th_SD05, th_SD03, th_other, th_MVC05, th_MVC10
+th_SD05 = 0        # SD*0.5 = Half of the standard deviation
+th_SD03 = 1        # SD*0.3 = Third of the standard deviation
+th_other = 2       # Other?
+th_MVC05 = 3       # MVC*0.05
+th_MVC10 = 4       # MVC*0.10
 
 # RehaMove3_Req_Type
 global Move3_none, Move3_incr, Move3_decr, Move3_ramp_more, Move3_ramp_less, Move3_stop, Move3_start, Move3_done, Move3_en_ch
@@ -90,7 +89,7 @@ rep_cnt = 10
 stim_code = Move3_none
 user_code = User_none
 exercise = EX_LOWERLEG
-method = th_SD3
+method = th_SD05
 status = st_init
 statusMessage = " "
 # ========================== Internal variables ==========================
@@ -131,9 +130,10 @@ ch_select = ["Ch.Red", "Ch.Blue", "Ch.Black", "Ch.White"]
 global ex_select, ex_str, ex_current
 ex_select = ["Lower leg flexion", "Upper leg extension", "Other"]
 global status_list
-status_list = ["Initialization", "Setting threshold", "EMG monitoring", "Tigger FES", "Stop FES", "Finish program", "Manual calibration", "Automatic calibration\n- stimulating", "Automatic calibration\n- resting", "Exercise finished"]
+status_list = ["Initialization", "Setting threshold", "EMG monitoring", "Tigger FES", "Stop FES", "Finish program", "Manual calibration", "Automatic calibration\n- stimulating", "Automatic calibration\n- resting", "Exercise finished", "st_MVC"]
 global mth_select, mth_str, mth_current
-mth_select = ["SD * 3", "SD * 2", "SD * X", "MVC * 5%","MVC * 10%","MVC * X%"]
+mth_select = ["th_SD05", "th_SD03", "th_other","MVC05", "MVC10"]
+
 
 # Colours
 LIGHT_RED = '#D95319'
@@ -263,7 +263,7 @@ mth_next = Label(select_frame, text='For next exercise:',
 
 # Select method
 mth_str = StringVar(root)
-mth_str.set(mth_select[th_SD3])
+mth_str.set(mth_select[th_SD05])
 mth_box = OptionMenu(select_frame, mth_str, *mth_select)
 mth_box.configure(width=20, font=("Arial Bold", 10),
                  bg=ctr_mid_color, fg=ctr_mid_fg)

@@ -46,7 +46,7 @@ std::vector<double> b50_result;
 double THRESHOLD = 0;
 double MEAN = 0;
 double MVC = 0;
-unsigned long long int GL_processed = 0;
+unsigned long long int GL_processed = 0, GL_processed_MVC = 0;
 unsigned long long int GL_sampleNr = 0;
 
 // Threshold processing
@@ -117,7 +117,7 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
     value = (flex_num) / (flex_den);
 
     // Savind data in files will be eventually deleted
-    fileVALUES << mean << ", 0.0, " << GL_processed << "," << v_size << "," << N_len << "\n";
+    fileVALUES << 3.0 << "," << mean << ", 0.0, " << GL_processed << "," << v_size << "," << N_len << "\n";
 
     // Update GL_processed data parameters
     GL_processed = i;
@@ -182,10 +182,10 @@ static double process_th_mean(unsigned long long int v_size, vector<double> raw_
 
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
-        fileVALUES << mean << "," << sd << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
+        fileVALUES << 2.0 << "," << mean << "," << sd << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
     }
     else {
-        fileVALUES << mean << "," << sd << "," << THRESHOLD << "," << v_size << "," << value << "\n";
+        fileVALUES << 2.0 << "," << mean << "," << sd << "," << THRESHOLD << "," << v_size << "," << value << "\n";
     }
 
     // Update amount of GL_processed data
@@ -247,6 +247,7 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
         if (temp > MVC)
         {
             MVC = temp;
+           
         }
     }
     if (v_size > TH_DISCARD)
@@ -273,14 +274,14 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
 
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
-        fileVALUES << MVC << "," << 0 << "," << TH_DISCARD << "," << v_size << "," << MVC << "\n";
+        fileVALUES << 1.0 << "," << MVC << "," << 0 << "," << TH_DISCARD << "," << v_size << "," << MVC << "\n";
     }
     else {
-        fileVALUES << MVC << "," << 0 << "," << THRESHOLD << "," << v_size << "," << MVC << "\n";
+        fileVALUES << 1.0 << "," << MVC << "," << 0 << "," << THRESHOLD << "," << v_size << "," << MVC << "\n";
     }
 
     // Update amount of GL_processed data
-    //GL_processed = i;
+    GL_processed = i;
     //for (int i = 4; i >= 1; i--)
     //{
     //    old_value[i] = old_value[i - 1];
