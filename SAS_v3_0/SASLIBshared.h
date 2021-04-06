@@ -41,7 +41,7 @@ public:
 	// Status field
 	state_Type status;
 	string screenMessage;
-	bool hmi_repeat, hmi_new, playPause;
+	bool hmi_repeat, hmi_new, playPause, set_MVC, th1, th2;
 	// Exercise parameters
 	bool main_thEN, recReq, stimActive;
 	threshold_Type method, next_method;
@@ -68,6 +68,7 @@ public:
 		screenMessage = " ";
 		hmi_new = false;
 		hmi_repeat = false;
+		set_MVC = false;
 		// Exercise
 		main_thEN = false;
 		recReq = false;
@@ -93,6 +94,6 @@ public:
 mainUI GL_UI;
 
 // Other variables that for some reason could not be created in the GUI declaration
-string statusList[10];
-string methodList[3];
+string statusList[15];
+string methodList[6];
 string exerciseList[30];

@@ -32,6 +32,7 @@ typedef enum
     st_calA_go = 7,   // Stimulation automatic calibration -> stimulator active
     st_calA_stop = 8, // Stimulation automatic calibration -> resting period
     st_repeat = 9,    // Repeat an exercise
+    st_mvc = 10,    // set MVC threshold
 } state_Type;
 
 typedef enum
@@ -49,6 +50,8 @@ typedef enum
     th_SD05 = 0,        // SD*0.5 = Half of the standard deviation
     th_SD03 = 1,        // SD*0.3 = Third of the standard deviation
     th_other = 2,       // Other?
+    th_MVC05 = 3,       // MVC*0.05
+    th_MVC10 = 4,       // MVC*0.10
 } threshold_Type;
 
 // User options for stimulation and process

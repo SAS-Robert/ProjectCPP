@@ -62,7 +62,7 @@ namespace SASv30 {
 		RehaMove3_Req_Type Move3_gui;
 		User_Req_Type user_gui;
 		state_Type state;
-		bool bUser, bMove3, bSetupPressed;
+		bool bUser, bMove3, bSetupPressed, bSingle_mth;
 		bool trainStart, stimA_active, stimM_active, gui_repeat, gui_new;
 		//char intStr[32];
 
@@ -91,9 +91,7 @@ namespace SASv30 {
 		System::Windows::Forms::Label^ fqTitle;
 		System::Windows::Forms::Label^ statusDebug;
 		System::Windows::Forms::Button^ stimButton;
-
 		System::Windows::Forms::Label^ nextTitle;
-
 		System::Windows::Forms::ComboBox^ methodBox;
 
 		System::Windows::Forms::Button^ velMinus;
@@ -102,12 +100,11 @@ namespace SASv30 {
 		System::Windows::Forms::Label^ velTitle;
 
 		System::Windows::Forms::ComboBox^ exerciseBox;
-
 		System::Windows::Forms::Label^ nextExTitle;
 
 		System::Windows::Forms::Label^ velCurrent;
 		System::Windows::Forms::BindingSource^ bindingSource1;
-	public: System::Windows::Forms::Label^ stimInfo;
+		System::Windows::Forms::Label^ stimInfo;
 
 
 	private: System::ComponentModel::IContainer^ components;
@@ -222,7 +219,7 @@ namespace SASv30 {
 			this->exerciseTitle->ForeColor = System::Drawing::SystemColors::Highlight;
 			this->exerciseTitle->Location = System::Drawing::Point(272, 151);
 			this->exerciseTitle->Name = L"exerciseTitle";
-			this->exerciseTitle->Size = System::Drawing::Size(311, 509);
+			this->exerciseTitle->Size = System::Drawing::Size(357, 509);
 			this->exerciseTitle->TabIndex = 8;
 			this->exerciseTitle->Text = L"EXERCISE SETTINGS";
 			this->exerciseTitle->TextAlign = System::Drawing::ContentAlignment::TopCenter;
@@ -453,7 +450,7 @@ namespace SASv30 {
 			this->nextTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->nextTitle->Location = System::Drawing::Point(283, 299);
+			this->nextTitle->Location = System::Drawing::Point(283, 297);
 			this->nextTitle->Name = L"nextTitle";
 			this->nextTitle->Size = System::Drawing::Size(290, 26);
 			this->nextTitle->TabIndex = 34;
@@ -463,18 +460,21 @@ namespace SASv30 {
 			// methodBox
 			// 
 			this->methodBox->AllowDrop = true;
-			this->methodBox->AutoCompleteCustomSource->AddRange(gcnew cli::array< System::String^  >(3) {
+			this->methodBox->AutoCompleteCustomSource->AddRange(gcnew cli::array< System::String^  >(5) {
 				L"xi+sd*0.5", L"xi+sd*0.33",
-					L"Another"
+					L"Another", L"MVC05", L"MVC10"
 			});
-			this->methodBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->methodBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 27.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->methodBox->ForeColor = System::Drawing::SystemColors::WindowText;
 			this->methodBox->FormattingEnabled = true;
-			this->methodBox->Items->AddRange(gcnew cli::array< System::Object^  >(3) { L"Xi+SD*0.5", L"Xi+SD*0.33", L"Another" });
-			this->methodBox->Location = System::Drawing::Point(283, 328);
+			this->methodBox->Items->AddRange(gcnew cli::array< System::Object^  >(5) {
+				L"Xi+SD*0.5", L"Xi+SD*0.33", L"Another", L"MVC05",
+					L"MVC10"
+			});
+			this->methodBox->Location = System::Drawing::Point(280, 324);
 			this->methodBox->Name = L"methodBox";
-			this->methodBox->Size = System::Drawing::Size(290, 39);
+			this->methodBox->Size = System::Drawing::Size(332, 50);
 			this->methodBox->TabIndex = 36;
 			this->methodBox->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::methodBox_SelectedIndexChanged);
 			// 
@@ -505,7 +505,7 @@ namespace SASv30 {
 			this->velPlus->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->velPlus->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->velPlus->Location = System::Drawing::Point(511, 388);
+			this->velPlus->Location = System::Drawing::Point(552, 388);
 			this->velPlus->Name = L"velPlus";
 			this->velPlus->Size = System::Drawing::Size(60, 78);
 			this->velPlus->TabIndex = 40;
@@ -518,9 +518,9 @@ namespace SASv30 {
 			this->velValue->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->velValue->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->velValue->Location = System::Drawing::Point(341, 435);
+			this->velValue->Location = System::Drawing::Point(351, 435);
 			this->velValue->Name = L"velValue";
-			this->velValue->Size = System::Drawing::Size(179, 31);
+			this->velValue->Size = System::Drawing::Size(195, 31);
 			this->velValue->TabIndex = 39;
 			this->velValue->Text = L"isVelocity value";
 			this->velValue->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
@@ -530,9 +530,9 @@ namespace SASv30 {
 			this->velTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->velTitle->ForeColor = System::Drawing::SystemColors::ControlText;
-			this->velTitle->Location = System::Drawing::Point(341, 391);
+			this->velTitle->Location = System::Drawing::Point(346, 391);
 			this->velTitle->Name = L"velTitle";
-			this->velTitle->Size = System::Drawing::Size(179, 31);
+			this->velTitle->Size = System::Drawing::Size(200, 31);
 			this->velTitle->TabIndex = 38;
 			this->velTitle->Text = L"MIN. VELOCITY";
 			this->velTitle->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
@@ -544,16 +544,16 @@ namespace SASv30 {
 					L"Planta flexion", L"Dorsal flexion", L"Other"
 			});
 			this->exerciseBox->Enabled = false;
-			this->exerciseBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->exerciseBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 27.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->exerciseBox->FormattingEnabled = true;
 			this->exerciseBox->Items->AddRange(gcnew cli::array< System::Object^  >(5) {
 				L"Knee extension", L"Knee flexion", L"Planta flexion",
 					L"Dorsal flexion", L"Other"
 			});
-			this->exerciseBox->Location = System::Drawing::Point(280, 238);
+			this->exerciseBox->Location = System::Drawing::Point(280, 230);
 			this->exerciseBox->Name = L"exerciseBox";
-			this->exerciseBox->Size = System::Drawing::Size(294, 39);
+			this->exerciseBox->Size = System::Drawing::Size(332, 50);
 			this->exerciseBox->TabIndex = 45;
 			this->exerciseBox->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::exerciseBox_SelectedIndexChanged);
 			// 
@@ -563,7 +563,7 @@ namespace SASv30 {
 			this->nextExTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->nextExTitle->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->nextExTitle->Location = System::Drawing::Point(280, 205);
+			this->nextExTitle->Location = System::Drawing::Point(280, 203);
 			this->nextExTitle->Name = L"nextExTitle";
 			this->nextExTitle->Size = System::Drawing::Size(294, 30);
 			this->nextExTitle->TabIndex = 43;
@@ -575,7 +575,7 @@ namespace SASv30 {
 			this->velCurrent->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->velCurrent->ForeColor = System::Drawing::Color::DarkRed;
-			this->velCurrent->Location = System::Drawing::Point(413, 469);
+			this->velCurrent->Location = System::Drawing::Point(413, 473);
 			this->velCurrent->Name = L"velCurrent";
 			this->velCurrent->Size = System::Drawing::Size(158, 23);
 			this->velCurrent->TabIndex = 47;
@@ -601,7 +601,6 @@ namespace SASv30 {
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->ClientSize = System::Drawing::Size(624, 761);
-			this->ControlBox = false;
 			this->Controls->Add(this->stimInfo);
 			this->Controls->Add(this->velCurrent);
 			this->Controls->Add(this->exerciseBox);
@@ -665,10 +664,13 @@ namespace SASv30 {
 			statusList[7] = "Automatic calibration\n- stimulating";
 			statusList[8] = "Automatic calibration\n- resting";
 			statusList[9] = "Set finished";
+			statusList[10] = "Seting MVC threshold";
 
-			methodList[0] = "Xi+SD*0.5";
-			methodList[1] = "Xi+SD*0.3";
+			methodList[0] = "Xi+SD*3";
+			methodList[1] = "Xi+SD*2";
 			methodList[2] = "Another";
+			methodList[3] = "MVC05";
+			methodList[4] = "MVC10";
 
 			// for isMoving testing
 			isVelocity = 0.8;
@@ -700,7 +702,20 @@ namespace SASv30 {
 	}
 
 	private: System::Void click_thButton(System::Object^ sender, System::EventArgs^ e) {
-		user_gui = User_th;
+		// Normal run: either single-th method or MVC after setting the first threshold
+		if (state == st_th && !GL_UI.recReq && !GL_UI.th1)
+		{
+			user_gui = User_th;
+			// Debug
+			this->statusDebug->Text =L"Sending normal th request";
+		}
+		// MCV Method: for setting the 2nd threshold
+		else if (!bSingle_mth && GL_UI.th1)
+		{
+			GL_UI.set_MVC = true;
+			// Debug
+			this->statusDebug->Text = L"set_MVC = true";
+		}
 	}
 
 	private: System::Void click_repeatButton(System::Object^ sender, System::EventArgs^ e) {
@@ -749,7 +764,8 @@ namespace SASv30 {
 		}
 
 	}
-
+// Unused: old manual/automatic calibration
+/*
 	private: System::Void click_setButton(System::Object^ sender, System::EventArgs^ e) {
 
 		if (state == st_init)
@@ -769,7 +785,7 @@ namespace SASv30 {
 		}
 
 	}
-
+*/
 	private: System::Void methodBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
 		// Update the selected value
 		nextIndex = this->methodBox->SelectedIndex;
@@ -859,6 +875,8 @@ namespace SASv30 {
 		tempString = tempValueFq.str();
 		this->fqValue->Text = gcnew String(tempString.c_str());
 
+		bSingle_mth = (GL_UI.method != th_MVC10 && GL_UI.method != th_MVC05);
+
 		// -------------------- Update requests (GUI->SAS) --------------------
 		bUser = (user_gui != User_none);
 		bMove3 = (Move3_gui != Move3_none);
@@ -888,8 +906,8 @@ namespace SASv30 {
 		// - STOP (safety-related important) red -> Crimson
 
 		// Debug stuff
-		itoa(GL_UI.status, intStr, 10);
-		this->statusDebug->Text = gcnew String(string(intStr).c_str());
+		//itoa(GL_UI.status, intStr, 10);
+		//this->statusDebug->Text = gcnew String(string(intStr).c_str());
 
 		// Start/Stop stimulation
 		if (GL_UI.playPause)
@@ -932,17 +950,31 @@ namespace SASv30 {
 
 
 		// Set threshold and method
-		if (state == st_th && !GL_UI.recReq && GL_UI.main_thEN)
+		// Normal behavior Enabled: 1st threshold (does not matter what method)
+		if (state == st_th && !GL_UI.recReq && GL_UI.main_thEN && !GL_UI.th1)
 		{
 			this->thButton->BackColor = System::Drawing::Color::LimeGreen;
+			this->thButton->Text = L"SET THRESHOLD";
 			this->nextTitle->BackColor = System::Drawing::Color::LimeGreen;
 			this->nextTitle->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->nextTitle->Text = L"SELECT METHOD:";
 			this->methodBox->Enabled = true;
 		}
+		else if (!bSingle_mth && GL_UI.th1 && !GL_UI.set_MVC)
+		{
+			// MVC: differentiating between 2nd th and set
+			this->thButton->BackColor = System::Drawing::Color::LimeGreen;
+			this->thButton->Text = L"SET MVC THRESHOLD";
+			this->nextTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->nextTitle->Text = L"SELECTED METHOD:";
+			this->methodBox->Enabled = false;
+		}
+		// Normal behavior Disabled: 1st threshold set (1 single method) or 2nd th set (MVC)
 		else
 		{
 			this->thButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->thButton->Text = L"SET THRESHOLD";
 			this->nextTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
 			this->nextTitle->Text = L"SELECTED METHOD:";

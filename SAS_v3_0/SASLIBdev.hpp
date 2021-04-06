@@ -476,6 +476,8 @@ public:
         smpt_port = smpt_open_serial_port(&device_ri, port_name_ri);
         packet_number = smpt_packet_number_generator_next(&device_ri);
         smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
+        // include the get_stop_ack here
+        // check smpt_dl_op_mode
         smpt_next = smpt_check && smpt_port && smpt_stop;
         // smpt_next = connection to the device was successful
 
@@ -558,6 +560,7 @@ public:
         while (smpt_new_packet_received(&device_ri))
         {
             handle_dl_packet_global(&device_ri);
+            // Sleep(2); // <--- maybe add this?
         }
         smpt_port = smpt_close_serial_port(&device_ri);
         smpt_check = smpt_check_serial_port(port_name_ri);

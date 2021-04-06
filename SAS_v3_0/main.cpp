@@ -34,6 +34,7 @@ struct device_to_device
 	bool start = false;
 	bool end = false;
 	bool th = false;
+    bool th2 = false;
 	bool ready = false;
 	bool req = false;
 } rec_status, MAIN_to_all, stim_status;
@@ -54,8 +55,8 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 // ------------------------- Devices handling --------------------------------
 bool stim_ready = false, rec_ready = false, stim_abort = false;
 
-char PORT_STIM[5] = "COM3";   // Laptop
-// char PORT_STIM[5] = "COM5";     // Robot
+//char PORT_STIM[5] = "COM6";   // Laptop
+char PORT_STIM[5] = "COM7";     // Robot
 RehaMove3 stimulator;
 
 // char PORT_REC[5] = "COM4";    // Laptop
@@ -64,8 +65,8 @@ RehaIngest recorder;
 
 // Flag variables
 bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
-bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false;
-bool main_fl0 = false, main_fl1 = false, main_init = false, main_1stSet = false;
+bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false, rec_fl5 = false;;
+bool main_fl0 = false, main_fl1 = false, main_init = false, main_1stSet = false, main_fl2 = false;;
 bool main_thEN = false;
 // ------------------------- UDP / TCP  ------------------------
 int udp_cnt = 0;
@@ -166,8 +167,8 @@ void Main()
     GL_UI.END_GUI = true;
     // Wait for the other threads to join
     robot.join();
-    extGUI.join();
     stateMachine.join();
+   // extGUI.join();
 }
 
 // ---------------------------- Interface function definitions --------------------------
@@ -179,8 +180,8 @@ void update_localGui() {
     GL_UI.screenMessage += msg_main;
     //GL_UI.screenMessage += "\nRobot-IP status: ";
     //GL_UI.screenMessage += msg_connect;
-    //GL_UI.screenMessage += "\nScreen-IP status: ";
-    //GL_UI.screenMessage += msg_extGui;
+    GL_UI.screenMessage += "\nScreen-IP status: ";
+    GL_UI.screenMessage += msg_extGui;
     //GL_UI.screenMessage += "\nRehaMove3: ";
     //GL_UI.screenMessage += msg_stimulating;
     //GL_UI.screenMessage += "\nRehaIngest: ";
@@ -199,6 +200,10 @@ void update_localGui() {
     GL_UI.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
     GL_UI.frequency = stimulator.fq[Smpt_Channel_Red];
     GL_UI.playPause = robert.playPause;
+
+    // Threshold variables
+    GL_UI.th1 = rec_status.th;
+    GL_UI.th2 = rec_status.th2;
 
     // ------------- gui -> sas -------------
     // Keys
@@ -463,7 +468,7 @@ void mainSAS_thread()
             }
             else if (screen_status == exDone || screen_status == msgEnd)
             {
-                GL_state = st_stop;
+                GL_state = st_init;
                 screen_status = msg_none; // update screen status if the state is updated
             }
             else if (screen_status != setDone && screen_status != exDone)
@@ -490,13 +495,26 @@ void mainSAS_thread()
             //}
             if (rec_status.th) // && screen_status == repStart
             {
-                msg_main = "Threshold saved. Press patient button to begin exercise.";
-                // Update exercise settings
-                robert.playPause = false; // start the first set with the stimulation disabled
-                GL_state = st_wait;
-                main_1stSet = false;
-                main_thEN = false;
                 //screen_status = msg_none; // update screen status if the state is updated
+
+                // New: differenciate bettween single-th and MVC methods
+                if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && GL_UI.set_MVC)
+                {
+                    GL_state = st_mvc;
+                    msg_main = "Setting MVC - 2nd threshold.";
+                }
+                else if (GL_thMethod != th_MVC05 && GL_thMethod != th_MVC10) {
+                    GL_state = st_wait;
+                    msg_main = "Threshold saved. Press patient button to begin exercise.";
+                    // Update exercise settings
+                    robert.playPause = false; // start the first set with the stimulation disabled
+                    main_1stSet = false;
+                    main_thEN = false;
+                }
+                else if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && !GL_UI.set_MVC)
+                {
+                    msg_main = "Threshold saved. Press Set MVC for 2nd threshold.";
+                }
             }
             else if (rec_status.req && !rec_status.th)
             {
@@ -508,6 +526,38 @@ void mainSAS_thread()
                 //msg_main = "Choose a method and press SET THRESHOLD";
                 GL_thMethod = GL_UI.next_method;
             }
+
+            // Abort
+            if (screen_status == exDone || screen_status == msgEnd)
+            {
+                GL_state = st_repeat;
+            }
+            break;
+
+
+        // New MVC methods state
+        case st_mvc:
+
+            if (rec_status.th2)
+            {
+                msg_main = "MVC threshold set. Press patient button to begin exercise.";
+                // Update exercise settings
+                robert.playPause = false; // start the first set with the stimulation disabled
+                main_1stSet = false;
+                main_thEN = false;
+                GL_UI.set_MVC = false;
+                GL_state = st_wait;
+            }
+            else
+            {
+                msg_main = msg_recording;
+            }
+
+            // Abort
+            if (screen_status == exDone || screen_status == msgEnd)
+            {
+                GL_state = st_repeat;
+            }
             break;
 
         case st_wait:
@@ -516,7 +566,7 @@ void mainSAS_thread()
                 // Exercise has been aborted
                 msg_main = "Exercise done.";
 
-                GL_state = st_stop;
+                GL_state = st_repeat;
                 fileLOGS << "2.0, " << GL_processed << "\n";
             }
             else if (rec_status.start && robert.playPause)
@@ -531,7 +581,7 @@ void mainSAS_thread()
             }
             // For GUI testing:  screen_status == repEnd
             // Final version: (robert.Reached && robert.valid_msg)
-            else if (screen_status == repEnd || screen_status == msgEnd)
+            else if (screen_status == repEnd)
             {
                 // Patient has reached end of repetition
                 msg_main = "End-Point reached";
@@ -558,17 +608,16 @@ void mainSAS_thread()
             break;
 
         case st_running:
-            if (screen_status == exDone || screen_status == msgEnd)
+            if ((screen_status == exDone || screen_status == msgEnd) && !stimulator.active)
             {
                 // Exercise has been aborted
                 msg_main = "Exercise done";
 
-                GL_state = st_stop;
+                GL_state = st_repeat;
                 fileLOGS << "3.0, " << GL_processed << "\n";
             }
-            // For GUI testing:  (screen_status == repEnd)
-            // Final version: (robert.Reached && robert.valid_msg)
-            else if (robert.Reached && robert.valid_msg)
+            // End Point reached or set finished 
+            else if ((robert.Reached && robert.valid_msg)|| screen_status == setDone)
             {
                 // Patient has reached end of repetition
                 msg_main = "End-Point reached";
@@ -873,6 +922,7 @@ void stimulating_sas()
 {
     // Local Variables
     bool Move3_user_req = false, Move3_user_gui = false, Move3_user_key = false;
+    bool screen_stop = false;
 
     switch (GL_state)
     {
@@ -909,9 +959,9 @@ void stimulating_sas()
         {
             modify_stimulation(Move3_key, hmi_channel);
         }
-
+        screen_stop = (screen_status == setDone) || (screen_status == exDone);
         // Quit
-        if (((Move3_key == Move3_stop || stim_timeout || screen_status == setDone || !robert.playPause || robert.Reached) && stimulator.active))
+        if (((Move3_key == Move3_stop || stim_timeout || screen_stop || !robert.playPause || robert.Reached) && stimulator.active))
         {
             stimulator.pause();
             stim_done = !stimulator.active && stim_timeout;
@@ -951,6 +1001,8 @@ void stimulating_sas()
         }
         break;
 
+        // There are no actions available while setting the threshold (st_th, st_mvc)
+
         // Normal SAS process
     case st_wait:
         stim_fl0 = false;
@@ -980,16 +1032,15 @@ void stimulating_sas()
             Move3_key = Move3_none;
         }
 
+        screen_stop = (screen_status == setDone) || (screen_status == exDone) || (screen_status == msgEnd);
         // Stop stimulation
-        if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || stim_timeout || !robert.playPause || robert.Reached) && stimulator.active || screen_status == exDone)
+        if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || screen_stop || stim_timeout || !robert.playPause || robert.Reached) && stimulator.active || screen_status == exDone)
         {
             stimulator.pause();
             stim_fl1 = true;
             stim_pause = !robert.playPause;
             // abort exercise
-            if (screen_status == exDone) {
-                stim_abort = true;
-            }
+            stim_abort = screen_stop;
             // screen message
             if (Move3_hmi == Move3_stop || Move3_key == Move3_stop)
             {
@@ -1120,7 +1171,7 @@ void stimulating_sas()
 void recording_sas()
 {
     int iterator = 0;
-    double mean = 0, temp_value = 0;
+    double mean = 0, temp_value = 0, mvc = 0;
     double static value = 0, value_cnt = 0;
     bool st_wait_jump = false;
 
@@ -1153,6 +1204,9 @@ void recording_sas()
         // Discard data
         recorder.record();
         recorder_emg1.clear();
+        MEAN = 0;
+        rec_fl4 = false;
+        rec_fl5 = false;
         break;
 
     case st_th:
@@ -1168,34 +1222,39 @@ void recording_sas()
             }
 
             GL_sampleNr = recorder_emg1.size();
-            if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
+            unsigned long long int N_len = GL_sampleNr - GL_processed;
+            if (N_len >= SAMPLE_LIM)
             {
-                // Select threshold method 
-                switch (GL_thMethod)
-                {
-                case th_SD05:
-                    temp_value = process_th_SD05(GL_sampleNr, recorder_emg1);
-                    break;
-                case th_SD03:
-                    temp_value = process_th_SD03(GL_sampleNr, recorder_emg1);
-                    break;
-                default:
-                    temp_value = process_th_XX(GL_sampleNr, recorder_emg1);
-                }
+                // Get mean
+                temp_value = process_th_mean(GL_sampleNr, recorder_emg1);
 
-                //printf("%d\n", temp_value);         // debugging stuff
-                if (GL_sampleNr >= TH_DISCARD)
+                if (GL_sampleNr >= TH_DISCARD && !rec_status.th)
                 {
                     THRESHOLD = THRESHOLD + temp_value;
                 }
-                if (GL_processed >= TH_NR)
+                if (GL_processed >= TH_NR && !rec_fl4)
                 {
-                    THRESHOLD = THRESHOLD / (GL_sampleNr - GL_thDiscard);
+                    unsigned long long int tot_len = GL_sampleNr - GL_thDiscard;
+                    MEAN = MEAN / tot_len;
+                    // Select threshold method 
+                    switch (GL_thMethod)
+                    {
+                    case th_SD05:
+                        THRESHOLD = process_th_sd(GL_sampleNr, 3);
+                        break;
+                    case th_SD03:
+                        THRESHOLD = process_th_sd(GL_sampleNr, 2);
+                        break;
+                    default:
+                        THRESHOLD = MEAN;
+                    }
+
                     sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
                     //sprintf(msg_main_char, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
                     //msg_main = msg_main_char;
                     rec_status.th = true;
                     rec_status.req = false;
+                    rec_fl4 = true;
                 }
             }
         }
@@ -1205,6 +1264,46 @@ void recording_sas()
             recorder_emg1.clear();
         }
         break;
+
+    case st_mvc:
+        recorder.record();
+        if (!rec_fl5)
+        {
+            GL_processed_MVC = GL_processed + 2 * TH_NR;
+            sprintf(msg_recording, "MCV samples needed = %d, , Current processed samples =  %d", GL_processed_MVC, GL_processed);
+            rec_fl5 = true;
+        }
+
+        GL_sampleNr = recorder_emg1.size();
+        if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
+        {
+            sprintf(msg_recording, "MCV samples needed = %d, , Current processed samples =  %d", GL_processed_MVC, GL_processed);
+            mvc = process_th_mvc(GL_sampleNr, recorder_emg1);
+            //std::cout << "Processed, now pointer on " << GL_processed << endl;
+
+            if (GL_processed >= GL_processed_MVC)
+            {
+                // Select threshold method 
+                switch (GL_thMethod)
+                {
+                case th_MVC05:
+                    THRESHOLD = MEAN + mvc * 0.05;
+                    break;
+                case th_MVC10:
+                    THRESHOLD = MEAN + mvc * 0.10;
+                    break;
+                default:
+                    THRESHOLD = MEAN;
+                }
+
+                //sprintf(msg_recording, "EMG activity: threshold =  %3.6f", THRESHOLD);
+                sprintf(msg_recording, "MEAN = %3.6f, THRESHOLD = %3.6f", MEAN, THRESHOLD);
+                rec_status.th2 = true;
+                rec_status.req = false;
+            }
+        }
+        break;
+
 
     case st_wait:
         recorder.record();
@@ -1263,6 +1362,10 @@ void recording_sas()
         }
         rec_status.ready = true;
         rec_status.th = false;
+        rec_status.th2 = false;
+        MEAN = 0;
+        rec_fl5 = false;
+        rec_fl4 = false;
         break;
 
     case st_repeat:
