@@ -54,7 +54,7 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 // ------------------------- Devices handling --------------------------------
 bool stim_ready = false, rec_ready = false, stim_abort = false;
 
-char PORT_STIM[5] = "COM6";   // Laptop
+char PORT_STIM[5] = "COM3";   // Laptop
 // char PORT_STIM[5] = "COM5";     // Robot
 RehaMove3 stimulator;
 
@@ -900,6 +900,8 @@ void stimulating_sas()
         {
             sprintf(msg_stimulating, " ");
             stim_fl2 = true;
+            // load initial values
+            set_stimulation(GL_exercise, stimulator.stim[Smpt_Channel_Red], INIT_FQ);
         }
         Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start);
         //Update stimulation parameters if a key associated with parameters has been pressed
@@ -974,8 +976,6 @@ void stimulating_sas()
         if (Move3_user_key)
         {
             modify_stimulation(Move3_key, Smpt_Channel_Red);
-            stim_fl1 = false;
-            // testing
             Move3_hmi = Move3_none;
             Move3_key = Move3_none;
         }
