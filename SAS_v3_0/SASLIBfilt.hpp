@@ -90,6 +90,7 @@ void startup_filters() {
     bPass_result.clear();
     b50_result.clear();
     GL_processed = 0;
+    GL_processed_MVC = 0;
     THRESHOLD = 0.0;
     for (int i = 0; i < FLEX_WINDOW; i++)
     {

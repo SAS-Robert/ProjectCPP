@@ -404,8 +404,9 @@ void mainSAS_thread()
     // Local variables
     bool devicesReady;
     bool robotReady;
-    // initialize files names
+    // initialize files names and filters
     start_files();
+    startup_filters();
 
     // Flushing input and output buffers
     cout.flush();
@@ -705,11 +706,11 @@ void mainSAS_thread()
                 GL_UI.hmi_repeat = true;
                 GL_UI.set_MVC = false;
                 // Repeat same type of exercise
-                startup_filters();
                 main_fl0 = false;
                 main_fl1 = false;
 
                 end_files();
+                startup_filters();
                 start_files();
 
                 statusList[(int)st_th] = "On hold";
@@ -719,8 +720,8 @@ void mainSAS_thread()
             else if (screen_status == exDone && devicesReady && robotReady)
             {
                 msg_main = "Exercise finished.";
-                startup_filters();
                 end_files();
+                startup_filters();
                 start_files();
                 GL_state = st_init;
             }
@@ -1209,7 +1210,6 @@ void recording_sas()
                 sprintf(msg_recording, "Recorder ready");
             }
         }
-        startup_filters();
         rec_status.ready = recorder.ready;
         break;
 
@@ -1381,9 +1381,14 @@ void recording_sas()
         break;
 
     case st_repeat:
-        // Discard data
+        // Discard data between sets
         recorder.record();
-        recorder_emg1.clear();
+        GL_sampleNr = recorder_emg1.size();
+        if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
+        {
+            mean = process_data_iir(GL_sampleNr, recorder_emg1);
+        }
+        //recorder_emg1.clear();
         rec_status.th = false;
         rec_status.th2 = false;
         rec_status.req = false;
