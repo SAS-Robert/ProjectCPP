@@ -51,8 +51,9 @@ unsigned long long int GL_sampleNr = 0;
 
 // Threshold processing
 const unsigned int TH_TIME = 3;                    // 3 seconds to set threshold
-const unsigned long long int TH_NR = TH_TIME * SAMPLINGRATE; // amount of samples for threshold
 const double TH_DISCARD = SAMPLINGRATE * 1.1;                // discard first filtered samples from the threshold
+const unsigned long long int TH_NR = TH_TIME * SAMPLINGRATE + TH_DISCARD; // amount of samples for threshold
+
 double GL_thDiscard = 0;
 int TH_WAIT = 20, GL_thWaitCnt = 0; // amount of mean sets before triggering
 
@@ -117,7 +118,7 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
     value = (flex_num) / (flex_den);
 
     // Savind data in files will be eventually deleted
-    fileVALUES << 3.0 << "," << mean << ", 0.0, " << GL_processed << "," << v_size << "," << N_len << "\n";
+    fileVALUES << 3.0 << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "\n";
 
     // Update GL_processed data parameters
     GL_processed = i;
@@ -182,10 +183,10 @@ static double process_th_mean(unsigned long long int v_size, vector<double> raw_
 
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
-        fileVALUES << 2.0 << "," << mean << "," << sd << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
+        fileVALUES << 2.0 << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << TH_DISCARD << "," << MEAN << "\n";
     }
     else {
-        fileVALUES << 2.0 << "," << mean << "," << sd << "," << THRESHOLD << "," << v_size << "," << value << "\n";
+        fileVALUES << 2.0 << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "\n";
     }
 
     // Update amount of GL_processed data
@@ -274,10 +275,10 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
 
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
-        fileVALUES << 1.0 << "," << MVC << "," << 0 << "," << TH_DISCARD << "," << v_size << "," << MVC << "\n";
+        fileVALUES << 1.0 << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << TH_DISCARD << "," << MEAN << "\n";
     }
     else {
-        fileVALUES << 1.0 << "," << MVC << "," << 0 << "," << THRESHOLD << "," << v_size << "," << MVC << "\n";
+        fileVALUES << 1.0 << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << THRESHOLD << "," << MEAN << "\n";
     }
 
     // Update amount of GL_processed data

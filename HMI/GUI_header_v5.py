@@ -29,12 +29,11 @@ st_calA_stop = 8
 st_repeat = 9
 
 # threshold_Type
-global th_SD05, th_SD03, th_other, th_MVC05, th_MVC10
+global th_SD05, th_SD03, th_MVC05, th_MVC10
 th_SD05 = 0        # SD*0.5 = Half of the standard deviation
 th_SD03 = 1        # SD*0.3 = Third of the standard deviation
-th_other = 2       # Other?
-th_MVC05 = 3       # MVC*0.05
-th_MVC10 = 4       # MVC*0.10
+th_MVC05 = 2       # MVC*0.05
+th_MVC10 = 3       # MVC*0.10
 
 # RehaMove3_Req_Type
 global Move3_none, Move3_incr, Move3_decr, Move3_ramp_more, Move3_ramp_less, Move3_stop, Move3_start, Move3_done, Move3_en_ch
@@ -132,7 +131,7 @@ ex_select = ["Lower leg flexion", "Upper leg extension", "Other"]
 global status_list
 status_list = ["Initialization", "Setting threshold", "EMG monitoring", "Tigger FES", "Stop FES", "Finish program", "Manual calibration", "Automatic calibration\n- stimulating", "Automatic calibration\n- resting", "Exercise finished", "st_MVC"]
 global mth_select, mth_str, mth_current
-mth_select = ["th_SD05", "th_SD03", "th_other","MVC05", "MVC10"]
+mth_select = ["th_SD05", "th_SD03", "MVC05", "MVC10"]
 
 
 # Colours

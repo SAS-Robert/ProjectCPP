@@ -30,7 +30,7 @@ data_dir = dir([SASshared folder name '_filter*.txt']);
 % plot all the EMGs individually with raw-vs-filtered on time domain, 
 % frequency domain, start-end of repetitions, triggers, etc
 files_dir = [SASshared_full  name];
-for k=amount
+for k=1:amount
     name = ['Recording XXth January, nr.' num2str(k)];
     data = plot_th_mvc(files_dir,name,k,'C');    
 end
