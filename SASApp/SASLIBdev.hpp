@@ -53,14 +53,14 @@ Smpt_ml_channel_config CIRCUIT_SET;
 
 // ------------------ Functions definition ------------------
 // Original Hasomed Functions
-void fill_ml_init(Smpt_device *const device, Smpt_ml_init *const ml_init)
+void fill_ml_init(Smpt_device* const device, Smpt_ml_init* const ml_init)
 {
     /* Clear ml_init struct and set the data */
     smpt_clear_ml_init(ml_init);
     ml_init->packet_number = smpt_packet_number_generator_next(device);
 }
 
-void fill_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update, Smpt_Channel sel_ch, bool enable, Smpt_ml_channel_config values)
+void fill_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_Channel sel_ch, bool enable, Smpt_ml_channel_config values)
 //void fill_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update, Smpt_ml_channel_config values)
 {
     /* Clear ml_update and set the data */
@@ -80,7 +80,7 @@ void fill_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update, 
     ml_update->channel_config[sel_ch].points[2].time = values.points[2].time;
 }
 
-void enable_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update, Smpt_Channel sel_ch, bool enable)
+void enable_ml_update(Smpt_device* const device, Smpt_ml_update* const ml_update, Smpt_Channel sel_ch, bool enable)
 {
     // Clear ml_update and set the data
     smpt_clear_ml_update(ml_update);
@@ -98,13 +98,13 @@ void enable_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update
     ml_update->channel_config[sel_ch].points[2].time = 200;
 }
 
-void fill_ml_get_current_data(Smpt_device *const device, Smpt_ml_get_current_data *const ml_get_current_data)
+void fill_ml_get_current_data(Smpt_device* const device, Smpt_ml_get_current_data* const ml_get_current_data)
 {
     ml_get_current_data->packet_number = smpt_packet_number_generator_next(device);
     ml_get_current_data->data_selection[Smpt_Ml_Data_Stimulation] = true; /* get stimulation data */
 }
 
-void fill_dl_init(Smpt_device *const device, Smpt_dl_init *const dl_init)
+void fill_dl_init(Smpt_device* const device, Smpt_dl_init* const dl_init)
 {
     dl_init->ads129x.ch1set = 16;
     dl_init->ads129x.ch2set = 0;
@@ -122,35 +122,35 @@ void fill_dl_init(Smpt_device *const device, Smpt_dl_init *const dl_init)
     dl_init->filter = Smpt_Dl_Dsp_Filter_off; /* = 0 no filter is activated*/
 }
 
-void fill_dl_power_module(Smpt_device *const device, Smpt_dl_power_module *const dl_power_module)
+void fill_dl_power_module(Smpt_device* const device, Smpt_dl_power_module* const dl_power_module)
 {
     dl_power_module->hardware_module = Smpt_Dl_Hardware_Module_Measurement;
     dl_power_module->switch_on_off = true;
 }
 
-void handleInitAckReceived(Smpt_device *const device, const Smpt_ack &ack)
+void handleInitAckReceived(Smpt_device* const device, const Smpt_ack& ack)
 {
     Smpt_dl_init_ack init_ack;
     smpt_get_dl_init_ack(device, &init_ack);
 }
 
-void handlePowerModuleAckReceived(Smpt_device *const device, const Smpt_ack &ack)
+void handlePowerModuleAckReceived(Smpt_device* const device, const Smpt_ack& ack)
 {
     Smpt_dl_power_module_ack power_module_ack;
     smpt_get_dl_power_module_ack(device, &power_module_ack);
 }
 
-void handleStopAckReceived(Smpt_device *const device, const Smpt_ack &ack)
+void handleStopAckReceived(Smpt_device* const device, const Smpt_ack& ack)
 {
     Smpt_dl_power_module_ack power_module_ack;
     smpt_get_dl_power_module_ack(device, &power_module_ack);
 }
 
 // Modified from original Hasomeds examples:
-static void handleSendLiveDataReceived(Smpt_device *const device, const Smpt_ack &ack)
+static void handleSendLiveDataReceived(Smpt_device* const device, const Smpt_ack& ack)
 {
     Smpt_dl_send_live_data live_data;
-    float values[5] = {0};
+    float values[5] = { 0 };
     smpt_get_dl_send_live_data(device, &live_data);
 
     for (int i = 0; i < live_data.n_channels; i++)
@@ -168,7 +168,7 @@ static void handleSendLiveDataReceived(Smpt_device *const device, const Smpt_ack
     // recorder_emg2.push_back((double)values[2]);
 }
 
-static bool handle_dl_packet_global(Smpt_device *const device)
+static bool handle_dl_packet_global(Smpt_device* const device)
 {
     Smpt_ack ack;
     smpt_last_ack(device, &ack);
@@ -219,8 +219,8 @@ void load_stim_settings() {
     // This function just initializes the stimulation values for different profiles:
 
     // Upper leg extension
-    UPPERLEG_SET.number_of_points = 3; 
-    UPPERLEG_SET.ramp = 3;             
+    UPPERLEG_SET.number_of_points = 3;
+    UPPERLEG_SET.ramp = 3;
     UPPERLEG_SET.period = 33;               // 1/frequency (ms)
     UPPERLEG_SET.points[0].current = 25;    // amplitude (mA)
     UPPERLEG_SET.points[0].time = 200;
@@ -249,17 +249,17 @@ void load_stim_settings() {
     CIRCUIT_SET.points[2].time = 200;
 }
 
-void set_stimulation(exercise_Type profile, Smpt_ml_channel_config &settings, double frequency)
+void set_stimulation(exercise_Type profile, Smpt_ml_channel_config& settings, double frequency)
 {
     Smpt_ml_channel_config new_settings = CIRCUIT_SET;
-    switch (profile) 
+    switch (profile)
     {
-        case lowerLeg_flex:
-            new_settings = LOWERLEG_SET;
-            break;
-        case upperLeg_ext:
-            new_settings = UPPERLEG_SET;
-            break;
+    case lowerLeg_flex:
+        new_settings = LOWERLEG_SET;
+        break;
+    case upperLeg_ext:
+        new_settings = UPPERLEG_SET;
+        break;
     }
     // Update values
     new_settings.period = float(MS_TO_HZ / frequency);
@@ -270,7 +270,7 @@ void set_stimulation(exercise_Type profile, Smpt_ml_channel_config &settings, do
 class RehaMove3
 {
 private:
-    char *port_name_rm;
+    char* port_name_rm;
     Smpt_device device;
     Smpt_ml_init ml_init; // Struct for ml_init command *
     Smpt_ml_get_current_data ml_get_current_data;
@@ -284,16 +284,16 @@ public:
     //Smpt_ml_channel_config stim;
     Smpt_ml_channel_config stim[4];
     double fq[4];
-    bool stim_act[4] = {true, false, false, false};
+    bool stim_act[4] = { true, false, false, false };
     // From main:
     bool abort;
 
     // Constructor
     RehaMove3()
     {
-        device = {0};
-        ml_init = {0};
-        ml_get_current_data = {0};
+        device = { 0 };
+        ml_init = { 0 };
+        ml_get_current_data = { 0 };
         smpt_port = false;
         smpt_check = false;
         smpt_next = false;
@@ -322,7 +322,7 @@ public:
         stim[Smpt_Channel_Red].points[2].time = 200;
 
         // Start Process
-        if (display) { printf("Reha Move3 message: Initializing device on port %s... ", port_name_rm); } 
+        if (display) { printf("Reha Move3 message: Initializing device on port %s... ", port_name_rm); }
 
         smpt_check = smpt_check_serial_port(port_name_rm);
         smpt_port = smpt_open_serial_port(&device, port_name_rm);
@@ -355,27 +355,27 @@ public:
                 fq[k] = INIT_FQ;
                 set_stimulation(exercise, stim[k], fq[k]);
             }
-            if(display) { printf("Device RehaMove3 ready.\n"); }
-            }
-            else if (!smpt_next)
+            if (display) { printf("Device RehaMove3 ready.\n"); }
+        }
+        else if (!smpt_next)
+        {
+            smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
+            smpt_close_serial_port(&device);
+            if (smpt_check && display)
             {
-                smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
-                smpt_close_serial_port(&device);
-                if (smpt_check && display)
-                {
-                    std::cout << "\nError - Reha Move3: Device does not respond. Turn it on or restart it.\n";
-                }
-                else if(display)
-                {
-                    std::cout << "\nError - Reha Move3: Device not found. Check connection.\n";
-                }
-                smpt_port = true;
-                // Retry after this
+                std::cout << "\nError - Reha Move3: Device does not respond. Turn it on or restart it.\n";
             }
-            else if (abort) 
+            else if (display)
             {
-                smpt_end = true;
+                std::cout << "\nError - Reha Move3: Device not found. Check connection.\n";
             }
+            smpt_port = true;
+            // Retry after this
+        }
+        else if (abort)
+        {
+            smpt_end = true;
+        }
 
     };
     void update()
@@ -406,7 +406,7 @@ public:
         {
             printf("Chanel %i is enabled\n", sel_ch);
         }
-        else if(display)
+        else if (display)
         {
             printf("Chanel %i is not enabled\n", sel_ch);
         }
@@ -441,10 +441,10 @@ public:
 class RehaIngest
 {
 private:
-    const char *port_name_ri;
+    const char* port_name_ri;
     uint8_t packet_number = 0;
-    Smpt_device device_ri = {0};
-    Smpt_ml_init ml_init = {0}; // Struct for ml_init command
+    Smpt_device device_ri = { 0 };
+    Smpt_ml_init ml_init = { 0 }; // Struct for ml_init command
     //Process variables
     bool smpt_port, smpt_check, smpt_stop, smpt_next, smpt_end;
 
@@ -455,8 +455,8 @@ public:
     // Constructor
     RehaIngest()
     {
-        device_ri = {0};
-        ml_init = {0};
+        device_ri = { 0 };
+        ml_init = { 0 };
         packet_number = 0;
         smpt_port = false;
         smpt_check = false;
@@ -515,7 +515,7 @@ public:
         }
         // Second step: enable device
         if (display) { std::cout << "Reha Ingest message: Enabling and initializing device... "; }
-        Smpt_dl_power_module dl_power_module = {0};
+        Smpt_dl_power_module dl_power_module = { 0 };
         fill_dl_power_module(&device_ri, &dl_power_module);
         smpt_send_dl_power_module(&device_ri, &dl_power_module);
 
@@ -527,7 +527,7 @@ public:
             handle_dl_packet_global(&device_ri);
         }
         // Third step: initialize device
-        Smpt_dl_init dl_init = {0};
+        Smpt_dl_init dl_init = { 0 };
         fill_dl_init(&device_ri, &dl_init);
         smpt_send_dl_init(&device_ri, &dl_init);
 

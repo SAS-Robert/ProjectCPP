@@ -31,6 +31,7 @@ typedef enum
     st_calA_go = 7,   // Stimulation automatic calibration -> stimulator active
     st_calA_stop = 8, // Stimulation automatic calibration -> resting period
     st_repeat = 9,    // Repeat an exercise
+    st_MVC = 10,    // set MVC threshold
 } state_Type;
 
 typedef enum
@@ -45,7 +46,8 @@ typedef enum
 {
     th_SD05 = 0,        // SD*0.5 = Half of the standard deviation
     th_SD03 = 1,        // SD*0.3 = Third of the standard deviation
-    th_other = 2,       // Other?
+    th_MVC05 = 2,       // MVC*0.05
+    th_MVC10 = 3,       // MVC*0.10
 } threshold_Type;
 
 // User options for stimulation and process
@@ -131,7 +133,7 @@ void generate_date(char* outStr)
     }
 }
 
-string convert_to_string(char *a, int size)
+string convert_to_string(char* a, int size)
 {
     int i;
     string s = "";
@@ -142,7 +144,7 @@ string convert_to_string(char *a, int size)
     return s;
 }
 
-void get_dir(int argc, char *argv[], string &Outdir)
+void get_dir(int argc, char* argv[], string& Outdir)
 {
     //Gets the current directory of the programme, but for files
     std::stringstream sst(argv[0]);
@@ -192,17 +194,18 @@ bool toc()
 
 void control_thread(int thread_nr, bool start, state_Type state)
 {
-    if (start){
+    if (start) {
         // Start thread: start counting time
-        switch(thread_nr){
-            case 1:
-                th1_st = std::chrono::steady_clock::now();
-                break;
-            case 2:
-                th2_st = std::chrono::steady_clock::now();
-                break;
+        switch (thread_nr) {
+        case 1:
+            th1_st = std::chrono::steady_clock::now();
+            break;
+        case 2:
+            th2_st = std::chrono::steady_clock::now();
+            break;
         }
-    }else{
+    }
+    else {
         // End thread: checks the current cycle time
         switch (thread_nr)
         {
