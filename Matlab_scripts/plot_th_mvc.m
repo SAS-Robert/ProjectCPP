@@ -36,19 +36,19 @@ meanIdx = find(data(1,:)==2);
 mvcIdx = find(data(1,:)==1);
 trainIdx = find(data(1,:)==3);
 
-%GL_processed = data(2,:);
-%v_size = data(3,:);
-%N_len = data(4,:);
-%mean_v = data(5,:);
-%threshold = data(6,:);
+GL_processed = data(2,:);
+v_size = data(3,:);
+N_len = data(4,:);
+mean_v = data(5,:);
+threshold = data(6,:);
 
-%tinit = threshold(1);
+tinit = threshold(1);
 
 %GL_processed = data(2,:);
-v_size = data(5,:);
-N_len = data(6,:);
-mean_v = data(2,:);
-tinit = data(4,1);
+% v_size = data(5,:);
+% N_len = data(6,:);
+% mean_v = data(2,:);
+% tinit = data(4,1);
 %threshold = data(6,:);
 
 %v_size = data(5,:);
@@ -58,10 +58,10 @@ tinit = data(4,1);
 y_idx_start = find(v_size>1100,1);
 y_idx_stop = find(v_size>1100+3000,1);
 
-mean_data = abs(c_t(v_size(y_idx_start):v_size(y_idx_stop)));
-%y_th = mean_v(1,10) * ones(1,v_size(meanIdx(end))-tinit);
+%mean_data = abs(c_t(v_size(y_idx_start):v_size(y_idx_stop)));
+y_th = mean_v(1,10) * ones(1,v_size(meanIdx(end))-tinit);
 
-y_th = mean(mean_data) * ones(1,v_size(meanIdx(end))-tinit);
+%y_th = mean(mean_data) * ones(1,v_size(meanIdx(end))-tinit);
 
 
 t_th = zeros(1,v_size(meanIdx(end))-tinit);

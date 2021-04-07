@@ -14,8 +14,13 @@
 // ------------------ Additional libraries ------------------
 
 #include "Iir.h"
+#include "SASLIBbasic.hpp"
 
 // ------------------ Gobal variables ------------------
+exercise_Type GL_exercise = kneeExt; // upperLeg_extexCircuit;
+
+threshold_Type GL_thMethod = th_SD05; // upperLeg_extexCircuit;
+
 // Filters from iir.h library. All the filters require the following parameters:
 // - Nr of order
 // - Sampling rate
@@ -133,7 +138,7 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
     
     //fileVALUES << mean << ", 0.0, " << GL_processed << "," << v_size << "," << N_len << "\n";
     // Saving data in files will be eventually deleted
-    fileVALUES << 3.0 << "," << mean << ", 0.0, " << GL_processed << "," << v_size << "," << N_len << "\n";
+    fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "\n";
 
     // Update GL_processed data parameters
     GL_processed = i;
@@ -198,10 +203,10 @@ static double process_th_mean(unsigned long long int v_size, vector<double> raw_
 
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
-        fileVALUES << 2.0 << "," << mean << "," << sd << "," << TH_DISCARD << "," << v_size << "," << value << "\n";
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise <<  "\n";
     }
     else {
-        fileVALUES << 2.0 << "," << mean << "," << sd << "," << THRESHOLD << "," << v_size << "," << value << "\n";
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "\n";
     }
 
     // Update amount of GL_processed data
@@ -290,10 +295,10 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
 
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
-        fileVALUES << 1.0 << "," << MVC << "," << 0 << "," << TH_DISCARD << "," << v_size << "," << MVC << "\n";
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "\n";
     }
     else {
-        fileVALUES << 1.0 << "," << MVC << "," << 0 << "," << THRESHOLD << "," << v_size << "," << MVC << "\n";
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "\n";
     }
 
     // Update amount of GL_processed data

@@ -41,9 +41,7 @@ struct device_to_device
 //MAIN_to_all: the main function writes here and all threads read
 
 // Exercise and method settings
-exercise_Type GL_exercise = kneeExt; // upperLeg_extexCircuit;
 
-threshold_Type GL_thMethod = th_SD05; // upperLeg_extexCircuit;
 threshold_Type GL_thhmi = th_SD05;
 
 // User options
@@ -56,7 +54,7 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 bool stim_abort = false;
 
 //char PORT_STIM[5] = "COM6";   // Laptop
-char PORT_STIM[5] = "COM7";     // Robot
+char PORT_STIM[5] = "COM3";     // Robot
 RehaMove3 stimulator;
 int countPort = 0;
 
@@ -76,7 +74,7 @@ int udp_cnt = 0;
 char ROBOT_IP_E[15] = "127.0.0.1";
 char ROBOT_IP[15] = "172.31.1.147";
 uint32_t ROBOT_PORT = 30009;
-UdpClient robert(ROBOT_IP, ROBOT_PORT);
+UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
 
 char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address
 char SCREEN_PORT[15] = "30002";
@@ -116,7 +114,9 @@ auto time3_end = std::chrono::steady_clock::now();
 
 // Files variables for names and handling
 char date[DATE_LENGTH];
-char folder[DATE_LENGTH] = "C:\\Users\\User\\Documents\\SASData\\";
+// Location on the SAS computer
+//char folder[DATE_LENGTH] = "C:\\Users\\User\\Documents\\SASData\\";
+char folder[DATE_LENGTH] = "C:\\Users\\Kasper Leerskov\\Downloads\\SASData\\";
 char Sname[DATE_LENGTH] = "subject";
 char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256], stim_s[256];
 char time3_s[256];
@@ -170,7 +170,7 @@ void Main()
     // Wait for the other threads to join
     robot.join();
     stateMachine.join();
-   // extGUI.join();
+    extGUI.join();
 }
 
 // ---------------------------- Interface function definitions --------------------------
@@ -181,8 +181,8 @@ void update_localGui() {
     GL_UI.screenMessage = "INFO: ";
     GL_UI.screenMessage += msg_main;
     // --- This is only for debuggin ---
-    //GL_UI.screenMessage += "\nRobot-IP status: ";
-    //GL_UI.screenMessage += msg_connect;
+    GL_UI.screenMessage += "\nRobot-IP status: ";
+    GL_UI.screenMessage += msg_connect;
     //GL_UI.screenMessage += "\nScreen-IP status: ";
     //GL_UI.screenMessage += msg_extGui;
     //GL_UI.screenMessage += "\nRehaMove3: ";

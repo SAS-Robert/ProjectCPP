@@ -10,7 +10,7 @@ addpath(fcn_path);
 
 % Data directory
 folder = 'SASData\';    % folder name from SAS.cpp on string format
-SASshared = 'F:\';
+SASshared = 'C:\Users\Kasper Leerskov\Downloads\';
 SASshared_full = [SASshared folder];
 SS_path = genpath(SASshared_full);
 addpath(SS_path);
@@ -30,9 +30,9 @@ data_dir = dir([SASshared folder name '_filter*.txt']);
 % plot all the EMGs individually with raw-vs-filtered on time domain, 
 % frequency domain, start-end of repetitions, triggers, etc
 files_dir = [SASshared_full  name];
-for k=[1 4 5 6]
+for k=amount
     name = ['Recording XXth January, nr.' num2str(k)];
-    data = plot_th_mvc(files_dir,name,k,'C');    
+    data = plot_th_mvc(files_dir,name,k,'C');  
 end
 
 % plotting only the filtered-rectified EMGs with the EMG averages and threshold:
