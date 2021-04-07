@@ -94,7 +94,7 @@ public:
 
 		// For isMoving testing
 		isVelocity = 0.0;
-		isVelocity_limit = 0.8;
+		isVelocity_limit = 10.0;
 	}
 };
 

@@ -180,10 +180,11 @@ void update_localGui() {
     GL_UI.status = GL_state;
     GL_UI.screenMessage = "INFO: ";
     GL_UI.screenMessage += msg_main;
+    // --- This is only for debuggin ---
     //GL_UI.screenMessage += "\nRobot-IP status: ";
     //GL_UI.screenMessage += msg_connect;
-    GL_UI.screenMessage += "\nScreen-IP status: ";
-    GL_UI.screenMessage += msg_extGui;
+    //GL_UI.screenMessage += "\nScreen-IP status: ";
+    //GL_UI.screenMessage += msg_extGui;
     //GL_UI.screenMessage += "\nRehaMove3: ";
     //GL_UI.screenMessage += msg_stimulating;
     //GL_UI.screenMessage += "\nRehaIngest: ";
@@ -491,7 +492,7 @@ void mainSAS_thread()
             if (screen_status == start && !main_thEN)
             {
                 statusList[(int)st_th] = "Setting threshold";
-                msg_main = "Select a method and press SET THRESHOLD";
+                msg_main = "Select a method and press RECORD THRESHOLD";
                 main_thEN = true;
             }
 
@@ -654,20 +655,24 @@ void mainSAS_thread()
                 fileLOGS << "4.0, " << GL_sampleNr << "\n";
             }
             // No more repetitions coming
-            else if ((screen_status == setDone || screen_status == msgEnd) && devicesReady)
+            else if ((screen_status == setDone || screen_status == msgEnd || screen_status == exDone) && devicesReady)
             {
                 GL_UI.hmi_repeat = false;
                 msg_main = "Set finished. Waiting for next set or next exercise.";
                 GL_state = st_repeat;
+                robert.legSaved = false;
             }
-            else if ((screen_status == exDone) && devicesReady)
+            /*else if ((screen_status == exDone) && devicesReady)
             {
                 GL_UI.hmi_repeat = false;
                 msg_main = "Exercise finished. Waiting for next one.";
                 // update leg weight value
                 robert.legSaved = false;
                 GL_state = st_init;
-            }
+            }*/
+
+            // Display message
+            msg_main = "Reached end-point. Waiting for robot to return to the start.";
             break;
 
         case st_repeat:
@@ -943,6 +948,8 @@ void stimulating_sas()
         }
         else
         {
+            stimulator.fq[Smpt_Channel_Red] = INIT_FQ;
+            set_stimulation(GL_exercise, stimulator.stim[Smpt_Channel_Red], INIT_FQ);
             sprintf(msg_stimulating, "Stimulator ready");
         }
         stim_status.ready = stimulator.ready;
@@ -955,6 +962,7 @@ void stimulating_sas()
             sprintf(msg_stimulating, " ");
             stim_fl2 = true;
             // load initial values
+            stimulator.fq[Smpt_Channel_Red] = INIT_FQ;
             set_stimulation(GL_exercise, stimulator.stim[Smpt_Channel_Red], INIT_FQ);
         }
         Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start);
@@ -1126,6 +1134,7 @@ void stimulating_sas()
         stim_status.ready = (screen_status != exDone);
 
         if (screen_status == exDone) {
+            stimulator.fq[Smpt_Channel_Red] = INIT_FQ;
             set_stimulation(GL_exercise, stimulator.stim[Smpt_Channel_Red], INIT_FQ);
             stim_status.ready = true;
         }

@@ -782,7 +782,7 @@ namespace SASv30 {
 			methodList[4] = "MVC10";
 
 			// for isMoving testing
-			isVelocity = 0.8;
+			isVelocity = 10.0;
 			// Update display
 			std::stringstream tempValue;
 			tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mms/s";
@@ -1044,7 +1044,7 @@ namespace SASv30 {
 		}
 
 		// START / STOP / RESUME STIMULATION
-		// notice text
+		// i. notice text
 		if (!GL_UI.playPause)
 		{
 			this->stimInfo->ForeColor = System::Drawing::SystemColors::InactiveCaption;
@@ -1053,7 +1053,7 @@ namespace SASv30 {
 		{
 			this->stimInfo->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
 		}
-		// Stimulation disabled
+		// ii. Stimulation disabled
 		if (!GL_UI.playPause)
 		{
 			this->stimButton->BackColor = System::Drawing::SystemColors::InactiveCaption;
@@ -1087,14 +1087,27 @@ namespace SASv30 {
 
 
 		// SELECT THRESHOLD AND RECORD IT
-		// Normal behavior Enabled: 1st threshold (does not matter what method)
+		// i. Method selection
 		if (state == st_th && !GL_UI.recReq && !GL_UI.th1 && GL_UI.main_thEN)
 		{
-			this->thButton->BackColor = System::Drawing::Color::LimeGreen;
 			this->nextTitle->BackColor = System::Drawing::Color::LimeGreen;
 			this->nextTitle->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->nextTitle->Text = L"SELECT METHOD:";
 			this->methodBox->Enabled = true;
+		}
+		else
+		{
+			this->nextTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->nextTitle->Text = L"SELECTED METHOD:";
+			this->methodBox->Enabled = false;
+		}
+
+		// ii. Record threshold button
+		// First: for 1st threshold (does not matter what method)
+		if (state == st_th && !GL_UI.recReq && !GL_UI.th1 && GL_UI.main_thEN)
+		{
+			this->thButton->BackColor = System::Drawing::Color::LimeGreen;
 
 			if (bSingle_mth)
 			{
@@ -1105,26 +1118,26 @@ namespace SASv30 {
 				this->thButton->Text = L"RECORD RESTING THRESHOLD";
 			}
 		}
-		else if (!bSingle_mth && GL_UI.th1 && state == st_th && !GL_UI.th2)
+		// Second: recording threshold
+		else if ((state == st_th && GL_UI.recReq && !GL_UI.th1) || (state == st_mvc && !GL_UI.th2))
 		{
-			// MVC: differentiating between 2nd th and set
+			this->thButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->thButton->Text = L"RECORDING...";
+		}
+		// Fourth: 1st threshold has been recording and it is necessary to press for the 2nd one
+		else if (state == st_th && GL_UI.th1 && !bSingle_mth && !GL_UI.set_MVC)
+		{
 			this->thButton->BackColor = System::Drawing::Color::LimeGreen;
 			this->thButton->Text = L"RECORD MVC THRESHOLD";
-			this->nextTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->nextTitle->Text = L"SELECTED METHOD:";
-			this->methodBox->Enabled = false;
 		}
-		// Normal behavior Disabled: 1st threshold set (1 single method) or 2nd th set (MVC)
+		// TH has not been set yet or it has already been set
 		else
 		{
 			this->thButton->BackColor = System::Drawing::SystemColors::Highlight;
-			this->thButton->Text = L"RECORD THRESHOLD";
-			this->nextTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
-			this->nextTitle->Text = L"SELECTED METHOD:";
-			this->methodBox->Enabled = false;
+			this->thButton->Text = L"THRESHOLD RECORDED";
 		}
+		//-----------------------------------------------------------------
+
 
 		// SELECT EXERCISE
 		if (state == st_init)
