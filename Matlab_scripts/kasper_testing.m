@@ -9,8 +9,8 @@ addpath(fcn_path);
 % addpath(fig_path);
 
 % Data directory
-folder = 'files\';    % folder name from SAS.cpp on string format
-SASshared = 'D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SASApp\';
+folder = 'SASData\';    % folder name from SAS.cpp on string format
+SASshared = 'F:\';
 SASshared_full = [SASshared folder];
 SS_path = genpath(SASshared_full);
 addpath(SS_path);
@@ -30,7 +30,7 @@ data_dir = dir([SASshared folder name '_filter*.txt']);
 % plot all the EMGs individually with raw-vs-filtered on time domain, 
 % frequency domain, start-end of repetitions, triggers, etc
 files_dir = [SASshared_full  name];
-for k=1:amount
+for k=[1 4 5 6]
     name = ['Recording XXth January, nr.' num2str(k)];
     data = plot_th_mvc(files_dir,name,k,'C');    
 end
