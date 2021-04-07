@@ -34,6 +34,11 @@ int one_to_escape = 0;
 bool main_finish = false;
 bool display_msg = true;
 char message[BUFLEN];
+
+char robotEnd[8] = "false", robotButton[8] = "true";
+double robotVelocity = 0.0;
+
+
 using namespace std;
 // ----------------------------- Structures ----------------------------------
 struct TCPServer
@@ -381,29 +386,35 @@ void UDPInterface()
 			{
 			case 1:
 				printf("Reset signals <--- \n");
-				strcpy(message, "0.0;false;false;");
+				robotVelocity = 0.0;
+				sprintf(robotEnd, "false");
+				sprintf(robotButton, "false");
 				break;
 			case 2:
 				printf("Only Is Moving <---\n");
-				strcpy(message, "5.123;false;false;");
+				robotVelocity = 15.0;
+				sprintf(robotEnd, "false");
 				break;
 			case 3:
-				printf("Only End Of Point <---\n");
-				strcpy(message, "0.0;true;false;");
+				printf("Set End Of Point <---\n");
+				robotVelocity = 0.0;
+				sprintf(robotEnd, "true");
 				break;
 			case 4:
 				printf("Set signals <---\n");
-				strcpy(message, "94.012345678;true;false;");
+				robotVelocity = 15.0;
+				sprintf(robotEnd, "true");
 				break;
 			case 5:
 				printf("Reset Play Pause <---\n");
-				strcpy(message, "0.0;true;false;");
+				sprintf(robotButton, "false");
 				break;
 			case 6:
 				printf("Set Play Pause\n");
-				strcpy(message, "0.0;true;true;");
+				sprintf(robotButton, "true");
 				break;
 			}
+			sprintf(message, "%2.6f;%s;%s;", robotVelocity, robotEnd, robotButton);
 		}
 		Sleep(10);
 	} while (!main_finish);
@@ -416,13 +427,15 @@ int main()
 	//UDPServer();
 	//TCPRunning();
 	memset(message, '\0', BUFLEN);
-	strcpy(message, "0.0;false;");
+	strcpy(message, "0.0;false;false");
 
 	printf("=========== ROBERT emulation controllers ===========\n");
-	printf("-1: Is Moving and End Of Point Reached (EOPR) both reset to 0.\n");
-	printf("-2: Is Moving set to 1 and EOPR reset to 0.\n");
-	printf("-3: Is Moving reset to 0 and EOPR set to 1.\n");
-	printf("-4: Is Moving and EOPR both set to 1.\n");
+	printf("-1: Is Moving (Velocity = 0mm/s) and End Of Point Reached (EOPR) both reset to 0.\n");
+	printf("-2: Is Moving set to 1 (Velocity = 15mm/s) and EOPR reset to 0.\n");
+	printf("-3: Is Moving reset to 0 (Velocity = 0 mm/s) and EOPR set to 1.\n");
+	printf("-4: Is Moving (Velocity = 15mm/s) and EOPR both set to 1.\n");
+	printf("-5: Set Play-Pause Button.\n");
+	printf("-6: Reset Play-Pause Button.\n");
 	printf("===================================================\n");
 
 	std::thread to_SAS(UDPServer);
