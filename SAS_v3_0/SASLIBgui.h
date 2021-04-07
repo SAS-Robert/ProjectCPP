@@ -56,7 +56,7 @@ namespace SASv30 {
 		}
 	// Class fields
 	public:
-		int dummy, nextIndex, nextExercise;
+		int dummy, nextIndex, nextExercise, nextRecP, nextStimP;
 		const int UPDATE_PERIOD_MS = 100;
 		// SAS <-> GUI fields
 		RehaMove3_Req_Type Move3_gui;
@@ -105,6 +105,14 @@ namespace SASv30 {
 		System::Windows::Forms::Label^ velCurrent;
 		System::Windows::Forms::BindingSource^ bindingSource1;
 		System::Windows::Forms::Label^ stimInfo;
+		System::Windows::Forms::Label^ additionalTitle;
+		System::Windows::Forms::ComboBox^ recPBox;
+
+		System::Windows::Forms::Label^ recPTitle;
+		System::Windows::Forms::ComboBox^ stimPBox;
+
+		System::Windows::Forms::Label^ stimPTitle;
+	public: System::Windows::Forms::Label^ addLabelFixed;
 
 
 	private: System::ComponentModel::IContainer^ components;
@@ -155,6 +163,12 @@ namespace SASv30 {
 			this->velCurrent = (gcnew System::Windows::Forms::Label());
 			this->bindingSource1 = (gcnew System::Windows::Forms::BindingSource(this->components));
 			this->stimInfo = (gcnew System::Windows::Forms::Label());
+			this->additionalTitle = (gcnew System::Windows::Forms::Label());
+			this->recPBox = (gcnew System::Windows::Forms::ComboBox());
+			this->recPTitle = (gcnew System::Windows::Forms::Label());
+			this->stimPBox = (gcnew System::Windows::Forms::ComboBox());
+			this->stimPTitle = (gcnew System::Windows::Forms::Label());
+			this->addLabelFixed = (gcnew System::Windows::Forms::Label());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->bindingSource1))->BeginInit();
 			this->SuspendLayout();
 			// 
@@ -206,7 +220,7 @@ namespace SASv30 {
 			this->stimTitle->ForeColor = System::Drawing::SystemColors::Highlight;
 			this->stimTitle->Location = System::Drawing::Point(1, 151);
 			this->stimTitle->Name = L"stimTitle";
-			this->stimTitle->Size = System::Drawing::Size(273, 509);
+			this->stimTitle->Size = System::Drawing::Size(273, 491);
 			this->stimTitle->TabIndex = 7;
 			this->stimTitle->Text = L"STIMULATION";
 			this->stimTitle->TextAlign = System::Drawing::ContentAlignment::TopCenter;
@@ -219,7 +233,7 @@ namespace SASv30 {
 			this->exerciseTitle->ForeColor = System::Drawing::SystemColors::Highlight;
 			this->exerciseTitle->Location = System::Drawing::Point(272, 151);
 			this->exerciseTitle->Name = L"exerciseTitle";
-			this->exerciseTitle->Size = System::Drawing::Size(357, 509);
+			this->exerciseTitle->Size = System::Drawing::Size(357, 491);
 			this->exerciseTitle->TabIndex = 8;
 			this->exerciseTitle->Text = L"EXERCISE SETTINGS";
 			this->exerciseTitle->TextAlign = System::Drawing::ContentAlignment::TopCenter;
@@ -236,7 +250,7 @@ namespace SASv30 {
 			this->thButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->thButton->Location = System::Drawing::Point(285, 507);
 			this->thButton->Name = L"thButton";
-			this->thButton->Size = System::Drawing::Size(286, 78);
+			this->thButton->Size = System::Drawing::Size(327, 78);
 			this->thButton->TabIndex = 10;
 			this->thButton->Text = L"SET THRESHOLD";
 			this->thButton->UseVisualStyleBackColor = false;
@@ -452,7 +466,7 @@ namespace SASv30 {
 			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
 			this->nextTitle->Location = System::Drawing::Point(283, 297);
 			this->nextTitle->Name = L"nextTitle";
-			this->nextTitle->Size = System::Drawing::Size(290, 26);
+			this->nextTitle->Size = System::Drawing::Size(329, 26);
 			this->nextTitle->TabIndex = 34;
 			this->nextTitle->Text = L"SELECTED METHOD:";
 			this->nextTitle->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
@@ -460,18 +474,15 @@ namespace SASv30 {
 			// methodBox
 			// 
 			this->methodBox->AllowDrop = true;
-			this->methodBox->AutoCompleteCustomSource->AddRange(gcnew cli::array< System::String^  >(5) {
+			this->methodBox->AutoCompleteCustomSource->AddRange(gcnew cli::array< System::String^  >(4) {
 				L"xi+sd*0.5", L"xi+sd*0.33",
-					L"Another", L"MVC05", L"MVC10"
+					L"MVC05", L"MVC10"
 			});
 			this->methodBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 27.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->methodBox->ForeColor = System::Drawing::SystemColors::WindowText;
 			this->methodBox->FormattingEnabled = true;
-			this->methodBox->Items->AddRange(gcnew cli::array< System::Object^  >(5) {
-				L"Xi+SD*0.5", L"Xi+SD*0.33", L"Another", L"MVC05",
-					L"MVC10"
-			});
+			this->methodBox->Items->AddRange(gcnew cli::array< System::Object^  >(4) { L"Xi+SD*0.5", L"Xi+SD*0.33", L"MVC05", L"MVC10" });
 			this->methodBox->Location = System::Drawing::Point(280, 324);
 			this->methodBox->Name = L"methodBox";
 			this->methodBox->Size = System::Drawing::Size(332, 50);
@@ -565,7 +576,7 @@ namespace SASv30 {
 			this->nextExTitle->ForeColor = System::Drawing::SystemColors::Highlight;
 			this->nextExTitle->Location = System::Drawing::Point(280, 203);
 			this->nextExTitle->Name = L"nextExTitle";
-			this->nextExTitle->Size = System::Drawing::Size(294, 30);
+			this->nextExTitle->Size = System::Drawing::Size(332, 30);
 			this->nextExTitle->TabIndex = 43;
 			this->nextExTitle->Text = L"SELECTED EXERCISE:";
 			this->nextExTitle->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
@@ -594,13 +605,109 @@ namespace SASv30 {
 			this->stimInfo->Text = L"PRESS PATIENT BUTTON TO ENABLE STIMULATION";
 			this->stimInfo->TextAlign = System::Drawing::ContentAlignment::BottomCenter;
 			// 
+			// additionalTitle
+			// 
+			this->additionalTitle->BorderStyle = System::Windows::Forms::BorderStyle::FixedSingle;
+			this->additionalTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 20.25F, System::Drawing::FontStyle::Regular,
+				System::Drawing::GraphicsUnit::Point, static_cast<System::Byte>(0)));
+			this->additionalTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->additionalTitle->Location = System::Drawing::Point(1, 641);
+			this->additionalTitle->Name = L"additionalTitle";
+			this->additionalTitle->Size = System::Drawing::Size(628, 124);
+			this->additionalTitle->TabIndex = 49;
+			this->additionalTitle->Text = L" ";
+			// 
+			// recPBox
+			// 
+			this->recPBox->AutoCompleteCustomSource->AddRange(gcnew cli::array< System::String^  >(9) {
+				L"COM1", L"COM2", L"COM3", L"COM4",
+					L"COM5", L"COM6", L"COM7", L"COM8", L"COM9"
+			});
+			this->recPBox->Enabled = false;
+			this->recPBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 27.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->recPBox->FormattingEnabled = true;
+			this->recPBox->Items->AddRange(gcnew cli::array< System::Object^  >(9) {
+				L"COM1", L"COM2", L"COM3", L"COM4", L"COM5", L"COM6",
+					L"COM7", L"COM8", L"COM9"
+			});
+			this->recPBox->Location = System::Drawing::Point(165, 675);
+			this->recPBox->Name = L"recPBox";
+			this->recPBox->Size = System::Drawing::Size(221, 50);
+			this->recPBox->TabIndex = 51;
+			this->recPBox->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::recPBox_SelectedIndexChanged);
+			// 
+			// recPTitle
+			// 
+			this->recPTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->recPTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->recPTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->recPTitle->Location = System::Drawing::Point(165, 648);
+			this->recPTitle->Name = L"recPTitle";
+			this->recPTitle->Size = System::Drawing::Size(221, 30);
+			this->recPTitle->TabIndex = 50;
+			this->recPTitle->Text = L"REHAINGEST PORT:";
+			this->recPTitle->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
+			// 
+			// stimPBox
+			// 
+			this->stimPBox->AutoCompleteCustomSource->AddRange(gcnew cli::array< System::String^  >(9) {
+				L"COM1", L"COM2", L"COM3", L"COM4",
+					L"COM5", L"COM6", L"COM7", L"COM8", L"COM9"
+			});
+			this->stimPBox->Enabled = false;
+			this->stimPBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 27.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->stimPBox->FormattingEnabled = true;
+			this->stimPBox->Items->AddRange(gcnew cli::array< System::Object^  >(9) {
+				L"COM1", L"COM2", L"COM3", L"COM4", L"COM5", L"COM6",
+					L"COM7", L"COM8", L"COM9"
+			});
+			this->stimPBox->Location = System::Drawing::Point(391, 675);
+			this->stimPBox->Name = L"stimPBox";
+			this->stimPBox->Size = System::Drawing::Size(221, 50);
+			this->stimPBox->TabIndex = 53;
+			this->stimPBox->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::stimPBox_SelectedIndexChanged);
+			// 
+			// stimPTitle
+			// 
+			this->stimPTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->stimPTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->stimPTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->stimPTitle->Location = System::Drawing::Point(391, 648);
+			this->stimPTitle->Name = L"stimPTitle";
+			this->stimPTitle->Size = System::Drawing::Size(221, 30);
+			this->stimPTitle->TabIndex = 52;
+			this->stimPTitle->Text = L"REHAMOVE3 PORT:";
+			this->stimPTitle->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
+			// 
+			// addLabelFixed
+			// 
+			this->addLabelFixed->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->addLabelFixed->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->addLabelFixed->Location = System::Drawing::Point(2, 648);
+			this->addLabelFixed->Name = L"addLabelFixed";
+			this->addLabelFixed->Size = System::Drawing::Size(157, 74);
+			this->addLabelFixed->TabIndex = 54;
+			this->addLabelFixed->Text = L"ADDITIONAL SETTINGS";
+			this->addLabelFixed->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			// 
 			// MyForm
 			// 
 			this->AllowDrop = true;
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->ClientSize = System::Drawing::Size(624, 761);
+			this->ClientSize = System::Drawing::Size(624, 731);
+			this->Controls->Add(this->addLabelFixed);
+			this->Controls->Add(this->stimPBox);
+			this->Controls->Add(this->stimPTitle);
+			this->Controls->Add(this->recPBox);
+			this->Controls->Add(this->recPTitle);
+			this->Controls->Add(this->additionalTitle);
 			this->Controls->Add(this->stimInfo);
 			this->Controls->Add(this->velCurrent);
 			this->Controls->Add(this->exerciseBox);
@@ -650,6 +757,8 @@ namespace SASv30 {
 			//this->Icon = gcnew System::Drawing::Icon(L"logo_square.ico");
 			this->methodBox->SelectedIndex = 0;
 			this->exerciseBox->SelectedIndex = 0;
+			this->recPBox->SelectedIndex = 3;
+			this->stimPBox->SelectedIndex = 6;
 			// Communication
 			Move3_gui = Move3_none;
 			user_gui = User_none;
@@ -703,14 +812,14 @@ namespace SASv30 {
 
 	private: System::Void click_thButton(System::Object^ sender, System::EventArgs^ e) {
 		// Normal run: either single-th method or MVC after setting the first threshold
-		if (state == st_th && !GL_UI.recReq && !GL_UI.th1)
+		if (state == st_th && !GL_UI.recReq && !GL_UI.th1 && GL_UI.main_thEN)
 		{
 			user_gui = User_th;
 			// Debug
 			this->statusDebug->Text =L"Sending normal th request";
 		}
 		// MCV Method: for setting the 2nd threshold
-		else if (!bSingle_mth && GL_UI.th1)
+		else if (!bSingle_mth && GL_UI.th1 && state == st_th && !GL_UI.set_MVC)
 		{
 			GL_UI.set_MVC = true;
 			// Debug
@@ -764,28 +873,7 @@ namespace SASv30 {
 		}
 
 	}
-// Unused: old manual/automatic calibration
-/*
-	private: System::Void click_setButton(System::Object^ sender, System::EventArgs^ e) {
 
-		if (state == st_init)
-		{
-			// Start manual calibration
-			user_gui = User_CM;
-		}
-		else
-		{
-			// Manual calibration has already started
-			Move3_gui = Move3_done;
-		}
-		// Internal handling
-		if (state == st_calM && !bSetupPressed)
-		{
-			bSetupPressed = true;
-		}
-
-	}
-*/
 	private: System::Void methodBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
 		// Update the selected value
 		nextIndex = this->methodBox->SelectedIndex;
@@ -794,6 +882,48 @@ namespace SASv30 {
 	private: System::Void exerciseBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
 		// Update the selected value
 		nextExercise = this->exerciseBox->SelectedIndex;
+	}
+
+	private: System::Void recPBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
+		char intStr[8];
+		nextRecP = this->recPBox->SelectedIndex;
+		nextRecP++;		// the index starts on 0 but the first port is COM1
+
+		// check limits if it is the same one as the other device
+		if (nextRecP == nextStimP && nextRecP < 9)
+		{
+			nextRecP++;
+			this->recPBox->SelectedIndex = nextRecP-1;
+		}
+		else if (nextRecP == nextStimP && nextRecP == 9)
+		{
+			nextRecP--;
+			this->recPBox->SelectedIndex = nextRecP-1;
+		}
+
+		itoa(nextRecP, intStr, 10);
+		GL_UI.PORT_REC[3] = intStr[0];
+	}
+
+	private: System::Void stimPBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
+		char intStr[8];
+		nextStimP = this->stimPBox->SelectedIndex;
+		nextStimP++;  // the index starts on 0 but the first port is COM1
+
+		// check limits if it is the same one as the other device
+		if (nextRecP == nextStimP && nextStimP < 9)
+		{
+			nextStimP++;
+			this->stimPBox->SelectedIndex = nextStimP-1;
+		}
+		else if (nextRecP == nextStimP && nextStimP == 9)
+		{
+			nextStimP--;
+			this->stimPBox->SelectedIndex = nextStimP-1;
+		}
+
+		itoa(nextStimP, intStr, 10);
+		GL_UI.PORT_STIM[3] = intStr[0];
 	}
 
 	// For isMoving testing
@@ -891,6 +1021,7 @@ namespace SASv30 {
 			Move3_gui = Move3_none;
 		}
 
+		// Update indexes in boxes
 		GL_UI.next_method = (threshold_Type)nextIndex;
 		GL_UI.next_exercise = (exercise_Type)nextExercise;
 
@@ -906,65 +1037,79 @@ namespace SASv30 {
 		// - STOP (safety-related important) red -> Crimson
 
 		// Debug stuff
-		//itoa(GL_UI.status, intStr, 10);
-		//this->statusDebug->Text = gcnew String(string(intStr).c_str());
-
-		// Start/Stop stimulation
-		if (GL_UI.playPause)
+		if (state != st_th)
 		{
-			// Normal behavior
-			this->stimInfo->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			if ((state == st_calM || state == st_running) && !GL_UI.stimActive && !GL_UI.main_thEN)
-			{
-				this->stimButton->BackColor = System::Drawing::Color::LimeGreen;
-				if (state == st_calM)
-				{
-					this->stimButton->Text = L"START STIMULATION";
-				}
-				else
-				{
-					this->stimButton->Text = L"RESUME STIMULATION";
-				}
-				
-			}
-			else
-			{
-				this->stimButton->Text = L"STOP STIMULATION";
-				if (GL_UI.stimActive)
-				{
-					this->stimButton->BackColor = System::Drawing::Color::Crimson;
-				}
-				else
-				{
-					this->stimButton->BackColor = System::Drawing::SystemColors::Highlight;
-				}
-			}
+			itoa(GL_UI.status, intStr, 10);
+			this->statusDebug->Text = gcnew String(string(intStr).c_str());
+		}
+
+		// START / STOP / RESUME STIMULATION
+		// notice text
+		if (!GL_UI.playPause)
+		{
+			this->stimInfo->ForeColor = System::Drawing::SystemColors::InactiveCaption;
 		}
 		else
 		{
-			// Button disabled
+			this->stimInfo->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
+		}
+		// Stimulation disabled
+		if (!GL_UI.playPause)
+		{
 			this->stimButton->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->stimButton->Text = L"STIMULATION DISABLED";
-			this->stimInfo->ForeColor = System::Drawing::SystemColors::InactiveCaption;
+		}
+		// Start/resume stimulation
+		else if ((state == st_calM || state == st_running) && !GL_UI.stimActive && GL_UI.playPause)
+		{
+			this->stimButton->BackColor = System::Drawing::Color::LimeGreen;
+			if (state == st_calM)
+			{
+				this->stimButton->Text = L"START STIMULATION";
+			}
+			else
+			{
+				this->stimButton->Text = L"RESUME STIMULATION";
+			}
+		}
+		// Stop stimulation that is active
+		else if (GL_UI.playPause && GL_UI.stimActive)
+		{
+			this->stimButton->Text = L"STOP STIMULATION";
+			this->stimButton->BackColor = System::Drawing::Color::Crimson;
+		}
+		// Stop stimulation in blue
+		else
+		{
+			this->stimButton->Text = L"STOP STIMULATION";
+			this->stimButton->BackColor = System::Drawing::SystemColors::Highlight;
 		}
 
 
-		// Set threshold and method
+		// SELECT THRESHOLD AND RECORD IT
 		// Normal behavior Enabled: 1st threshold (does not matter what method)
-		if (state == st_th && !GL_UI.recReq && GL_UI.main_thEN && !GL_UI.th1)
+		if (state == st_th && !GL_UI.recReq && !GL_UI.th1 && GL_UI.main_thEN)
 		{
 			this->thButton->BackColor = System::Drawing::Color::LimeGreen;
-			this->thButton->Text = L"SET THRESHOLD";
 			this->nextTitle->BackColor = System::Drawing::Color::LimeGreen;
 			this->nextTitle->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->nextTitle->Text = L"SELECT METHOD:";
 			this->methodBox->Enabled = true;
+
+			if (bSingle_mth)
+			{
+				this->thButton->Text = L"RECORD THRESHOLD";
+			}
+			else
+			{
+				this->thButton->Text = L"RECORD RESTING THRESHOLD";
+			}
 		}
-		else if (!bSingle_mth && GL_UI.th1 && !GL_UI.set_MVC)
+		else if (!bSingle_mth && GL_UI.th1 && state == st_th && !GL_UI.th2)
 		{
 			// MVC: differentiating between 2nd th and set
 			this->thButton->BackColor = System::Drawing::Color::LimeGreen;
-			this->thButton->Text = L"SET MVC THRESHOLD";
+			this->thButton->Text = L"RECORD MVC THRESHOLD";
 			this->nextTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
 			this->nextTitle->Text = L"SELECTED METHOD:";
@@ -974,14 +1119,14 @@ namespace SASv30 {
 		else
 		{
 			this->thButton->BackColor = System::Drawing::SystemColors::Highlight;
-			this->thButton->Text = L"SET THRESHOLD";
+			this->thButton->Text = L"RECORD THRESHOLD";
 			this->nextTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->nextTitle->ForeColor = System::Drawing::SystemColors::Highlight;
 			this->nextTitle->Text = L"SELECTED METHOD:";
 			this->methodBox->Enabled = false;
 		}
 
-		// Select exercise
+		// SELECT EXERCISE
 		if (state == st_init)
 		{
 			this->nextExTitle->BackColor = System::Drawing::Color::LimeGreen;
@@ -997,12 +1142,15 @@ namespace SASv30 {
 			this->exerciseBox->Enabled = false;
 		}
 
+		// SELECT STIMULATOR AND RECORDER PORTS
+		this->stimPBox->Enabled = (state == st_init && !GL_UI.stimReady);
+		this->recPBox->Enabled = (state == st_init && !GL_UI.recReady);
+
 		// For isVelocity testing
 		std::stringstream tempVelocity;
 		tempVelocity << std::setprecision(7) << GL_UI.isVelocity << " mm/s";
 		tempString = tempVelocity.str();
 		this->velCurrent->Text = gcnew String(tempString.c_str());
 	}
-
 };
 }

@@ -29,6 +29,7 @@ std::string ws2s(const std::wstring& wstr)
 	return converterX.to_bytes(wstr);
 }
 
+
 // This class is a set of fields to communicate the main with the local IU
 public class mainUI {
 public:
@@ -43,7 +44,7 @@ public:
 	string screenMessage;
 	bool hmi_repeat, hmi_new, playPause, set_MVC, th1, th2;
 	// Exercise parameters
-	bool main_thEN, recReq, stimActive;
+	bool main_thEN, recReq, stimActive, recReady, stimReady;
 	threshold_Type method, next_method;
 	// Stimulation parameters
 	float current, frequency;
@@ -56,6 +57,10 @@ public:
 	RehaMove3_Req_Type Move3_hmi;
 	User_Req_Type User_hmi;
 	int ch_hmi;
+
+	// Global additional settings:
+	char PORT_STIM[5] = "COM7";
+	char PORT_REC[5] = "COM4";
 
 	// for isMoving testing
 	double isVelocity;
@@ -80,6 +85,8 @@ public:
 		frequency = 30.0;
 		ramp = 3;
 
+		recReady = false;
+		stimReady = false;
 		// gui -> sas
 		Move3_hmi = Move3_none;
 		User_hmi = User_none;

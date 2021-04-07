@@ -26,7 +26,7 @@ static std::vector<double> recorder_emg2;
 
 // For stimulator
 // Limits
-const float MAX_STIM_CUR = 50.0, MIN_STIM_CUR = 1.0;
+const float MAX_STIM_CUR = 80.0, MIN_STIM_CUR = 1.0;
 const float MAX_STIM_FQ = 50.0, MIN_STIM_FQ = 20.0, INIT_FQ = 30.0;
 const uint8_t MAX_STIM_RAMP = 10, MIN_STIM_RAMP = 1;
 const int MS_TO_HZ = 1000;
@@ -284,9 +284,11 @@ private:
     Smpt_device device;
     Smpt_ml_init ml_init; // Struct for ml_init command *
     Smpt_ml_get_current_data ml_get_current_data;
+    Smpt_get_device_id_ack device_id_ack;
+    Smpt_get_stim_status_ack device_stim_ack;
     uint8_t packet;
     int turn_on = 0; //Time if the device gets turned on in the middle of the process
-    bool smpt_port, smpt_check, smpt_next, smpt_end, smpt_get;
+    bool smpt_port, smpt_check, smpt_next, smpt_end, smpt_get, smpt_ack;
     Smpt_ml_update ml_update; // Struct for ml_update command
     char itoaNr[32];
 
@@ -335,13 +337,8 @@ public:
         stim[Smpt_Channel_Red].points[2].time = 200;
 
         // Start Process
-        if (display) { sprintf(displayMsg,"Reha Move3 message: Initializing device on port %s... ", port_name_rm); }
-
         smpt_check = smpt_check_serial_port(port_name_rm);
         smpt_port = smpt_open_serial_port(&device, port_name_rm);
-        // Request ID Data
-        packet = smpt_packet_number_generator_next(&device);
-        smpt_send_get_device_id(&device, packet);
 
         fill_ml_init(&device, &ml_init);
         smpt_send_ml_init(&device, &ml_init);
@@ -350,7 +347,25 @@ public:
         fill_ml_get_current_data(&device, &ml_get_current_data);
         // This last command check if it's received all the data requested
         smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+        // This all is true when it is connected to the wrong port. Therefore it is necessary to check the device ID
 
+        //sprintf(displayMsg, "%s smpt_check %d, smpt_port %d, smpt_get %d", port_name_rm, smpt_check, smpt_port, smpt_get);
+
+        // Request ID Data
+        /*packet = smpt_packet_number_generator_next(&device);
+        smpt_send_get_device_id(&device, packet);
+        packet = smpt_packet_number_generator_next(&device);
+        smpt_get_get_device_id_ack(&device, &device_id_ack);
+        // check device id
+        //sprintf(displayMsg, "%s, ID = %s, result = %d", port_name_rm, device_id_ack.device_id, device_id_ack.result);
+
+        // Request stimulator status 
+        packet = smpt_packet_number_generator_next(&device);
+        smpt_send_get_stim_status(&device, packet);
+        packet = smpt_packet_number_generator_next(&device);
+        smpt_get_get_stim_status_ack(&device, &device_stim_ack);
+        //sprintf(displayMsg, "%s, ID = %s, result = %d", port_name_rm, device_id_ack.device_id, device_id_ack.result);
+        */
         // smpt_next = connection port was successfull
         smpt_next = smpt_check && smpt_port && smpt_get;
 
@@ -360,7 +375,6 @@ public:
             smpt_port = false;
             fill_ml_init(&device, &ml_init);
             smpt_send_ml_init(&device, &ml_init);
-            ready = true;
 
             // Initialize stim channels values
             for (int k = 0; k < 4; k++)
@@ -370,27 +384,29 @@ public:
             }
             // Start the channel 1
             stim_act[Smpt_Channel_Red] = true;
+            ready = true;
             if(display) { sprintf(displayMsg, "Device RehaMove3 ready."); }
-            }
-            else if (!smpt_next)
+        }
+        else if (!smpt_next)
+        {
+            smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
+            smpt_close_serial_port(&device);
+            if (smpt_check && display)
             {
-                smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
-                smpt_close_serial_port(&device);
-                if (smpt_check && display)
-                {
-                    sprintf(displayMsg,"Error - Reha Move3: Device does not respond. Turn it on or restart it.");
-                }
-                else if(display)
-                {
-                    sprintf(displayMsg,"Error - Reha Move3: Device not found. Check connection.");
-                }
-                smpt_port = true;
-                // Retry after this
+               sprintf(displayMsg,"Device on port %s does not respond. Turn it on or restart it.", port_name_rm);
             }
-            else if (abort) 
+            else if(display)
             {
-                smpt_end = true;
+               sprintf(displayMsg,"Device on port %s not found. Check connection.", port_name_rm);
             }
+            
+            smpt_port = true;
+            // Retry after this
+        }
+        else if (abort) 
+        {
+            smpt_end = true;
+        }
 
     };
     void update()

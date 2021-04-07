@@ -68,8 +68,8 @@ unsigned long long int GL_sampleNr = 0;
 
 // Threshold processing
 const unsigned int TH_TIME = 3;                    // 3 seconds to set threshold
-const unsigned long long int TH_NR = TH_TIME * SAMPLINGRATE; // amount of samples for threshold
 const double TH_DISCARD = SAMPLINGRATE * 1.1;                // discard first filtered samples from the threshold
+const unsigned long long int TH_NR = (TH_TIME * SAMPLINGRATE)+ TH_DISCARD; // amount of samples for threshold
 double GL_thDiscard = 0;
 int TH_WAIT = 20, GL_thWaitCnt = 0; // amount of mean sets before triggering
 

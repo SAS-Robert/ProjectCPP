@@ -49,9 +49,8 @@ typedef enum
 {
     th_SD05 = 0,        // SD*0.5 = Half of the standard deviation
     th_SD03 = 1,        // SD*0.3 = Third of the standard deviation
-    th_other = 2,       // Other?
-    th_MVC05 = 3,       // MVC*0.05
-    th_MVC10 = 4,       // MVC*0.10
+    th_MVC05 = 2,       // MVC*0.05
+    th_MVC10 = 3,       // MVC*0.10
 } threshold_Type;
 
 // User options for stimulation and process
@@ -113,7 +112,7 @@ typedef enum
 
 const int MSG_AMOUNT = (int)res10 + 1;
 // ------------------ Global variables ------------------
-const int DATE_LENGTH = 32;
+const int DATE_LENGTH = 256;
 // Threads cycles
 auto th1_st = std::chrono::steady_clock::now();
 auto th1_fn = std::chrono::steady_clock::now();
