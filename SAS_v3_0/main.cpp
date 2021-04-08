@@ -54,7 +54,7 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 bool stim_abort = false;
 
 //char PORT_STIM[5] = "COM6";   // Laptop
-char PORT_STIM[5] = "COM3";     // Robot
+char PORT_STIM[5] = "COM5";     // Robot
 RehaMove3 stimulator;
 int countPort = 0;
 
@@ -1218,6 +1218,8 @@ void recording_sas()
         recorder.record();
         recorder_emg1.clear();
         MEAN = 0;
+        MVC = 0;
+        THRESHOLD = 0;
         rec_fl4 = false;
         rec_fl5 = false;
         break;
@@ -1247,15 +1249,18 @@ void recording_sas()
                 if (GL_processed >= TH_NR && !rec_status.th)
                 {
                     unsigned long long int tot_len = GL_sampleNr - GL_thDiscard;
+                    double proper_mean;
                     MEAN = MEAN / tot_len;
                     // Select threshold method 
                     switch (GL_thMethod)
                     {
                     case th_SD05:
-                        THRESHOLD = process_th_sd(GL_sampleNr, 3);
+                        proper_mean = process_th_proper_mean(GL_sampleNr);
+                        THRESHOLD = process_th_sd(GL_sampleNr, proper_mean, 3);
                         break;
                     case th_SD03:
-                        THRESHOLD = process_th_sd(GL_sampleNr, 2);
+                        proper_mean = process_th_proper_mean(GL_sampleNr);
+                        THRESHOLD = process_th_sd(GL_sampleNr, proper_mean, 2);
                         break;
                     default:
                         THRESHOLD = MEAN;
@@ -1269,16 +1274,25 @@ void recording_sas()
                 }
             }
         }
-        else
+        else if (rec_status.th == false && (GL_thMethod != th_MVC05 || GL_thMethod != th_MVC10))
         {
             // Discard data until button is pressed
             recorder_emg1.clear();
+        }
+        else if (rec_status.th == true && (GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && !GL_UI.set_MVC)
+        {
+            GL_sampleNr = recorder_emg1.size();
+            //sprintf(msg_recording, "GL_sampleNr %d", GL_sampleNr);
+            if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
+            {
+                process_data_iir(GL_sampleNr, recorder_emg1);
+            }
         }
         break;
 
     case st_mvc:
         recorder.record();
-        if (!rec_fl5)
+        if (!rec_fl5 && GL_UI.set_MVC)
         {
             GL_processed_MVC = GL_processed + 2 * TH_NR;
             sprintf(msg_recording, "MCV samples needed = %d, , Current processed samples =  %d", GL_processed_MVC, GL_processed);
@@ -1287,10 +1301,12 @@ void recording_sas()
         }
 
         GL_sampleNr = recorder_emg1.size();
+        //sprintf(msg_recording, "GL_sampleNr %d", GL_sampleNr);
         if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
         {
             GL_iterator++;
-            sprintf(msg_recording, "MCV GL_iterator %d, samples needed = %d, , Current processed samples =  %d", GL_iterator, GL_processed_MVC, GL_processed);
+            unsigned long long int sampleCounter = GL_processed;
+            sprintf(msg_recording, "MCV GL_iterator %d, samples needed = %d, Current processed samples =  %d, GL_sampleNr = %d", GL_iterator, GL_processed_MVC, sampleCounter, GL_sampleNr);
             mvc = process_th_mvc(GL_sampleNr, recorder_emg1);
             //std::cout << "Processed, now pointer on " << GL_processed << endl;
 
@@ -1375,7 +1391,6 @@ void recording_sas()
         rec_status.ready = true;
         rec_status.th = false;
         rec_status.th2 = false;
-        MEAN = 0;
         rec_fl5 = false;
         rec_fl4 = false;
         break;

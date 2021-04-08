@@ -13,6 +13,12 @@ function data = plot_th_mean_v(files_dir,name,pos,plot_type)
 %new/modified filters would affect the original data.
 %
 % NOTE: use only on recorded data from 1st to 9th November.
+%
+% process_data_iir:  fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 3 << "\n";
+% process_th_mean: fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "," << 1 << "\n";
+%                  fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 1 << "\n";
+% process_th_mvc: fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "," << 2 << "\n";
+%                 fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 2 << "\n";
 
 % getting filtered EMG
 data_dir=dir([files_dir '_filter_*']);
@@ -32,9 +38,9 @@ end
 th_dir=dir([files_dir '_th_*']);
 full_name = [th_dir(pos).folder '\' th_dir(pos).name]; %Just take the last one
 data = (load(full_name))';
-meanIdx = find(data(1,:)==2);
-mvcIdx = find(data(1,:)==1);
-trainIdx = find(data(1,:)==3);
+meanIdx = find(data(9,:)==1);
+mvcIdx = find(data(9,:)==2);
+trainIdx = find(data(9,:)==3);
 
 GL_processed = data(2,:);
 v_size = data(3,:);
@@ -55,8 +61,8 @@ tinit = threshold(1);
 %N_len = data(6,:);
 
 % threshold values
-y_idx_start = find(v_size>1100,1);
-y_idx_stop = find(v_size>1100+3000,1);
+%y_idx_start = find(v_size>1100,1);
+%y_idx_stop = find(v_size>1100+3000,1);
 
 %mean_data = abs(c_t(v_size(y_idx_start):v_size(y_idx_stop)));
 y_th = mean_v(1,10) * ones(1,v_size(meanIdx(end))-tinit);
@@ -72,52 +78,64 @@ end
 if not(isempty(mvcIdx))
     % MVC Data
     y_mvc = [];
-    for i = length(meanIdx)+1 : length(meanIdx)+length(mvcIdx)
-        y_temp = mean_v(1,i) * ones(1,N_len(1,i));
+    for i = 1:length(mvcIdx)
+        y_temp = mean_v(1,mvcIdx(i)) * ones(1,N_len(1,mvcIdx(i)));
         y_mvc = [y_mvc y_temp];
     end
     
-    t1 = zeros(1,v_size(mvcIdx(end))-v_size(meanIdx(end)));
-    for i=1:length(t1)
-        t1(i) = t_th(end) + i/1000;
+    t1 = zeros(1,v_size(mvcIdx(end))-v_size(mvcIdx(1)-1));
+    for i=1:(v_size(mvcIdx(end))-v_size(mvcIdx(1)-1))
+        t1(i) = v_size(mvcIdx(1)-1)/1000 + i/1000;
     end
 end
 % mean values
 y_t =[];
-for i=length(meanIdx)+length(mvcIdx)+1:length(data(1,:))
-    y_temp = mean_v(1,i) * ones(1,N_len(1,i));
-    y_t = [y_t y_temp];
+if isempty(mvcIdx)
+    for i=length(meanIdx)+length(mvcIdx)+1:length(data(1,:))
+        y_temp = mean_v(1,i) * ones(1,N_len(1,i));
+        y_t = [y_t y_temp];
+    end
+else
+    for i=mvcIdx(end)+1:length(data(1,:))
+        y_temp = mean_v(1,i) * ones(1,N_len(1,i));
+        y_t = [y_t y_temp];
+    end
 end
-
 if isempty(mvcIdx)
     t2 = zeros(1,v_size(trainIdx(end))-v_size(meanIdx(end)));
     for i=1:length(t2)
         t2(i) = t_th(end) + i/1000;
     end
 else
-    t2 = zeros(1,v_size(end)-v_size(length(meanIdx)+length(mvcIdx)));
+    t2 = zeros(1,v_size(end)-v_size(mvcIdx(end)));
     for i=1:length(t2)
         t2(i) = t1(end) + i/1000;
     end
 end
-if isempty(mvcIdx)
-    th_value1 = mean(mean_data)+2*std(mean_data);
-    th_value2 = mean(mean_data)+3*std(mean_data);
-else
-    mvc_data=abs(c_t(v_size(mvcIdx(1)):v_size(mvcIdx(end))));
-    th_value1 = mean(mean_data)+0.05*max(mvc_data);
-    th_value2 = mean(mean_data)+0.1*max(mvc_data);
-    
-end
+%
+% if data(1,1) == 0
+%     th_value = mean(mean_data)+3*std(mean_data);
+% elseif data(1,1) == 1
+% elseif data(1,1) == 2
+% elseif data(1,1) == 3
+% end
+%     th_value1 = mean(mean_data)+2*std(mean_data);
+%
+% else
+%     mvc_data=abs(c_t(v_size(mvcIdx(1)):v_size(mvcIdx(end))));
+%     th_value1 = mean(mean_data)+0.05*max(mvc_data);
+%     th_value2 = mean(mean_data)+0.1*max(mvc_data);
+%
+% end
 
-log_dir=dir([files_dir '_log_*']);
-full_name = [log_dir(pos).folder '\' log_dir(pos).name]; %Just take the last one
+log_dir=dir([files_dir '_log_' full_name(end-18:end)]);
+full_name = [log_dir.folder '\' log_dir.name]; %Just take the last one
 log_data = (load(full_name))';
 log_type = log_data(1,:);
 log_val = log_data(2,:);
 
 if(plot_type=='C')
-    figure('Name',name)
+    figure('Name',name,'units','normalize','outerposition',[0 0 1 1])
     %
     subplot(2,2,1)
     hold on
@@ -152,8 +170,8 @@ if(plot_type=='C')
         plot3 = plot(t1,y_mvc,'c');
     end
     plot4 = plot(t2,y_t,'r');
-    plot5 = plot([t2(1) t2(end)], [th_value1 th_value1],'y');
-    plot5 = plot([t2(1) t2(end)], [th_value2 th_value2],'y');
+    plot5 = plot([t2(1) t2(end)], [threshold(trainIdx(end)) threshold(trainIdx(end))],'y');
+    % plot5 = plot([t2(1) t2(end)], [threshold(1) threshold(1)],'y');
     if not(isempty(mvcIdx))
         plot_array = [plot1 plot2 plot3 plot4 plot5];
     else
@@ -165,10 +183,22 @@ if(plot_type=='C')
     title('Retified-Filtered data and mean values');
     xlim([0 t2(end)]);
     ylim([0 max(c_t(3000:end))+0.0002]);
+    
+    if data(1,1) == 0
+        threshLabel = 'Mean+3SD';
+    elseif data(1,1) == 1
+        threshLabel = 'Mean+2SD';
+    elseif data(1,1) == 2
+        threshLabel = 'Mean+0.05*MVC';
+    elseif data(1,1) == 3
+        threshLabel = 'Mean+0.10*MVC';
+    end
+    
+    
     if not(isempty(mvcIdx))
-        plot_names={'EMG','Resting mean','MVC Data', 'Activity mean', 'Threshold'};
+        plot_names={'EMG','Resting mean','MVC Data', 'Activity mean', threshLabel};
     else
-        plot_names={'EMG','Resting mean','Activity mean', 'Threshold'};
+        plot_names={'EMG','Resting mean','Activity mean', threshLabel};
     end
     
     xlabel('t (s)');

@@ -95,6 +95,8 @@ void startup_filters() {
     bPass_result.clear();
     b50_result.clear();
     GL_processed = 0;
+    MEAN = 0;
+    MVC = 0;
     GL_processed_MVC = 0;
     THRESHOLD = 0.0;
     for (int i = 0; i < FLEX_WINDOW; i++)
@@ -138,7 +140,7 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
     
     //fileVALUES << mean << ", 0.0, " << GL_processed << "," << v_size << "," << N_len << "\n";
     // Saving data in files will be eventually deleted
-    fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "\n";
+    fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 3 << "\n";
 
     // Update GL_processed data parameters
     GL_processed = i;
@@ -203,10 +205,10 @@ static double process_th_mean(unsigned long long int v_size, vector<double> raw_
 
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
-        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise <<  "\n";
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "," << 1 << "\n";
     }
     else {
-        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "\n";
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 1 << "\n";
     }
 
     // Update amount of GL_processed data
@@ -222,7 +224,7 @@ static double process_th_mean(unsigned long long int v_size, vector<double> raw_
     return mean;
 }
 
-static double process_th_sd(unsigned long long int v_size, int factor)
+static double process_th_sd(unsigned long long int v_size, double proper_mean, int factor)
 {
     double temp = 0, sd = 0, value = 0;
     unsigned long long int i = 0;
@@ -235,7 +237,7 @@ static double process_th_sd(unsigned long long int v_size, int factor)
         {
             temp = -b50_result[i];
         }
-        sd += pow(temp - MEAN, 2);
+        sd += pow(temp - proper_mean, 2);
     }
     sd = sqrt(sd / N_len);
     // Calculate final threshold value
@@ -244,10 +246,27 @@ static double process_th_sd(unsigned long long int v_size, int factor)
     return value;
 }
 
+static double process_th_proper_mean(unsigned long long int v_size)
+{
+    double mean = 0;
+    unsigned long long int i = 0;
+    unsigned long long int N_len = v_size - GL_thDiscard;
+    // Filtering + calculate mean
+    for (i = GL_thDiscard; i < v_size; ++i) // Loop for the length of the array
+    {
+        mean += b50_result[i];
+    }
+
+    mean = mean / N_len;
+    // Calculate final threshold value
+
+    return mean;
+}
+
 static double process_th_mvc(unsigned long long int v_size, vector<double> raw_data)
 {
     double temp = 0, raw_sample = 0.0;
-    unsigned long long int i = 0;
+    unsigned long long int i = 0, iHolder = 0;
     unsigned long long int N_len = v_size - GL_processed;
     // Filtering + calculate mean
     for (i = GL_processed; i < v_size; ++i) // Loop for the length of the array
@@ -271,6 +290,8 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
 
         }
     }
+    iHolder = i;
+
     if (v_size > TH_DISCARD)
     {
         //// Calculate standard deviation
@@ -295,14 +316,14 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
 
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
-        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "\n";
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "," << 2 << "\n";
     }
     else {
-        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "\n";
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 2 << "\n";
     }
 
     // Update amount of GL_processed data
-    GL_processed = i;
+    GL_processed = iHolder;
     //for (int i = 4; i >= 1; i--)
     //{
     //    old_value[i] = old_value[i - 1];

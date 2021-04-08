@@ -30,16 +30,16 @@ data_dir = dir([SASshared folder name '_filter*.txt']);
 % plot all the EMGs individually with raw-vs-filtered on time domain, 
 % frequency domain, start-end of repetitions, triggers, etc
 files_dir = [SASshared_full  name];
-for k=amount
+for k=1:amount
     name = ['Recording XXth January, nr.' num2str(k)];
     data = plot_th_mvc(files_dir,name,k,'C');  
 end
 
 % plotting only the filtered-rectified EMGs with the EMG averages and threshold:
-select_nr = [1 3 4]; % e.g.: plot only recordings 1, 3 and 4
-plot_titles = {'Retified-Filtered data and mean values - Recording 1';
-               'Retified-Filtered data and mean values - Recording 3';
-               'Retified-Filtered data and mean values - Recording 4';
-               'Test Session XXth January different electrodes placement'};
-% the last component of plot_titles is the name of the Figure
-data = only_th(files_dir, plot_titles, select_nr);
+% select_nr = [1 3 4]; % e.g.: plot only recordings 1, 3 and 4
+% plot_titles = {'Retified-Filtered data and mean values - Recording 1';
+%                'Retified-Filtered data and mean values - Recording 3';
+%                'Retified-Filtered data and mean values - Recording 4';
+%                'Test Session XXth January different electrodes placement'};
+% % the last component of plot_titles is the name of the Figure
+% data = only_th(files_dir, plot_titles, select_nr);
