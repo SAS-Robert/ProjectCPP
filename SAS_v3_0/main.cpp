@@ -54,7 +54,7 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 bool stim_abort = false;
 
 //char PORT_STIM[5] = "COM6";   // Laptop
-char PORT_STIM[5] = "COM5";     // Robot
+char PORT_STIM[5] = "COM6";     // Robot
 RehaMove3 stimulator;
 int countPort = 0;
 
@@ -74,7 +74,7 @@ int udp_cnt = 0;
 char ROBOT_IP_E[15] = "127.0.0.1";
 char ROBOT_IP[15] = "172.31.1.147";
 uint32_t ROBOT_PORT = 30009;
-UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
+UdpClient robert(ROBOT_IP, ROBOT_PORT);
 
 char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address
 char SCREEN_PORT[15] = "30002";
@@ -115,8 +115,8 @@ auto time3_end = std::chrono::steady_clock::now();
 // Files variables for names and handling
 char date[DATE_LENGTH];
 // Location on the SAS computer
-//char folder[DATE_LENGTH] = "C:\\Users\\User\\Documents\\SASData\\";
-char folder[DATE_LENGTH] = "C:\\Users\\Kasper Leerskov\\Downloads\\SASData\\";
+char folder[DATE_LENGTH] = "C:\\Users\\User\\Documents\\SASData\\";
+//char folder[DATE_LENGTH] = "C:\\Users\\Kasper Leerskov\\Downloads\\SASData\\";
 char Sname[DATE_LENGTH] = "subject";
 char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256], stim_s[256];
 char time3_s[256];
@@ -170,7 +170,7 @@ void Main()
     // Wait for the other threads to join
     robot.join();
     stateMachine.join();
-    extGUI.join();
+    //extGUI.join();
 }
 
 // ---------------------------- Interface function definitions --------------------------
@@ -181,8 +181,8 @@ void update_localGui() {
     GL_UI.screenMessage = "INFO: ";
     GL_UI.screenMessage += msg_main;
     // --- This is only for debuggin ---
-    GL_UI.screenMessage += "\nRobot-IP status: ";
-    GL_UI.screenMessage += msg_connect;
+    //GL_UI.screenMessage += "\nRobot-IP status: ";
+    //GL_UI.screenMessage += msg_connect;
     //GL_UI.screenMessage += "\nScreen-IP status: ";
     //GL_UI.screenMessage += msg_extGui;
     //GL_UI.screenMessage += "\nRehaMove3: ";
@@ -448,7 +448,6 @@ void mainSAS_thread()
             {
                 msg_main = "Set up stimulation parameters.\n- Complete first set to start exercise.";
                 GL_state = st_calM;
-              //  screen_status = msg_none; // update screen status if the state is updated
             }
             else if (devicesReady && !screen_status == start)
             {
@@ -477,7 +476,6 @@ void mainSAS_thread()
             else if (screen_status == exDone || screen_status == msgEnd)
             {
                 GL_state = st_init;
-                //screen_status = msg_none; // update screen status if the state is updated
             }
             else if (screen_status != setDone && screen_status != exDone)
             {
@@ -552,7 +550,7 @@ void mainSAS_thread()
             }
             else
             {
-                msg_main = msg_recording;
+                msg_main = "Recording 2nd threshold.";
             }
 
             // Abort
@@ -563,6 +561,16 @@ void mainSAS_thread()
             break;
 
         case st_wait:
+            // screen message on the run
+            if (robert.playPause)
+            {
+                msg_main = "Waiting for trigger.";
+            }
+            if (msg_main == "Waiting for trigger." && !robert.playPause)
+            {
+                msg_main = "Press patient button to allow stimulation.";
+            }
+
             if (screen_status == exDone || screen_status == msgEnd)
             {
                 // Exercise has been aborted
@@ -575,7 +583,6 @@ void mainSAS_thread()
             {
                 // normal trigger
                 GL_state = st_running;
-               // screen_status = msg_none; // update screen status if the state is updated
                 msg_main = "Stimulation triggered";
 
                 fileLOGS << "1.0, " << GL_processed << "\n";
@@ -594,22 +601,18 @@ void mainSAS_thread()
                 }
 
                 GL_state = st_stop;
-                // screen_status = msg_none; // update screen status if the state is updated
                 fileLOGS << "2.0, " << GL_processed << "\n";
             }
 
-            // screen message on the run
-            if (robert.playPause)
-            {
-                msg_main = "Waiting for trigger.";
-            }
-            if (msg_main == "Waiting for trigger." && !robert.playPause)
-            {
-                msg_main = "Press patient button to allow stimulation.";
-            }
             break;
 
         case st_running:
+            // screen message on the run
+            if (!(screen_status == exDone || screen_status == msgEnd) && !robert.Reached)
+            {
+                msg_main = msg_stimulating;
+            }
+
             if ((screen_status == exDone || screen_status == msgEnd) && !stimulator.active)
             {
                 // Exercise has been aborted
@@ -630,19 +633,15 @@ void mainSAS_thread()
                 }
 
                 GL_state = st_stop;
-                //screen_status = msg_none; // update screen status if the state is updated
 
                 fileLOGS << "3.0, " << GL_processed << "\n";
-            }
-
-            // screen message on the run
-            if (!(screen_status == exDone || screen_status == msgEnd) && !robert.Reached)
-            {
-                msg_main = msg_stimulating;
             }
             break;
 
         case st_stop:
+            // Display message
+            msg_main = "Reached end-point. Waiting for robot to return to the start.";
+
             devicesReady = stim_status.ready && rec_status.ready;
             robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
             // For GUI testing: screen_status == repStart && devicesReady, taken out && robotReady
@@ -672,8 +671,6 @@ void mainSAS_thread()
                 GL_state = st_init;
             }*/
 
-            // Display message
-            msg_main = "Reached end-point. Waiting for robot to return to the start.";
             break;
 
         case st_repeat:
@@ -730,7 +727,9 @@ void mainSAS_thread()
         } // State machine
 
         stimulating_sas();
-        // GUI testing: robot error has been taken out
+        // The robot communication loss has been removed because
+        // this program runs on the same computer as the main ROBERT-UI
+        // and if the communication is lost, the complete platform must be restarted
         /*
         // Process handling: if the robot-connection gets lost
         if (robert.error_lim && MAIN_to_all.ready)
@@ -768,6 +767,7 @@ void mainSAS_thread()
         // Controlling thread cycle time
         System::Threading::Thread::Sleep(control_thread(MAIN_THREAD, THREAD_END, GL_state));
 
+        /*
         time3_end = std::chrono::steady_clock::now();
         if (GL_state != st_init)
         {
@@ -775,6 +775,7 @@ void mainSAS_thread()
             time3_v.push_back((double)time3_diff.count());
             time3_v2.push_back(GL_state);
         }
+        */
     }
 
 
@@ -1101,7 +1102,7 @@ void stimulating_sas()
         if (stimulator.active)
         {
             stimFile << (float)stimulator.stim[Smpt_Channel_Red].points[0].current << ", " << (int)stimulator.stim[Smpt_Channel_Red].ramp << ", " << (float)stimulator.fq[Smpt_Channel_Red] << ", ";
-            stimFile << GL_exercise << ", " << robert.isVelocity << ", " << robert.legWeight << ", " << screen.level << "\n";
+            stimFile << GL_exercise << ", " << robert.isVelocity << ", " << robert.legWeight << ", " << screen.level << ", " << GL_processed << "\n";
         }
         break;
 
@@ -1295,7 +1296,7 @@ void recording_sas()
         if (!rec_fl5 && GL_UI.set_MVC)
         {
             GL_processed_MVC = GL_processed + 2 * TH_NR;
-            sprintf(msg_recording, "MCV samples needed = %d, , Current processed samples =  %d", GL_processed_MVC, GL_processed);
+            //sprintf(msg_recording, "MCV samples needed = %d, , Current processed samples =  %d", GL_processed_MVC, GL_processed);
             rec_fl5 = true;
             GL_iterator = 0;
         }
@@ -1306,7 +1307,7 @@ void recording_sas()
         {
             GL_iterator++;
             unsigned long long int sampleCounter = GL_processed;
-            sprintf(msg_recording, "MCV GL_iterator %d, samples needed = %d, Current processed samples =  %d, GL_sampleNr = %d", GL_iterator, GL_processed_MVC, sampleCounter, GL_sampleNr);
+            //sprintf(msg_recording, "MCV GL_iterator %d, samples needed = %d, Current processed samples =  %d, GL_sampleNr = %d", GL_iterator, GL_processed_MVC, sampleCounter, GL_sampleNr);
             mvc = process_th_mvc(GL_sampleNr, recorder_emg1);
             //std::cout << "Processed, now pointer on " << GL_processed << endl;
 
@@ -1326,7 +1327,7 @@ void recording_sas()
                 }
 
                 //sprintf(msg_recording, "EMG activity: threshold =  %3.6f", THRESHOLD);
-                sprintf(msg_recording, "MEAN = %3.6f, THRESHOLD = %3.6f", MEAN, THRESHOLD);
+                //sprintf(msg_recording, "MEAN = %3.6f, THRESHOLD = %3.6f", MEAN, THRESHOLD);
                 rec_status.th2 = true;
                 rec_status.req = false;
             }

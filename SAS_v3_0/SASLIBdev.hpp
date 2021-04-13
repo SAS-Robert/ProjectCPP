@@ -92,10 +92,10 @@ void enable_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update
     ml_update->channel_config[sel_ch].ramp = 3;
     ml_update->channel_config[sel_ch].period = 20;
     ml_update->channel_config[sel_ch].points[0].current = 0.0;
-    ml_update->channel_config[sel_ch].points[0].time = 200;
-    ml_update->channel_config[sel_ch].points[1].time = 200;
+    ml_update->channel_config[sel_ch].points[0].time = 300;
+    ml_update->channel_config[sel_ch].points[1].time = 300;
     ml_update->channel_config[sel_ch].points[2].current = 0.0;
-    ml_update->channel_config[sel_ch].points[2].time = 200;
+    ml_update->channel_config[sel_ch].points[2].time = 300;
 }
 
 void fill_ml_get_current_data(Smpt_device *const device, Smpt_ml_get_current_data *const ml_get_current_data)
@@ -223,30 +223,30 @@ void load_stim_settings() {
     UPPERLEG_SET.ramp = 3;             
     UPPERLEG_SET.period = 33;               // 1/frequency (ms)
     UPPERLEG_SET.points[0].current = 5;    // amplitude (mA)
-    UPPERLEG_SET.points[0].time = 200;
-    UPPERLEG_SET.points[1].time = 200;
+    UPPERLEG_SET.points[0].time = 300;
+    UPPERLEG_SET.points[1].time = 300;
     UPPERLEG_SET.points[2].current = -5;   // amplitude (bipolar)
-    UPPERLEG_SET.points[2].time = 200;
+    UPPERLEG_SET.points[2].time = 300;
 
     // Lower leg extension
     LOWERLEG_SET.number_of_points = 3;
     LOWERLEG_SET.ramp = 3;
     LOWERLEG_SET.period = 33;
     LOWERLEG_SET.points[0].current = 5;
-    LOWERLEG_SET.points[0].time = 200;
-    LOWERLEG_SET.points[1].time = 200;
+    LOWERLEG_SET.points[0].time = 300;
+    LOWERLEG_SET.points[1].time = 300;
     LOWERLEG_SET.points[2].current = -5;
-    LOWERLEG_SET.points[2].time = 200;
+    LOWERLEG_SET.points[2].time = 300;
 
     // Electrical circuit
     CIRCUIT_SET.number_of_points = 3;
     CIRCUIT_SET.ramp = 3;
     CIRCUIT_SET.period = 33;
     CIRCUIT_SET.points[0].current = 5;
-    CIRCUIT_SET.points[0].time = 200;
-    CIRCUIT_SET.points[1].time = 200;
+    CIRCUIT_SET.points[0].time = 300;
+    CIRCUIT_SET.points[1].time = 300;
     CIRCUIT_SET.points[2].current = -5;
-    CIRCUIT_SET.points[2].time = 200;
+    CIRCUIT_SET.points[2].time = 300;
 }
 
 void set_stimulation(exercise_Type profile, Smpt_ml_channel_config &settings, double frequency)
@@ -331,10 +331,10 @@ public:
         stim[Smpt_Channel_Red].period = 20;          // Frequency: 50 Hz
         // Set the stimulation pulse
         stim[Smpt_Channel_Red].points[0].current = 0;
-        stim[Smpt_Channel_Red].points[0].time = 200;
-        stim[Smpt_Channel_Red].points[1].time = 200;
+        stim[Smpt_Channel_Red].points[0].time = 300;
+        stim[Smpt_Channel_Red].points[1].time = 300;
         stim[Smpt_Channel_Red].points[2].current = 0;
-        stim[Smpt_Channel_Red].points[2].time = 200;
+        stim[Smpt_Channel_Red].points[2].time = 300;
 
         // Start Process
         smpt_check = smpt_check_serial_port(port_name_rm);

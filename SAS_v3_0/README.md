@@ -62,6 +62,14 @@ In case of using another VS project with a GUI (using as template "CLR Empty pro
 
 ![](howTo/setVS_advanced.png)
 
+
+
+NOTE: After these steps, the solution should be able to be compiled and run. Even without the devices or without a ROBERT platform, it should display something like this:
+
+![](howTo/launch.png)
+
+
+
 ### How to run the program in another computer ###
 
 On the other computer:
@@ -77,25 +85,6 @@ On the other computer:
 4. Run the SAS_v3_0\x64\Release\SAS_v3_0.exe file.
 
 
-### Generated files ###
+On a ROBERT plaform, using the standard ROBERT-UI:
 
-A set of files are generated for every exercise, they are located in the SAS_v3_0\files folder. A brief description of each:
-
-* NAME_filter_DATE_TIME.txt: EMG recording. It includes both raw and filtered data. Every row has the format:
-
-```
-raw_data, output_filter1, output_filter2, ... output_filterN
-```
-
-* NAME_th_DATE_TIME.txt: threshold set up and EMG activity. It contains information about the mean values used for the threshold, the final threshold value and the averga EMG afterwards. Its format per row may vary depending on if the data was discard, used for the threshold or for monitoring.
-
-* NAME_log_DATE_TIME.txt: logs and events on the program, such as trigger, start/end repetition, etc.
-
-* NAME_time_DATE_TIME.txt: main thread duty cycle. Every row has hte format:
-
-```
-duty_cycle, state;
-```
-
-To plot the data on Matlab, copy, export or include the files within MATLAB's workspace. The use the given functions in "Matlab scripts" as shown in Matlab\Example_script.m
 
