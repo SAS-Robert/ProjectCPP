@@ -1,7 +1,0 @@
-Ctrl+Alt+delete
-
-Log in as User/admin
-
-Windows start -> User logo -> change account settings
-Family and other users -> Select ROBERT account
-Go to ROBERT set up -> remove kiosk
