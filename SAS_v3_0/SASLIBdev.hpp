@@ -291,6 +291,7 @@ private:
     bool smpt_port, smpt_check, smpt_next, smpt_end, smpt_get, smpt_ack;
     Smpt_ml_update ml_update; // Struct for ml_update command
     char itoaNr[32];
+    char ID_dev[64], ID_MOVE[64] = "170150307";
 
 public:
     bool ready, active, display;
@@ -322,6 +323,7 @@ public:
     // Functions
     void init(char* port, exercise_Type exercise)
     {
+        ready = false;
         // device port
         port_name_rm = port;
         // Stimulation values
@@ -349,25 +351,31 @@ public:
         smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
         // This all is true when it is connected to the wrong port. Therefore it is necessary to check the device ID
 
-        //sprintf(displayMsg, "%s smpt_check %d, smpt_port %d, smpt_get %d", port_name_rm, smpt_check, smpt_port, smpt_get);
-
         // Request ID Data
-        /*packet = smpt_packet_number_generator_next(&device);
+        packet = smpt_packet_number_generator_next(&device);
         smpt_send_get_device_id(&device, packet);
-        packet = smpt_packet_number_generator_next(&device);
-        smpt_get_get_device_id_ack(&device, &device_id_ack);
-        // check device id
-        //sprintf(displayMsg, "%s, ID = %s, result = %d", port_name_rm, device_id_ack.device_id, device_id_ack.result);
+        bool getID = false;
+        int getID_cnt = 0;
+        Smpt_ack getID_ack = { 0 };
+        memset(ID_dev, '\0', 64);
 
-        // Request stimulator status 
-        packet = smpt_packet_number_generator_next(&device);
-        smpt_send_get_stim_status(&device, packet);
-        packet = smpt_packet_number_generator_next(&device);
-        smpt_get_get_stim_status_ack(&device, &device_stim_ack);
-        //sprintf(displayMsg, "%s, ID = %s, result = %d", port_name_rm, device_id_ack.device_id, device_id_ack.result);
-        */
+        while (!getID && getID_cnt < 100)
+        {
+            if (smpt_new_packet_received(&device))
+            {
+                smpt_last_ack(&device, &getID_ack);
+                getID = smpt_get_get_device_id_ack(&device, &device_id_ack);
+            }
+            Sleep(1);
+            getID_cnt++;
+        }
+        sprintf(ID_dev, "%s", device_id_ack.device_id);
+        bool id_comp = strcmp(ID_dev, ID_MOVE) == 0;
+
+        sprintf(displayMsg, "%s smpt_check %d, smpt_port %d, getID %d, smpt_get %d", port_name_rm, smpt_check, smpt_port, getID, smpt_get);
+
         // smpt_next = connection port was successfull
-        smpt_next = smpt_check && smpt_port && smpt_get;
+        smpt_next = smpt_check && smpt_port && smpt_get && getID && id_comp;
 
         if (smpt_next && !abort && !smpt_end)
         {
@@ -442,6 +450,37 @@ public:
             sprintf(displayMsg, "Reha Move3 message: Process finished.");
         }
     };
+
+    bool checkStatus()
+    {
+        // this just returns if the devices is still there
+        bool getStatus = false;
+        int getID_cnt = 0;
+        // Request ID Data
+        packet = smpt_packet_number_generator_next(&device);
+        smpt_send_get_device_id(&device, packet);
+        bool getID = false;
+        Smpt_ack getID_ack = { 0 };
+        memset(ID_dev, '\0', 64);
+
+        while (!getID && getID_cnt < 100)
+        {
+            if (smpt_new_packet_received(&device))
+            {
+                smpt_last_ack(&device, &getID_ack);
+                getID = smpt_get_get_device_id_ack(&device, &device_id_ack);
+            }
+            Sleep(1);
+            getID_cnt++;
+        }
+        sprintf(ID_dev, "%s", device_id_ack.device_id);
+        bool id_comp = strcmp(ID_dev, ID_MOVE) == 0;
+
+        getStatus = getID && id_comp;
+
+
+        return getStatus;
+    };
 };
 
 // Recorder
@@ -452,8 +491,10 @@ private:
     uint8_t packet_number = 0;
     Smpt_device device_ri = {0};
     Smpt_ml_init ml_init = {0}; // Struct for ml_init command
+    Smpt_get_device_id_ack device_id_ack;
     //Process variables
     bool smpt_port, smpt_check, smpt_stop, smpt_next, smpt_end;
+    char ID_dev[64], ID_INGEST[64] = "190751110";
 
 public:
     bool abort, ready, found, display;
@@ -492,9 +533,29 @@ public:
         smpt_port = smpt_open_serial_port(&device_ri, port_name_ri);
         packet_number = smpt_packet_number_generator_next(&device_ri);
         smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
-        // include the get_stop_ack here
-        // check smpt_dl_op_mode
-        smpt_next = smpt_check && smpt_port && smpt_stop;
+        
+        // Request ID Data
+        packet_number = smpt_packet_number_generator_next(&device_ri);
+        smpt_send_get_device_id(&device_ri, packet_number);
+        bool getID = false;
+        int getID_cnt = 0;
+        Smpt_ack getID_ack = { 0 };
+        memset(ID_dev, '\0', 64);
+
+        while (!getID && getID_cnt < 100)
+        {
+            if (smpt_new_packet_received(&device_ri))
+            {
+                smpt_last_ack(&device_ri, &getID_ack);
+                getID = smpt_get_get_device_id_ack(&device_ri, &device_id_ack);
+            }
+            Sleep(1);
+            getID_cnt++;
+        }
+        sprintf(ID_dev, "%s", device_id_ack.device_id);
+        bool id_comp = strcmp(ID_dev, ID_INGEST) == 0;
+        
+        smpt_next = smpt_check && smpt_port && smpt_stop && getID && id_comp;
         // smpt_next = connection to the device was successful
 
         if (smpt_next && !smpt_end && !abort) {
@@ -582,6 +643,37 @@ public:
         smpt_check = smpt_check_serial_port(port_name_ri);
         ready = false;
         if (display) { sprintf(displayMsg, "Reha Ingest message: Process finished."); }
+    };
+
+    bool checkStatus()
+    {
+        // this just returns if the devices is still there
+        bool getStatus = false;
+        int getID_cnt = 0;
+        // Request ID Data
+        packet_number = smpt_packet_number_generator_next(&device_ri);
+        smpt_send_get_device_id(&device_ri, packet_number);
+        bool getID = false;
+        Smpt_ack getID_ack = { 0 };
+        memset(ID_dev, '\0', 64);
+
+        while (!getID && getID_cnt < 100)
+        {
+            if (smpt_new_packet_received(&device_ri))
+            {
+                smpt_last_ack(&device_ri, &getID_ack);
+                getID = smpt_get_get_device_id_ack(&device_ri, &device_id_ack);
+            }
+            Sleep(1);
+            getID_cnt++;
+        }
+        sprintf(ID_dev, "%s", device_id_ack.device_id);
+        bool id_comp = strcmp(ID_dev, ID_INGEST) == 0;
+
+        getStatus = getID && id_comp;
+
+
+        return getStatus;
     };
 };
 

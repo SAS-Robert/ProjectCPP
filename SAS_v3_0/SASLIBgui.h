@@ -114,6 +114,13 @@ namespace SASv30 {
 
 	public: System::Windows::Forms::Label^ addLabelFixed;
 	public: System::Windows::Forms::Button^ windowButton;
+	public: System::Windows::Forms::ComboBox^ recPBox;
+
+	public: System::Windows::Forms::Label^ recPortTitle;
+	public: System::Windows::Forms::ComboBox^ stimPBox;
+
+
+	public: System::Windows::Forms::Label^ stimPortTitle;
 
 
 
@@ -167,6 +174,10 @@ namespace SASv30 {
 			this->additionalTitle = (gcnew System::Windows::Forms::Label());
 			this->addLabelFixed = (gcnew System::Windows::Forms::Label());
 			this->windowButton = (gcnew System::Windows::Forms::Button());
+			this->recPBox = (gcnew System::Windows::Forms::ComboBox());
+			this->recPortTitle = (gcnew System::Windows::Forms::Label());
+			this->stimPBox = (gcnew System::Windows::Forms::ComboBox());
+			this->stimPortTitle = (gcnew System::Windows::Forms::Label());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->bindingSource1))->BeginInit();
 			this->SuspendLayout();
 			// 
@@ -614,7 +625,7 @@ namespace SASv30 {
 			this->addLabelFixed->ForeColor = System::Drawing::SystemColors::Highlight;
 			this->addLabelFixed->Location = System::Drawing::Point(2, 648);
 			this->addLabelFixed->Name = L"addLabelFixed";
-			this->addLabelFixed->Size = System::Drawing::Size(157, 74);
+			this->addLabelFixed->Size = System::Drawing::Size(139, 74);
 			this->addLabelFixed->TabIndex = 54;
 			this->addLabelFixed->Text = L"ADDITIONAL SETTINGS";
 			this->addLabelFixed->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
@@ -629,13 +640,79 @@ namespace SASv30 {
 			this->windowButton->Font = (gcnew System::Drawing::Font(L"Microsoft JhengHei UI", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
 			this->windowButton->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
-			this->windowButton->Location = System::Drawing::Point(165, 646);
+			this->windowButton->Location = System::Drawing::Point(147, 646);
 			this->windowButton->Name = L"windowButton";
-			this->windowButton->Size = System::Drawing::Size(152, 78);
+			this->windowButton->Size = System::Drawing::Size(138, 78);
 			this->windowButton->TabIndex = 55;
 			this->windowButton->Text = L"RESIZE WINDOW";
 			this->windowButton->UseVisualStyleBackColor = false;
 			this->windowButton->Click += gcnew System::EventHandler(this, &MyForm::click_windowButton);
+			// 
+			// recPBox
+			// 
+			this->recPBox->AutoCompleteCustomSource->AddRange(gcnew cli::array< System::String^  >(9) {
+				L"COM1", L"COM2", L"COM3", L"COM4",
+					L"COM5", L"COM6", L"COM7", L"COM8", L"COM9"
+			});
+			this->recPBox->Enabled = false;
+			this->recPBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 27.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->recPBox->FormattingEnabled = true;
+			this->recPBox->Items->AddRange(gcnew cli::array< System::Object^  >(9) {
+				L"COM1", L"COM2", L"COM3", L"COM4", L"COM5", L"COM6",
+					L"COM7", L"COM8", L"COM9"
+			});
+			this->recPBox->Location = System::Drawing::Point(296, 674);
+			this->recPBox->Name = L"recPBox";
+			this->recPBox->Size = System::Drawing::Size(151, 50);
+			this->recPBox->TabIndex = 57;
+			this->recPBox->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::recPBox_SelectedIndexChanged);
+			// 
+			// recPortTitle
+			// 
+			this->recPortTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->recPortTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->recPortTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->recPortTitle->Location = System::Drawing::Point(296, 647);
+			this->recPortTitle->Name = L"recPortTitle";
+			this->recPortTitle->Size = System::Drawing::Size(160, 30);
+			this->recPortTitle->TabIndex = 56;
+			this->recPortTitle->Text = L"REHA INGEST";
+			this->recPortTitle->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
+			// 
+			// stimPBox
+			// 
+			this->stimPBox->AutoCompleteCustomSource->AddRange(gcnew cli::array< System::String^  >(9) {
+				L"COM1", L"COM2", L"COM3", L"COM4",
+					L"COM5", L"COM6", L"COM7", L"COM8", L"COM9"
+			});
+			this->stimPBox->Enabled = false;
+			this->stimPBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 27.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->stimPBox->FormattingEnabled = true;
+			this->stimPBox->Items->AddRange(gcnew cli::array< System::Object^  >(9) {
+				L"COM1", L"COM2", L"COM3", L"COM4", L"COM5", L"COM6",
+					L"COM7", L"COM8", L"COM9"
+			});
+			this->stimPBox->Location = System::Drawing::Point(459, 674);
+			this->stimPBox->Name = L"stimPBox";
+			this->stimPBox->Size = System::Drawing::Size(153, 50);
+			this->stimPBox->TabIndex = 59;
+			this->stimPBox->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::stimPBox_SelectedIndexChanged);
+			// 
+			// stimPortTitle
+			// 
+			this->stimPortTitle->BackColor = System::Drawing::SystemColors::ButtonHighlight;
+			this->stimPortTitle->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->stimPortTitle->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->stimPortTitle->Location = System::Drawing::Point(459, 647);
+			this->stimPortTitle->Name = L"stimPortTitle";
+			this->stimPortTitle->Size = System::Drawing::Size(153, 30);
+			this->stimPortTitle->TabIndex = 58;
+			this->stimPortTitle->Text = L"REHA MOVE";
+			this->stimPortTitle->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
 			// 
 			// MyForm
 			// 
@@ -644,7 +721,10 @@ namespace SASv30 {
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->ClientSize = System::Drawing::Size(624, 731);
-			this->ControlBox = false;
+			this->Controls->Add(this->stimPBox);
+			this->Controls->Add(this->stimPortTitle);
+			this->Controls->Add(this->recPBox);
+			this->Controls->Add(this->recPortTitle);
 			this->Controls->Add(this->windowButton);
 			this->Controls->Add(this->addLabelFixed);
 			this->Controls->Add(this->additionalTitle);
@@ -696,8 +776,8 @@ namespace SASv30 {
 			//this->Icon = gcnew System::Drawing::Icon(L"logo_square.ico");
 			this->methodBox->SelectedIndex = 0;
 			this->exerciseBox->SelectedIndex = 0;
-			//this->recPBox->SelectedIndex = 3;
-			//this->stimPBox->SelectedIndex = 6;
+			this->recPBox->SelectedIndex = 3;
+			this->stimPBox->SelectedIndex = 6;
 			// Communication
 			Move3_gui = Move3_none;
 			user_gui = User_none;
@@ -724,7 +804,7 @@ namespace SASv30 {
 			isVelocity = 10.0;
 			// Update display
 			std::stringstream tempValue;
-			tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mms/s";
+			tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mm/100ms";
 			string tempString = tempValue.str();
 			this->velValue->Text = gcnew String(tempString.c_str());
 
@@ -824,7 +904,7 @@ namespace SASv30 {
 		this->Location = System::Drawing::Point(0, 0);
 	}
 // Select recorder and stimulator Ports
-		   /*
+
 	private: System::Void recPBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
 		char intStr[8];
 		nextRecP = this->recPBox->SelectedIndex;
@@ -866,8 +946,8 @@ namespace SASv30 {
 		itoa(nextStimP, intStr, 10);
 		GL_UI.PORT_STIM[3] = intStr[0];
 	}
-	*/
-	// For isMoving testing
+
+	// For isMoving testing (that it was at the end shipped to Holland because why not)
 	private: System::Void click_velMinus(System::Object^ sender, System::EventArgs^ e) {
 		isVelocity -= isDelta;
 		// Update SAS
@@ -909,7 +989,7 @@ namespace SASv30 {
 		}
 	}
 
-		   // This event handler demonstrates how to interpret runs when the background must finish
+	// This event handler demonstrates how to interpret runs when the background must finish
 	private: System::Void endBackground(System::Object^ sender, RunWorkerCompletedEventArgs^ e)
 	{
 		// The operation completed normally.
@@ -979,16 +1059,24 @@ namespace SASv30 {
 
 		// START / STOP / RESUME STIMULATION
 		// i. notice text
-		if (!GL_UI.playPause)
+		if (!GL_UI.playPause || !GL_UI.stimReady)
 		{
 			this->stimInfo->ForeColor = System::Drawing::SystemColors::InactiveCaption;
+			if (!GL_UI.playPause)
+			{
+				this->stimInfo->Text = L"PRESS PATIENT BUTTON TO ENABLE STIMULATION";
+			}
+			else
+			{
+				this->stimInfo->Text = L"CONNECT STIMULATOR";
+			}
 		}
 		else
 		{
 			this->stimInfo->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
 		}
 		// ii. Stimulation disabled
-		if (!GL_UI.playPause)
+		if (!GL_UI.playPause || !GL_UI.stimReady)
 		{
 			this->stimButton->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->stimButton->Text = L"STIMULATION DISABLED";
@@ -1090,12 +1178,12 @@ namespace SASv30 {
 		}
 
 		// SELECT STIMULATOR AND RECORDER PORTS
-		//this->stimPBox->Enabled = (state == st_init && !GL_UI.stimReady);
-		//this->recPBox->Enabled = (state == st_init && !GL_UI.recReady);
+		this->stimPBox->Enabled = (!GL_UI.stimReady);
+		this->recPBox->Enabled = (!GL_UI.recReady);
 
 		// For isVelocity testing
 		std::stringstream tempVelocity;
-		tempVelocity << std::setprecision(7) << GL_UI.isVelocity << " mm/s";
+		tempVelocity << std::setprecision(7) << GL_UI.isVelocity << " mm/100ms";
 		tempString = tempVelocity.str();
 		this->velCurrent->Text = gcnew String(tempString.c_str());
 	}
