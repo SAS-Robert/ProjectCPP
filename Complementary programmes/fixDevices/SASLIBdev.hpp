@@ -269,17 +269,31 @@ public:
         // Request ID Data
         packet = smpt_packet_number_generator_next(&device);
         smpt_send_get_device_id(&device, packet);
-        packet = smpt_packet_number_generator_next(&device);
-        smpt_get_get_device_id_ack(&device, &device_id_ack);
+        bool getID = false;
+        int getID_dummy = 0;
+        Smpt_ack getID_ack = { 0 };
+
+        while (!getID && getID_dummy<100)
+        {
+            if (smpt_new_packet_received(&device))
+            {
+                smpt_last_ack(&device, &getID_ack);
+                //packet = smpt_packet_number_generator_next(&device);
+                getID = smpt_get_get_device_id_ack(&device, &device_id_ack);
+            }
+            Sleep(1);
+            getID_dummy++;
+        }
+        
         // check device id
-        printf("GET ID: ID = %s, result = %d\n", device_id_ack.device_id, device_id_ack.result);
+        printf("GET ID: bool %d, ID = %s, result = %d, schleife = %d\n", getID, device_id_ack.device_id, device_id_ack.result, getID_dummy);
 
         // Request stimulator status 
         packet = smpt_packet_number_generator_next(&device);
         smpt_send_get_stim_status(&device, packet);
         packet = smpt_packet_number_generator_next(&device);
         smpt_get_get_stim_status_ack(&device, &device_stim_ack);
-        //printf("GET STATUS: result = %d, Smpt_Stim_Status = %d \n", device_id_ack.result, device_stim_ack.stim_status);
+        printf("GET STATUS (leer): result = %d, Smpt_Stim_Status = %d \n", device_id_ack.result, device_stim_ack.stim_status);
         // TODO: check on Smpt_Stim_Status
 
         // smpt_next = connection port was successfull
@@ -308,6 +322,14 @@ public:
             packet = smpt_packet_number_generator_next(&device);
             smpt_get_get_stim_status_ack(&device, &device_stim_ack);
             printf("GET STATUS: result = %d, Smpt_Stim_Status = %d \n", device_id_ack.result, device_stim_ack.stim_status);
+            // Another request
+            packet = smpt_packet_number_generator_next(&device);
+            bool sendStatus = smpt_send_get_main_status(&device, packet);
+            printf("GET STATUS 2: bool =%d\n", sendStatus);//, get_main_status_ack.result, get_main_status_ack.main_status);
+
+            Smpt_get_main_status_ack get_main_status_ack = { 0 };
+            bool getStatus = smpt_get_get_main_status_ack(&device,&get_main_status_ack);
+            printf("GET STATUS 3: bool =%d, result = %d, Smpt_Main_Status = %d \n", getStatus, get_main_status_ack.result, get_main_status_ack.main_status);
 
 
             if(display) { sprintf(displayMsg, "Device RehaMove3 ready."); }
@@ -334,6 +356,32 @@ public:
         }
 
     };
+    bool checkStatus()
+    {
+
+        bool getStatus = false;
+        int getStatus_cnt = 0;
+        Smpt_ack getID_ack = { 0 };
+        Smpt_get_main_status_ack get_main_status_ack = { 0 };
+
+        packet = smpt_packet_number_generator_next(&device);
+        smpt_send_get_stim_status(&device, packet);
+
+        while (!getStatus && getStatus_cnt < 100)
+        {
+            if (smpt_new_packet_received(&device))
+            {
+                smpt_last_ack(&device, &getID_ack);
+                //packet = smpt_packet_number_generator_next(&device);
+                getStatus = smpt_get_get_main_status_ack(&device, &get_main_status_ack);
+            }
+            Sleep(10);
+            getStatus_cnt++;
+        }
+        printf("checkStatus: bool =%d, result = %d, Smpt_Main_Status = %d \n", getStatus, get_main_status_ack.result, get_main_status_ack.main_status);
+
+        return getStatus;
+    }
     void update()
     {
         fill_ml_update(&device, &ml_update, Smpt_Channel_Red, true, stim[Smpt_Channel_Red]);
@@ -468,6 +516,22 @@ public:
 
         Sleep(10);
 
+        // testing
+        Smpt_dl_init_ack dl_init_ack = { 0 };
+        smpt_get_dl_init_ack(&device_ri, &dl_init_ack);
+        printf("Smpt_dl_ads129x id %d\n", dl_init_ack.ads129x.id);
+        // testing
+        printf("Smpt_dl_ads129x id %d\n", dl_init.ads129x.id);
+
+        //Smpt_dl_send_mmi dl_send_mmi = {0};
+        //smpt_clear_dl_send_mmi(&dl_send_mmi);
+
+        Smpt_dl_get_ack dl_get_ack = { 0 };
+        smpt_get_dl_get_ack(&device_ri, &dl_get_ack);
+
+        printf("dl_get_ack OP= %d, ID= %s\n", int(dl_get_ack.operation_mode), dl_get_ack.deviceId);
+        //
+
         while (smpt_new_packet_received(&device_ri))
         {
             handle_dl_packet_global(&device_ri);
@@ -479,6 +543,23 @@ public:
         smpt_send_dl_start(&device_ri, packet_number);
         ready = true;
         if (display) { sprintf(displayMsg, "Device ready."); }
+
+        // testing
+        dl_init_ack = { 0 };
+        smpt_get_dl_init_ack(&device_ri, &dl_init_ack);
+        printf("----AFTER----\nSmpt_dl_ads129x id %d\n", dl_init_ack.ads129x.id);
+        // testing
+        printf("Smpt_dl_ads129x id %d\n", dl_init.ads129x.id);
+
+        //Smpt_dl_send_mmi dl_send_mmi = {0};
+        //smpt_clear_dl_send_mmi(&dl_send_mmi);
+
+        dl_get_ack = { 0 };
+        smpt_get_dl_get_ack(&device_ri, &dl_get_ack);
+
+        printf("dl_get_ack OP= %d, ID= %s\n", int(dl_get_ack.operation_mode), dl_get_ack.deviceId);
+        //
+
     };
     void record()
     {

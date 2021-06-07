@@ -1,0 +1,29 @@
+////////////////////////////////////////////////////////////////////////
+// Stimulator is connected
+Starting stimulator on port COM5, try nr 1, nrPort 5, COM5
+PORT CHECK: smpt_check 1, smpt_port 1, smpt_get 1
+GET ID: bool 1, ID = 170150307, result = 0, schleife = 3
+GET STATUS (leer): result = 0, Smpt_Stim_Status = 0
+GET STATUS: result = 0, Smpt_Stim_Status = 0
+GET STATUS 2: bool =1
+GET STATUS 3: bool =0, result = 0, Smpt_Main_Status = 0
+Device RehaMove3 ready.
+
+////////////////////////////////////////////////////////////////////////
+// Stimulator is not connected
+Starting stimulator on port COM5, try nr 1, nrPort 5, COM5
+PORT CHECK: smpt_check 1, smpt_port 1, smpt_get 1
+GET ID: bool 0, ID = , result = 0, schleife = 100
+GET STATUS (leer): result = 0, Smpt_Stim_Status = 0
+GET STATUS: result = 0, Smpt_Stim_Status = 0
+GET STATUS 2: bool =0
+GET STATUS 3: bool =0, result = 0, Smpt_Main_Status = 0
+Device RehaMove3 ready.
+
+
+//////////////////////////////////////////
+// Recorder is connected
+Starting recorder on port COM4, try nr 2, nrPort 4, COM4
+GET ID: bool 1, ID = 190751110, result = 0, schleife = 67
+Device RehaIngest found.
+Reha Ingest message: Process finished.

@@ -15,11 +15,14 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DevTesting.cpp">
+    <ClCompile Include="fixDevices.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="SASLIB.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="SASLIBdev.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
