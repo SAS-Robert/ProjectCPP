@@ -58,5 +58,5 @@ Other documentation:
 -----------------------------------------------
 ### Authors ###
 
-Carolina Gomez Salvatierra:             cgs@lifescience-robotics.com             cgomez19@student.aau.dk
+Carolina Gomez Salvatierra:             cgs@lifescience-robotics.com
 -----------------------------------------------

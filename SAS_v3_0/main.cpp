@@ -178,18 +178,18 @@ void update_localGui() {
     // ------------- sas -> gui -------------
     // status
     GL_UI.status = GL_state;
-    //GL_UI.screenMessage = "INFO: ";
-    //GL_UI.screenMessage += msg_main;
+    GL_UI.screenMessage = "INFO: ";
+    GL_UI.screenMessage += msg_main;
     // --- This is only for debugging ---
     //GL_UI.screenMessage += "\nRobot-IP status: ";
     //GL_UI.screenMessage += msg_connect;
     //GL_UI.screenMessage += "\nScreen-IP status: ";
     //GL_UI.screenMessage += msg_extGui;
-    GL_UI.screenMessage = "";
-    GL_UI.screenMessage += "RehaMove3: ";
-    GL_UI.screenMessage += msg_stimulating;
-    GL_UI.screenMessage += "\nRehaIngest: ";
-    GL_UI.screenMessage += msg_recording;
+    //GL_UI.screenMessage = "";
+    //GL_UI.screenMessage += "RehaMove3: ";
+    //GL_UI.screenMessage += msg_stimulating;
+    //GL_UI.screenMessage += "\nRehaIngest: ";
+    //GL_UI.screenMessage += msg_recording;
     GL_UI.END_GUI = MAIN_to_all.end;
 
     // Exercise settings
@@ -429,11 +429,6 @@ void mainSAS_thread()
             msg_main += "Waiting for screen server to be set up.\n";
         }
     }
-
-    //sprintf(msg_stimulating, "waiiiitiiiiing");
-    //System::Threading::Thread::Sleep(1000);
-    //sprintf(msg_stimulating, "done waiting");
-
     // ------------- State machine loop -------------
     while (!MAIN_to_all.end && GL_state != st_end)
     {
@@ -461,9 +456,9 @@ void mainSAS_thread()
             }
             else if (!devicesReady)
             {
-                //msg_main = "RehaMove3: ";
-                //msg_main += msg_stimulating;
-                //msg_main += "\nRehaIngest: ";
+                msg_main = "\nRehaMove3: ";
+                msg_main += msg_stimulating;
+                msg_main += "\nRehaIngest: ";
                 msg_main += msg_recording;
             }
 

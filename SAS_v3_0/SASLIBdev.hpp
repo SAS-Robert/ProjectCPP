@@ -154,6 +154,12 @@ void handleStopAckReceived(Smpt_device *const device, const Smpt_ack &ack)
     smpt_get_dl_power_module_ack(device, &power_module_ack);
 }
 
+void fill_dl_poweroff_module(Smpt_device* const device, Smpt_dl_power_module* const dl_power_module)
+{
+    dl_power_module->hardware_module = Smpt_Dl_Hardware_Module_Measurement;
+    dl_power_module->switch_on_off = false;
+}
+
 // Modified from original Hasomeds examples:
 static void handleSendLiveDataReceived(Smpt_device *const device, const Smpt_ack &ack)
 {
@@ -713,15 +719,100 @@ public:
         if (display) { sprintf(displayMsg, "Reha Ingest message: Process finished."); }
     };
 
-/*    bool checkStatus()
+    void init_hasomed(char* port)
     {
-        // this just returns if the devices is still there
-        bool getStatus = false;
-        int getID_cnt = 0;
+        error_cnt = 0;
+        data_start = false;
+        ready = false;
+        found = false;
+        port_name_ri = port;
+        // First step
+        if (display) { sprintf(displayMsg, "Reha Ingest message: Setting communication on port %s", port_name_ri); }
+
+        smpt_check = smpt_check_serial_port(port_name_ri);
+        smpt_port = smpt_open_serial_port(&device_ri, port_name_ri);
+
+        packet_number = smpt_packet_number_generator_next(&device_ri);
+        Smpt_dl_get dl_get;
+        dl_get.get_type = Smpt_Dl_Get_Type_Operation_Mode;
+        dl_get.packet_number = packet_number;
+        smpt_send_dl_get(&device_ri, &dl_get);
+
+        bool getMode = false;
+        int getMode_cnt = 0;
+        Smpt_ack getMode_ack = { 0 };
+        Smpt_dl_get_ack dl_get_ack = { 0 };
+        Smpt_Dl_Op_Mode OperationMode;
+
+        while (!getMode && getMode_cnt < 100)
+        {
+            if (smpt_new_packet_received(&device_ri))
+            {
+                smpt_last_ack(&device_ri, &getMode_ack);
+                smpt_get_dl_get_ack(&device_ri, &dl_get_ack);
+
+                if (dl_get_ack.get_type == Smpt_Dl_Get_Type_Operation_Mode)
+                {
+                    getMode = true;
+                    OperationMode = dl_get_ack.operation_mode;
+                }
+
+            }
+            Sleep(1);
+            getMode_cnt++;
+        }
+        bool sendStop = false;
+        if (getMode)
+        {
+            sprintf(displayMsg, "Get Operation Mode sucessfull: %d\n", OperationMode);
+
+            switch (OperationMode)
+            {
+            case Smpt_Dl_Op_Mode_Undefined:
+            {
+                sprintf(displayMsg, "!! Undefined Mode !!\n\n");
+                break;
+            }
+            case Smpt_Dl_Op_Mode_Idle:
+            {
+                sprintf(displayMsg, "Device is idle\n");
+                break;
+            }
+            case Smpt_Dl_Op_Mode_Live_Measurement_Pre:
+            {
+                sprintf(displayMsg, "Device is working\n");
+                sendStop = true;
+                break;
+            }
+            case Smpt_Dl_Op_Mode_Live_Measurement:
+            {
+                sprintf(displayMsg, "Device is working\n");
+                sendStop = true;
+                break;
+            }
+            }
+        }
+        else
+        {
+            sprintf(displayMsg, "Get Operation Mode has failed!\n");
+            sendStop = true;
+        }
+
+        if (sendStop)
+        {
+            packet_number = smpt_packet_number_generator_next(&device_ri);
+            smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
+            Sleep(10);
+            Smpt_dl_power_module dl_power_module = { 0 };
+            fill_dl_poweroff_module(&device_ri, &dl_power_module);
+            smpt_send_dl_power_module(&device_ri, &dl_power_module);
+            Sleep(10);
+        }
         // Request ID Data
         packet_number = smpt_packet_number_generator_next(&device_ri);
         smpt_send_get_device_id(&device_ri, packet_number);
         bool getID = false;
+        int getID_cnt = 0;
         Smpt_ack getID_ack = { 0 };
         memset(ID_dev, '\0', 64);
 
@@ -738,12 +829,27 @@ public:
         sprintf(ID_dev, "%s", device_id_ack.device_id);
         bool id_comp = strcmp(ID_dev, ID_INGEST) == 0;
 
-        getStatus = getID && id_comp;
+        smpt_next = smpt_check && smpt_port && smpt_stop && getID && id_comp;
+        // smpt_next = connection to the device was successful
 
+        if (smpt_next && !smpt_end && !abort) {
+            if (display) { sprintf(displayMsg, "Device RehaIngest found."); }
+            recorder_emg1.clear();
+            found = true;
+            error = false;
+        }
+        else if (!smpt_next)
+        {
+            sprintf(displayMsg, "Error - Reha Ingest: Device not found. Turn it on and/or check connection.");
+            smpt_stop = smpt_send_dl_stop(&device_ri, packet_number);
+            smpt_close_serial_port(&device_ri);
+        }
+        else if (abort)
+        {
+            smpt_end = true;
+        }
 
-        return getStatus;
     };
-    */
 };
 
 // ------------------------------------------------------------------------
