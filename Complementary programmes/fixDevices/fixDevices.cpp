@@ -215,7 +215,7 @@ private:
     bool smpt_port, smpt_check, smpt_next, smpt_end, smpt_get, smpt_ack;
     Smpt_ml_update ml_update; // Struct for ml_update command
     char itoaNr[32];
-
+    char ID_dev[64], ID_MOVE[64] = "170150307";
 public:
     bool ready, active, display;
     //Smpt_ml_channel_config stim;
@@ -345,30 +345,32 @@ public:
     };
     bool checkStatus()
     {
-
+        // this just returns if the devices is still there
         bool getStatus = false;
-        int getStatus_cnt = 0;
+        int getID_cnt = 0;
         // Request ID Data
         packet = smpt_packet_number_generator_next(&device);
         smpt_send_get_device_id(&device, packet);
         bool getID = false;
         Smpt_ack getID_ack = { 0 };
+        memset(ID_dev, '\0', 64);
 
-        while (!getID && getStatus_cnt < 100)
+        while (!getID && getID_cnt < 100)
         {
             if (smpt_new_packet_received(&device))
             {
                 smpt_last_ack(&device, &getID_ack);
-                //packet = smpt_packet_number_generator_next(&device);
                 getID = smpt_get_get_device_id_ack(&device, &device_id_ack);
             }
             Sleep(1);
-            getStatus_cnt++;
+            getID_cnt++;
         }
-        getStatus = getID;
-        error = !getID;
+        sprintf(ID_dev, "%s", device_id_ack.device_id);
+        bool id_comp = strcmp(ID_dev, ID_MOVE) == 0;
+        getStatus = getID && id_comp;
+        
         return getStatus;
-    }
+    };
     void update()
     {
         fill_ml_update(&device, &ml_update, Smpt_Channel_Red, true, stim[Smpt_Channel_Red]);
@@ -413,13 +415,17 @@ private:
     Smpt_device device_ri = { 0 };
     Smpt_ml_init ml_init = { 0 }; // Struct for ml_init command
     Smpt_get_device_id_ack device_id_ack;
+    Smpt_dl_stop_ack device_stop_ack;
     //Process variables
     bool smpt_port, smpt_check, smpt_stop, smpt_next, smpt_end;
-    char ID_dev[64], ID_INGEST[64] ="190751110";
+    char ID_dev[64], ID_INGEST[64] = "190751110";
+    const int ERROR_LIM = 10;
+
 public:
-    bool abort, ready, found, display;
+    bool abort, ready, found, display, error;
     bool data_received, data_start, data_printed;
     char displayMsg[512];
+    int packet_cnt = 0, error_cnt = 0;
 
     // Constructor
     RehaIngest()
@@ -439,10 +445,15 @@ public:
         abort = false;
         display = false;
         found = false;
+        error = false;
+        error_cnt = 0;
+        packet_cnt = 0;
     }
     // Functions
     void init(char* port)
     {
+        error_cnt = 0;
+        data_start = false;
         ready = false;
         found = false;
         port_name_ri = port;
@@ -458,29 +469,23 @@ public:
         packet_number = smpt_packet_number_generator_next(&device_ri);
         smpt_send_get_device_id(&device_ri, packet_number);
         bool getID = false;
-        int getID_dummy = 0;
+        int getID_cnt = 0;
         Smpt_ack getID_ack = { 0 };
-        
+        memset(ID_dev, '\0', 64);
 
-        while (!getID && getID_dummy < 100)
+        while (!getID && getID_cnt < 100)
         {
             if (smpt_new_packet_received(&device_ri))
             {
                 smpt_last_ack(&device_ri, &getID_ack);
-                //packet = smpt_packet_number_generator_next(&device);
                 getID = smpt_get_get_device_id_ack(&device_ri, &device_id_ack);
             }
             Sleep(1);
-            getID_dummy++;
+            getID_cnt++;
         }
         sprintf(ID_dev, "%s", device_id_ack.device_id);
-        bool id_comp  = strcmp(ID_dev, ID_INGEST) == 0;
+        bool id_comp = strcmp(ID_dev, ID_INGEST) == 0;
 
-        // check device id
-        printf("GET ID: bool %d, ID = %s, id_comp = %d, schleife = %d\n", getID, device_id_ack.device_id, id_comp, getID_dummy);
-
-        // include the get_stop_ack here
-        // check smpt_dl_op_mode
         smpt_next = smpt_check && smpt_port && smpt_stop && getID && id_comp;
         // smpt_next = connection to the device was successful
 
@@ -488,6 +493,7 @@ public:
             if (display) { sprintf(displayMsg, "Device RehaIngest found."); }
             recorder_emg1.clear();
             found = true;
+            error = false;
         }
         else if (!smpt_next)
         {
@@ -530,22 +536,6 @@ public:
 
         Sleep(10);
 
-        // testing
-        Smpt_dl_init_ack dl_init_ack = { 0 };
-        smpt_get_dl_init_ack(&device_ri, &dl_init_ack);
-        printf("Smpt_dl_ads129x id %d\n", dl_init_ack.ads129x.id);
-        // testing
-        printf("Smpt_dl_ads129x id %d\n", dl_init.ads129x.id);
-
-        //Smpt_dl_send_mmi dl_send_mmi = {0};
-        //smpt_clear_dl_send_mmi(&dl_send_mmi);
-
-        Smpt_dl_get_ack dl_get_ack = { 0 };
-        smpt_get_dl_get_ack(&device_ri, &dl_get_ack);
-
-        printf("dl_get_ack OP= %d, ID= %s\n", int(dl_get_ack.operation_mode), dl_get_ack.deviceId);
-        //
-
         while (smpt_new_packet_received(&device_ri))
         {
             handle_dl_packet_global(&device_ri);
@@ -556,26 +546,73 @@ public:
         packet_number = smpt_packet_number_generator_next(&device_ri);
         smpt_send_dl_start(&device_ri, packet_number);
         ready = true;
+        error = false;
         if (display) { sprintf(displayMsg, "Device ready."); }
-
-        // testing
-        dl_init_ack = { 0 };
-        smpt_get_dl_init_ack(&device_ri, &dl_init_ack);
-        printf("----AFTER----\nSmpt_dl_ads129x id %d\n", dl_init_ack.ads129x.id);
-        // testing
-        printf("Smpt_dl_ads129x id %d\n", dl_init.ads129x.id);
-
-        //Smpt_dl_send_mmi dl_send_mmi = {0};
-        //smpt_clear_dl_send_mmi(&dl_send_mmi);
-
-        dl_get_ack = { 0 };
-        smpt_get_dl_get_ack(&device_ri, &dl_get_ack);
-
-        printf("dl_get_ack OP= %d, ID= %s\n", int(dl_get_ack.operation_mode), dl_get_ack.deviceId);
-        //
-
     };
-    void record()
+
+    int record_hasomed(int j)
+    {
+        // clean data variables before starting
+        data_received = false;
+
+        while (smpt_new_packet_received(&device_ri) && j < 300) {
+
+            data_received = handle_dl_packet_global(&device_ri);
+            if (data_received && !data_start)
+            {
+                data_start = true;
+            }
+            if (data_received)
+            {
+                j++;
+            }
+            //checking error
+            if (data_start && !data_received)
+            {
+                error_cnt++;
+            }
+            if (data_start && data_received && error_cnt != 0)
+            {
+                error_cnt=0;
+            }
+            error = (error_cnt >= ERROR_LIM);
+        }
+
+        return packet_cnt;
+    };
+
+    bool record()
+    {
+        // clean data variables before starting
+        data_received = false;
+
+        while (smpt_new_packet_received(&device_ri)) {
+
+            data_received = handle_dl_packet_global(&device_ri);
+            if (data_received && !data_start)
+            {
+                data_start = true;
+            }
+            if (data_received)
+            {
+                packet_cnt++;
+            }         
+        }
+        //checking error
+        if (data_start && !data_received && error_cnt < ERROR_LIM)
+        {
+            error_cnt++;
+        }
+        else if (data_start && data_received && error_cnt != 0)
+        {
+            error_cnt = 0;
+        } 
+        error = (error_cnt >= ERROR_LIM);
+        return data_received;
+    };
+
+
+    void record_original()
     {
         // clean data variables before starting
         data_received = false;
@@ -588,6 +625,7 @@ public:
             }
         }
     };
+
     void end()
     {
         packet_number = smpt_packet_number_generator_next(&device_ri);
@@ -596,12 +634,43 @@ public:
         while (smpt_new_packet_received(&device_ri))
         {
             handle_dl_packet_global(&device_ri);
-            // Sleep(2); // <--- maybe add this?
+            Sleep(1); // <--- maybe add this?
         }
         smpt_port = smpt_close_serial_port(&device_ri);
         smpt_check = smpt_check_serial_port(port_name_ri);
         ready = false;
         if (display) { sprintf(displayMsg, "Reha Ingest message: Process finished."); }
+    };
+
+    bool checkStatus(int& counter)
+    {
+        // this just returns if the devices is still there
+        bool getStatus = false;
+        int getID_cnt = 0;
+        // Request ID Data
+        packet_number = smpt_packet_number_generator_next(&device_ri);
+        smpt_send_get_device_id(&device_ri, packet_number);
+        bool getID = false;
+        Smpt_ack getID_ack = { 0 };
+        memset(ID_dev, '\0', 64);
+
+        while (!getID && getID_cnt < 100)
+        {
+            if (smpt_new_packet_received(&device_ri))
+            {
+                smpt_last_ack(&device_ri, &getID_ack);
+                getID = smpt_get_get_device_id_ack(&device_ri, &device_id_ack);
+            }
+            Sleep(1);
+            getID_cnt++;
+        }
+        sprintf(ID_dev, "%s", device_id_ack.device_id);
+        bool id_comp = strcmp(ID_dev, ID_INGEST) == 0;
+
+        getStatus = getID && id_comp;
+        counter = getID_cnt;
+
+        return getStatus;
     };
 };
 
@@ -609,7 +678,8 @@ public:
 using namespace std;
 
 // ====================== Global variables ====================== 
-
+RehaMove3 stimulator;
+RehaIngest recorder;
 
 // ====================== Function headers ====================== 
 void findStimulator();
@@ -617,20 +687,19 @@ void testStimulator();
 
 void findRecorder();
 void testRecorder();
+void testRecorder2();
 
 // ====================== main ====================== 
 int main()
 {
-    //std::cout << "Hello World!\n";
-
     //testStimulator();
-    testRecorder();
+    //testRecorder();
+    testRecorder2();
 
     return 0;
 }
 
 // ====================== Function definitions: stimulator ====================== 
-RehaMove3 stimulator;
 
 void findStimulator()
 {
@@ -679,7 +748,6 @@ void findStimulator()
         Sleep(100);
     }
 }
-
 
 void testStimulator()
 {
@@ -772,7 +840,6 @@ void testStimulator()
 }
 
 // ====================== Function definitions: recorder ====================== 
-RehaIngest recorder;
 
 void findRecorder()
 {
@@ -784,7 +851,7 @@ void findRecorder()
     while (!success)
     {
         // Select port from the GUI
-        if (PORT_REC_UI[3] >= '1' && PORT_REC_UI[3] <= '9')
+        if (PORT_REC_UI[3] >= '1' && PORT_REC_UI[3] <= '6')
         {
             PORT_REC[3] = PORT_REC_UI[3];
         }
@@ -794,10 +861,10 @@ void findRecorder()
         printf("Starting recorder on port %s, try nr %d, nrPort %d, %s\n", PORT_REC, countPort, nrPort, PORT_REC_UI);
         recorder.display = true;
         recorder.init(PORT_REC);
-        //if (recorder.found)
-        //{
-        //    recorder.start();
-        //}
+        if (recorder.found)
+        {
+            recorder.start();
+        }
 
 
         printf("%s\n", recorder.displayMsg);
@@ -839,44 +906,126 @@ void findRecorder()
     }
 
 }
+
 void testRecorder()
 {
+
+    for (int k = 0; k < 3; k++)
+    {
+
+    
     findRecorder();
 
     printf("\n\n-------------- DONE SOME STUFF --------------\n\n");
 
-    findRecorder();
-}
-
-void testIDLE()
-{
-    RehaIngest recorder;
-    char PORT_REC[5] = "COM4";
-    char PORT_REC_UI[5] = "COM4";
-    int countPort = 0, nrPort = 4;
-    bool success = false;
-
-    // initialization
-    recorder.init(PORT_REC);
-    recorder.start();
-
-    for (int j = 0; j < 1000; j++)
+    // record some stuff
+    int dummy = 0;
+    for (int j = 0; j < 3; j++)
     {
+        printf("recording\n");
         recorder.record();
-
-        if (recorder.data_start && success)
-        {
-            printf("Das Geraet hat die Messung angefangen\n");
-            success = true;
-        }
-        else if (j >= 500)
-        {
-            printf("Immer noch kein Datenpacket bekommen\n");
-        }
-        Sleep(100);
+        Sleep(1000);
     }
 
-    recorder.end();
+    // checking periodically connection
+    int schleife = 0, j=0, rec_cnt = 0;   // schleife (DE) = loop (ENG)
+    bool devAvailable = false, received_data = false;
+    //for (int j = 0; j < 30; j++)
+    while(j<30)
+    {
+        recorder.record();
+        //recorder.record();
+        devAvailable = (received_data && recorder.data_start) || (!recorder.data_start && recorder.ready);
+        Sleep(33);
+        
+        Sleep(33);
+    }
 
+    printf("Disconnect\n");
+    //recorder.end();
+    printf("%s", recorder.displayMsg);
+    Sleep(2000);
+
+
+    printf("Starting again...\n");
+    Sleep(5000);
+    } // for loop
+}
+
+void testRecorder2()
+{
+    bool success = false;
+    int countPort = 0;
+
+    char PORT_REC[5] = "COM4";
+
+    // start recorder
+    while (!success)
+    {
+        // Connect to the device and initialize settings
+        printf("Starting recorder on port %s, try nr %d\n", PORT_REC, countPort);
+        recorder.display = true;
+        recorder.init(PORT_REC);
+        if (recorder.found)
+        {
+            recorder.start();
+        }
+        printf("%s\n", recorder.displayMsg);
+
+        countPort++;
+
+        success = recorder.ready;
+    }
+
+    // checking periodically connection
+    int schleife = 0, j = 0, rec_cnt = 0;   // schleife (DE) = loop (ENG)
+    bool devAvailable = false, received_data = false;
+    //for (int j = 0; j < 30; j++)j
+    while (j < 10000)
+    {
+        //received_data = recorder.record(rec_cnt);
+        //devAvailable = (received_data && recorder.data_start) || (!recorder.data_start && recorder.ready);
+        devAvailable = recorder.record();
+        // = !recorder.error;
+        Sleep(100);
+        printf("dataStart %d, error cnt %d, packet %d, error %d, j %d\n", recorder.data_start, recorder.error_cnt, recorder.packet_cnt, recorder.error, j);
+        j++;
+
+        if (recorder.error)
+        {
+            printf("Connection lost. Ending device... ");
+            recorder.display = true;
+            recorder.end();
+            printf("%s\n", recorder.displayMsg);
+
+            Sleep(2000);
+
+            success = false;
+
+            printf("Re-connecting... ");
+            while (!success)
+            {
+                recorder.init(PORT_REC);
+                printf("%s\n", recorder.displayMsg);
+
+                if (recorder.found)
+                {
+                    recorder.start();
+                    if (recorder.ready)
+                    {
+                        printf("Connection re-stored\n");
+                        success = true;
+                    }
+                }
+                Sleep(1000);
+            }
+
+        }
+    }
+
+    printf("Disconnecting\n");
+    //devAvailable = recorder.end(schleife);
+    recorder.end();
+    printf("dev %d, cnt%d, %s",devAvailable,schleife, recorder.displayMsg);
 }
 

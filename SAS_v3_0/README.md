@@ -85,6 +85,4 @@ On the other computer:
 4. Run the SAS_v3_0\x64\Release\SAS_v3_0.exe file.
 
 
-On a ROBERT plaform, using the standard ROBERT-UI:
-
-
+On a ROBERT plaform, using the standard ROBERT-UI: please check the instructions on _ProjectCPP\ROBERT screen\README.md_ 

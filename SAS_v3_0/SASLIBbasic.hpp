@@ -37,6 +37,17 @@ typedef enum
 
 typedef enum
 {
+    log_trigger = 1,    // stimulator triggered
+    log_noTgr   = 2,    // end of repetition (without triggering stimulator)
+    log_end     = 3,    // end of repetition (with stimulator)
+    log_start   = 4,    // start repetition
+    log_train   = 5,    // start training pressed (no longer in use)
+    log_stop    = 6,    // sending stop command to stimulator
+    log_stopUser= 7,    // stimulator stopped by user
+} log_type;
+
+typedef enum
+{
     exInvalid = -1,     // Invalid exercise
     kneeExt = 0,        // Knee extension
     kneeFlex = 1,       // Knee flexion
@@ -70,7 +81,6 @@ typedef enum
     Move3_us_ls = 11,    // Decrease pulse width
     Move3_en_ch = 12,     //Enable/disable channel
 } RehaMove3_Req_Type;
-
 
 typedef enum
 {
@@ -200,6 +210,7 @@ void get_dir(int argc, char *argv[], string &Outdir)
     Outdir = full;
 }
 
+// Las funciones de tic-toc solo se hicieron porque Christian echa mucho de menos Matlab
 void tic()
 {
     tstart = std::chrono::steady_clock::now();

@@ -31,12 +31,12 @@ state_Type GL_state = st_init;
 
 struct device_to_device
 {
-	bool start = false;
-	bool end = false;
-	bool th = false;
+    bool start = false;
+    bool end = false;
+    bool th = false;
     bool th2 = false;
-	bool ready = false;
-	bool req = false;
+    bool ready = false;
+    bool req = false;
     bool error = false;
 } rec_status, MAIN_to_all, stim_status;
 //MAIN_to_all: the main function writes here and all threads read
@@ -52,7 +52,7 @@ RehaMove3_Req_Type Move3_key = Move3_none;
 User_Req_Type User_cmd = User_none, user_gui = User_none;
 
 // ------------------------- Devices handling --------------------------------
-bool stim_abort = false;
+bool stim_abort = false, stimAvailable = false, recAvailable = false;
 
 char PORT_STIM[5] = "COM3";   // Laptop
 //char PORT_STIM[5] = "COM6";     // Robot
@@ -125,7 +125,6 @@ char time3_s[256];
 ofstream fileLOGS, stimFile;
 bool dummyMain = false, dummyMain2 = false;
 // ---------------------------- Functions declaration  -----------------------------
-// Dummies
 bool GL_tcpActive = true;
 
 // Sub-function messages
@@ -159,11 +158,11 @@ void Main()
     std::thread extGUI(screen_thread);
 
     // Run local GUI
-	Application::EnableVisualStyles();
-	Application::SetCompatibleTextRenderingDefault(false);
+    Application::EnableVisualStyles();
+    Application::SetCompatibleTextRenderingDefault(false);
 
-	SASv30::MyForm form;
-	Application::Run(% form);
+    SASv30::MyForm form;
+    Application::Run(% form);
 
     // Force to all the other threads to close when the local GUI is closed
     MAIN_to_all.end = true;
@@ -187,10 +186,10 @@ void update_localGui() {
     //GL_UI.screenMessage += "\nScreen-IP status: ";
     //GL_UI.screenMessage += msg_extGui;
     GL_UI.screenMessage = "";
-    //GL_UI.screenMessage += "\nRehaMove3: ";
-    //GL_UI.screenMessage += msg_stimulating;
-    GL_UI.screenMessage += "\nRehaIngest: ";
-    GL_UI.screenMessage += msg_recording;
+    GL_UI.screenMessage += "\nRehaMove3: ";
+    GL_UI.screenMessage += msg_stimulating;
+    //GL_UI.screenMessage += "\nRehaIngest: ";
+    //GL_UI.screenMessage += msg_recording;
     GL_UI.END_GUI = MAIN_to_all.end;
 
     // Exercise settings
@@ -211,8 +210,8 @@ void update_localGui() {
     GL_UI.th2 = rec_status.th2;
 
     // stimulator and recorder ports
-    GL_UI.recReady = rec_status.ready && !rec_status.error;
-    GL_UI.stimReady = stim_status.ready && !stim_status.error;
+    GL_UI.recReady = recAvailable && !rec_status.error;
+    GL_UI.stimReady = stimAvailable && !stim_status.error;
 
     // ------------- gui -> sas -------------
     // Keys
@@ -260,7 +259,7 @@ void robot_thread()
         control_thread(INTERFACE_THREAD, THREAD_START, GL_state);
 
         // UDP Update:
-        if(GL_state == st_th) // !robert.legSaved &&
+        if (GL_state == st_th) // !robert.legSaved &&
         {
             // st_th is the safest moment to get the leg weight data
             udp_cnt++;
@@ -386,7 +385,7 @@ void end_files()
         {
             time3_f << time3_v[k] << ", " << time3_v2[k] << ";" << endl;
         }
-       // printf("Main: time measurement t3 saved in file.\n");
+        // printf("Main: time measurement t3 saved in file.\n");
     }
     else
     {
@@ -541,7 +540,7 @@ void mainSAS_thread()
             break;
 
 
-        // New MVC methods state
+            // New MVC methods state
         case st_mvc:
 
             if (rec_status.th2)
@@ -628,7 +627,7 @@ void mainSAS_thread()
                 fileLOGS << "3.0, " << GL_processed << "\n";
             }
             // End Point reached or set finished 
-            else if (((robert.Reached && robert.valid_msg)|| screen_status == setDone) && !stimulator.active)
+            else if (((robert.Reached && robert.valid_msg) || screen_status == setDone) && !stimulator.active)
             {
                 // Patient has reached end of repetition
                 msg_main = "End-Point reached";
@@ -932,23 +931,20 @@ void stimulating_sas()
 {
     // Local Variables
     bool Move3_user_req = false, Move3_user_gui = false, Move3_user_key = false;
-    bool screen_stop = false, robot_stop = true, devAvailable = false;
-
+    bool screen_stop = false, robot_stop = true, devAvailable = true;
+    
     if (GL_state != st_init)
     {
         devAvailable = stimulator.checkStatus();
     }
-    // checking error
-    if (GL_state!=st_init && !devAvailable && !stim_status.error)
+
+    if (!devAvailable && !stim_status.error)
     {
-        sprintf(msg_stimulating, "Connection lost");
-        stimulator.display = true;
+        sprintf(msg_stimulating, "Device2 connection lost");
         stim_status.error = true;
-        countPort = 0;
-        stimulator.pause();
-        System::Threading::Thread::Sleep(1000);
     }
-    else if (GL_state == st_init || !stim_status.error)
+
+    if (devAvailable && !stim_status.error)
     {
         switch (GL_state)
         {
@@ -1172,31 +1168,34 @@ void stimulating_sas()
             }
             break;
         } // switch case
-
+    
     }
-
-    if (stim_status.error) // need to find device
+    
+    // Stimulator connection lost
+    if (!devAvailable && stim_status.error)
     {
-        sprintf(msg_stimulating, "Starting stimulator on port %s, try nr %d", PORT_STIM, countPort);
-        // Select port from the GUI
-        if (GL_UI.PORT_STIM[3] >= '1' && GL_UI.PORT_STIM[3] <= '9')
-        {
-            PORT_STIM[3] = GL_UI.PORT_STIM[3];
-        }
-        countPort++;
-        // Connect to the device and initialize settings
-        stimulator.display = true;
-        stimulator.end();
-        stimulator.init(PORT_STIM, GL_exercise);
-        //sprintf(msg_stimulating, "%s", stimulator.displayMsg);
+        sprintf(msg_stimulating, "Device connection lost");
         if (stimulator.ready)
         {
-            sprintf(msg_stimulating, "Connection restored");
+            stimulator.end();
+            countPort = 0;
         }
-
-        stim_status.error = !stimulator.ready;
+        if (!stimulator.ready)
+        {
+            // Select port from the GUI
+            if (GL_UI.PORT_STIM[3] >= '1' && GL_UI.PORT_STIM[3] <= '9')
+            {
+                PORT_STIM[3] = GL_UI.PORT_STIM[3];
+            }
+            countPort++;
+            // Connect to the device and initialize settings
+            sprintf(msg_stimulating, "Starting stimulator on port %s, try nr %d", PORT_STIM, countPort);
+            stimulator.display = true;
+            stimulator.init(PORT_STIM, GL_exercise);
+            stim_status.error = !stimulator.ready;
+        }
     }
-
+    
     // Stimulation time control
     if (!stim_timing && stimulator.active)
     {
@@ -1211,7 +1210,6 @@ void stimulating_sas()
         if (stim_timeout)
         {
             sprintf(msg_stimulating, "Stimulation timeout");
-            //msg_main = "Stimulation timeout";
         }
     }
     if (!stimulator.active && stim_timing)
@@ -1220,6 +1218,9 @@ void stimulating_sas()
         stim_timeout = false;
     }
 
+
+    // For the GUI
+    stimAvailable = stimulator.ready || (GL_state != st_init && devAvailable);
 
 }
 //================================================
@@ -1230,23 +1231,8 @@ void recording_sas()
     double static value = 0, value_cnt = 0;
     bool st_wait_jump = false, devAvailable = false;
     unsigned long long int N_len = 0;
+    recAvailable = stimulator.ready || GL_state != st_init; 
 
-    if (GL_state != st_init)
-    {
-        devAvailable = recorder.checkStatus();
-    }
-    // checking error
-    if (GL_state != st_init && !devAvailable && !rec_status.error)
-    {
-        sprintf(msg_recording, "Connection lost");
-        recorder.display = true;
-        rec_status.error = true;
-        countPort = 0;
-        System::Threading::Thread::Sleep(1000);
-    }
-
-    else if (GL_state == st_init || !rec_status.error)
-    {
         switch (GL_state)
         {
 
@@ -1481,30 +1467,5 @@ void recording_sas()
             }
             break;
         }
-    }
-
-    if (rec_status.error) // need to find device
-    {
-        sprintf(msg_recording, "Starting recorder on port %s, try nr %d", PORT_REC, countPort);
-        // Select port from the GUI
-        if (GL_UI.PORT_REC[3] >= '1' && GL_UI.PORT_REC[3] <= '9')
-        {
-            PORT_REC[3] = GL_UI.PORT_REC[3];
-        }
-        countPort++;
-        // Connect to the device and initialize settings
-        recorder.display = true;
-        recorder.end();
-        recorder.init(PORT_REC);
-        //sprintf(msg_recording, "%s", stimulator.displayMsg);
-        if (recorder.ready)
-        {
-            recorder.start();
-            sprintf(msg_recording, "Connection restored");
-
-            // what to do here with all the info from filters, emg,... etc that needs to be restored
-        }
-
-        rec_status.error = !recorder.ready;
-    }
+   
 }

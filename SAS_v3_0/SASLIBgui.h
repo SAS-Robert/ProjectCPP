@@ -121,6 +121,7 @@ namespace SASv30 {
 
 
 	public: System::Windows::Forms::Label^ stimPortTitle;
+	public: System::Windows::Forms::Label^ testText;
 
 
 
@@ -178,6 +179,7 @@ namespace SASv30 {
 			this->recPortTitle = (gcnew System::Windows::Forms::Label());
 			this->stimPBox = (gcnew System::Windows::Forms::ComboBox());
 			this->stimPortTitle = (gcnew System::Windows::Forms::Label());
+			//this->testText = (gcnew System::Windows::Forms::Label());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->bindingSource1))->BeginInit();
 			this->SuspendLayout();
 			// 
@@ -714,6 +716,21 @@ namespace SASv30 {
 			this->stimPortTitle->Text = L"REHA MOVE";
 			this->stimPortTitle->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
 			// 
+			// testText
+			//
+			/*
+			this->testText->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->testText->ForeColor = System::Drawing::SystemColors::Highlight;
+			this->testText->Location = System::Drawing::Point(302, 600);
+			this->testText->Name = L"testText";
+			this->testText->Size = System::Drawing::Size(195, 31);
+			this->testText->TabIndex = 60;
+			this->testText->Text = L"debug";
+			this->testText->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			this->testText->Click += gcnew System::EventHandler(this, &MyForm::testText_Click);
+			*/
+			// 
 			// MyForm
 			// 
 			this->AllowDrop = true;
@@ -721,6 +738,8 @@ namespace SASv30 {
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::SystemColors::ButtonHighlight;
 			this->ClientSize = System::Drawing::Size(624, 731);
+			this->ControlBox = false;
+			//this->Controls->Add(this->testText);
 			this->Controls->Add(this->stimPBox);
 			this->Controls->Add(this->stimPortTitle);
 			this->Controls->Add(this->recPBox);
@@ -876,7 +895,7 @@ namespace SASv30 {
 
 	private: System::Void click_stimButton(System::Object^ sender, System::EventArgs^ e) {
 
-		if ((state == st_calM || state == st_running) && !GL_UI.stimActive && GL_UI.playPause)
+		if ((state == st_calM || state == st_running) && !GL_UI.stimActive && GL_UI.playPause && GL_UI.stimReady)
 		{
 			// Start stimulation command
 			Move3_gui = Move3_start;
@@ -1001,6 +1020,8 @@ namespace SASv30 {
 
 	private: System::Void updateBackground(System::Object^ sender, ProgressChangedEventArgs^ e)
 	{
+		// Debug test
+		//this->testText->Text = L"Hello world";
 		// This function can actually access and modify the IU variables 
 		char intStr[32];
 		// -------------------- Update status (SAS -> GUI) --------------------
@@ -1188,5 +1209,8 @@ namespace SASv30 {
 		this->velCurrent->Text = gcnew String(tempString.c_str());
 	}
 
+private: System::Void testText_Click(System::Object^ sender, System::EventArgs^ e) {
+
+}
 };
 }

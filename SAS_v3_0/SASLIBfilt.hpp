@@ -1,4 +1,4 @@
-/** Main library for the SAS project
+/** Filtering library for the SAS project
 */
 
 #ifndef SASLIBfilt_H_ 
@@ -17,6 +17,8 @@
 #include "SASLIBbasic.hpp"
 
 // ------------------ Gobal variables ------------------
+// Estas dos variables eran el main pero se movieron aqui porque Kasper era demiasdo tonto 
+// para usarlas como parametros o argumentos en sus th methods
 exercise_Type GL_exercise = kneeExt; // upperLeg_extexCircuit;
 
 threshold_Type GL_thMethod = th_SD05; // upperLeg_extexCircuit;
@@ -39,6 +41,7 @@ Iir::Butterworth::BandPass<ORDER_PASS> BPass;
 std::vector<double> bPass_result;
 
 // Define Notch filter
+// Notch = Bandstop, pero Notch te hace quedar guay porque usas jerga de biomedico
 const double B50FQ = 50;
 const double BSTOP_FW = 4;
 const int ORDER_STOP = 2;
@@ -85,6 +88,9 @@ unsigned long long int old_nr[FLEX_WINDOW] = { 0, 0, 0, 0, 0 };
 const unsigned int SAMPLE_LIM = 27;
 
 // Savind data in files will be eventually deleted
+// î Pero se ha convertido en una cosa permanente porque no hay huevos de hacer live-streaming
+// Y la penha es muy floja para grabar nuevos ejercicios, asi que los th methods de aqui se hicieron a base de
+// re-usar los archivos con EMG de mi internship sin hacer ni un solo recording nuevo hasta Abril.
 ofstream fileVALUES, fileFILTERS;
 // ------------------ Functions definition ------------------
 void startup_filters() {
@@ -156,6 +162,10 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
 }
 
 // Threshold methods
+/* Estas funciones fueron modificadas por Kasper.
+* Asi que no tengo mucha idea de como funcionan ni tampoco he sido yo quien ha puesto nombres absurdos como
+* "proper_mean" y tonterias varias
+*/
 static double process_th_mean(unsigned long long int v_size, vector<double> raw_data)
 {
     double mean = 0, temp = 0, sd = 0, value = 0, raw_sample = 0.0;

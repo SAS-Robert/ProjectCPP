@@ -2,6 +2,13 @@
   *
 */
 
+/* Notas en esta library:
+* - Fue la peor de todas, porque windows.h y ws2tcpip.h son necesarias para implementar TCP, pero 
+* estas 2 libraries estran en conflicto entre ellas. Este es un bug conocido de Windows y hay que declarar
+* los headers como estan puestos ahora para evitar el conflicto. NO uses ninguna de estas librerias en otro header o script.
+* - Si necesitas algo que requiera alguno de estos headers, ponlo en esta library.
+* 
+*/
 #ifndef SASLIBcom_H_
 #define SASLIBcom_H_
 
@@ -209,6 +216,7 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 
     return valid_msg;
 }
+
 // ------------------ Objects definition ------------------
 typedef struct UdpClient
 {

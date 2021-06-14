@@ -16,3 +16,9 @@
 #include "SASLIBfilt.hpp"
 // ------------------------------------------------------------------------
 #endif
+
+/* Notas en la estructura de las librerias:
+* - Se han hecho como un header .hpp y no un header + script (.h + .cpp)
+* para que sean faciles de integrar en otras plataformas
+* - La libreria com.hpp esta declarada la primera para evitar conflictos
+*/

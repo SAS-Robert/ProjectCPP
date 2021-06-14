@@ -4,6 +4,14 @@
   *
 */
 
+/* Notas on esta library:
+* - Fue la 2da mas dificil de hacer por la cantidad de funciones de mid-level de Hasomed con las que hay que lidiar
+* - En los metodos .init() las clases se compara los ID para verificar que no se ha confundido el puerto del recorder/estimulador,
+* pero puede ser que estos ID sean unicos para estos dispositivos y que si la oficina consigue alguno nuevo, el ID sea distinto
+* - El multichannel tambien esta disponible para el recorder, solo tienes que descommentar en la funcion handleSendLiveDataReceived,
+* la linea de codigo que almacena los datos para la EMG2 
+*/
+
 #ifndef SASLIBdev_H_ // Include guards
 #define SASLIBdev_H_
 
@@ -426,6 +434,31 @@ public:
         smpt_send_ml_get_current_data(&device, &ml_get_current_data);
         active = true;
     };
+
+    void update2(Smpt_Channel channel_nr)
+    {
+        stim_act[channel_nr] = true;
+        fill_ml_update(&device, &ml_update, channel_nr, stim_act[channel_nr], stim[channel_nr]);
+        smpt_send_ml_update(&device, &ml_update);
+
+        fill_ml_get_current_data(&device, &ml_get_current_data);
+        smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+        
+        active = true;
+    };
+
+    void stopUpdate2(Smpt_Channel channel_nr)
+    {
+        stim_act[channel_nr] = false;
+        fill_ml_update(&device, &ml_update, channel_nr, stim_act[channel_nr], stim[channel_nr]);
+        smpt_send_ml_update(&device, &ml_update);
+
+        fill_ml_get_current_data(&device, &ml_get_current_data);
+        smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+        
+        active = stim_act[Smpt_Channel_Red] || stim_act[Smpt_Channel_Blue] || stim_act[Smpt_Channel_Black] || stim_act[Smpt_Channel_White];
+    };
+
     void pause()
     {
         smpt_send_ml_stop(&device, smpt_packet_number_generator_next(&device));
@@ -495,9 +528,11 @@ private:
     //Process variables
     bool smpt_port, smpt_check, smpt_stop, smpt_next, smpt_end;
     char ID_dev[64], ID_INGEST[64] = "190751110";
+    int packet_cnt = 0, error_cnt = 0;
+    const int ERROR_LIM = 10;
 
 public:
-    bool abort, ready, found, display;
+    bool abort, ready, found, display, error;
     bool data_received, data_start, data_printed;
     char displayMsg[512];
 
@@ -519,10 +554,17 @@ public:
         abort = false;
         display = false;
         found = false;
+        error = false;
+        error_cnt = 0;
+        packet_cnt = 0;
     }
     // Functions
     void init(char* port)
     {
+        data_start = false;
+        error = false;
+        error_cnt = 0;
+        packet_cnt = 0;
         ready = false;
         found = false;
         port_name_ri = port;
@@ -562,6 +604,7 @@ public:
             if (display) { sprintf(displayMsg, "Device RehaIngest found."); }
             recorder_emg1.clear();
             found = true;
+            error = false;
         }
         else if (!smpt_next)
         {
@@ -575,6 +618,7 @@ public:
         }
 
     };
+
     void start()
     {
         ready = false;
@@ -614,21 +658,41 @@ public:
         packet_number = smpt_packet_number_generator_next(&device_ri);
         smpt_send_dl_start(&device_ri, packet_number);
         ready = true;
+        error = false;
+        error_cnt = 0;
         if (display) { sprintf(displayMsg, "Device ready."); }
     };
-    void record()
+
+    bool record()
     {
         // clean data variables before starting
         data_received = false;
-        while (smpt_new_packet_received(&device_ri))
-        {
+
+        while (smpt_new_packet_received(&device_ri)) {
+
             data_received = handle_dl_packet_global(&device_ri);
             if (data_received && !data_start)
             {
                 data_start = true;
             }
+            if (data_received)
+            {
+                packet_cnt++;
+            }
         }
+        //checking error
+        if (data_start && !data_received && error_cnt < ERROR_LIM)
+        {
+            error_cnt++;
+        }
+        else if (data_start && data_received && error_cnt != 0)
+        {
+            error_cnt = 0;
+        }
+        error = (error_cnt >= ERROR_LIM);
+        return data_received;
     };
+
     void end()
     {
         packet_number = smpt_packet_number_generator_next(&device_ri);
@@ -642,10 +706,13 @@ public:
         smpt_port = smpt_close_serial_port(&device_ri);
         smpt_check = smpt_check_serial_port(port_name_ri);
         ready = false;
+        found = false;
+        data_start = false;
+        error_cnt = 0;
         if (display) { sprintf(displayMsg, "Reha Ingest message: Process finished."); }
     };
 
-    bool checkStatus()
+/*    bool checkStatus()
     {
         // this just returns if the devices is still there
         bool getStatus = false;
@@ -675,6 +742,7 @@ public:
 
         return getStatus;
     };
+    */
 };
 
 // ------------------------------------------------------------------------

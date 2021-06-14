@@ -144,10 +144,6 @@
   <ItemGroup>
     <ClCompile Include="fixDevices.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="SASLIB.hpp" />
-    <ClInclude Include="SASLIBdev.hpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
