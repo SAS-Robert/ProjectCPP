@@ -68,7 +68,7 @@ int GL_iterator = 0;
 bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
 bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false, rec_fl5 = false;;
 bool main_fl0 = false, main_fl1 = false, main_init = false, main_1stSet = false, main_fl2 = false;;
-bool main_thEN = false;
+bool main_thEN = false, main_force_repeat = false;
 // ------------------------- UDP / TCP  ------------------------
 int udp_cnt = 0;
 
@@ -186,10 +186,10 @@ void update_localGui() {
     //GL_UI.screenMessage += "\nScreen-IP status: ";
     //GL_UI.screenMessage += msg_extGui;
     GL_UI.screenMessage = "";
-    GL_UI.screenMessage += "\nRehaMove3: ";
+    GL_UI.screenMessage += "RehaMove3: ";
     GL_UI.screenMessage += msg_stimulating;
-    //GL_UI.screenMessage += "\nRehaIngest: ";
-    //GL_UI.screenMessage += msg_recording;
+    GL_UI.screenMessage += "\nRehaIngest: ";
+    GL_UI.screenMessage += msg_recording;
     GL_UI.END_GUI = MAIN_to_all.end;
 
     // Exercise settings
@@ -210,7 +210,7 @@ void update_localGui() {
     GL_UI.th2 = rec_status.th2;
 
     // stimulator and recorder ports
-    GL_UI.recReady = recAvailable && !rec_status.error;
+    GL_UI.recReady = recorder.ready;// && !rec_status.error;
     GL_UI.stimReady = stimAvailable && !stim_status.error;
 
     // ------------- gui -> sas -------------
@@ -430,9 +430,9 @@ void mainSAS_thread()
         }
     }
 
-    sprintf(msg_stimulating, "waiiiitiiiiing");
-    System::Threading::Thread::Sleep(1000);
-    sprintf(msg_stimulating, "done waiting");
+    //sprintf(msg_stimulating, "waiiiitiiiiing");
+    //System::Threading::Thread::Sleep(1000);
+    //sprintf(msg_stimulating, "done waiting");
 
     // ------------- State machine loop -------------
     while (!MAIN_to_all.end && GL_state != st_end)
@@ -502,7 +502,7 @@ void mainSAS_thread()
 
             if (rec_status.th) // && screen_status == repStart
             {
-                // New: differenciate bettween single-th and MVC methods
+                //differenciate bettween single-th and MVC methods
                 if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && GL_UI.set_MVC)
                 {
                     GL_state = st_mvc;
@@ -533,9 +533,10 @@ void mainSAS_thread()
             }
 
             // Abort
-            if (screen_status == exDone || screen_status == msgEnd)
+            if (screen_status == exDone || screen_status == msgEnd || rec_status.error)
             {
                 GL_state = st_repeat;
+                main_force_repeat = rec_status.error;
             }
             break;
 
@@ -559,9 +560,10 @@ void mainSAS_thread()
             }
 
             // Abort
-            if (screen_status == exDone || screen_status == msgEnd)
+            if (screen_status == exDone || screen_status == msgEnd || rec_status.error)
             {
                 GL_state = st_repeat;
+                main_force_repeat = rec_status.error;
             }
             break;
 
@@ -576,13 +578,14 @@ void mainSAS_thread()
                 msg_main = "Press patient button to allow stimulation.";
             }
 
-            if (screen_status == exDone || screen_status == msgEnd)
+            if (screen_status == exDone || screen_status == msgEnd || rec_status.error)
             {
                 // Exercise has been aborted
                 msg_main = "Exercise done.";
 
                 GL_state = st_repeat;
                 fileLOGS << "2.0, " << GL_processed << "\n";
+                main_force_repeat = rec_status.error;
             }
             else if (rec_status.start && robert.playPause)
             {
@@ -593,8 +596,7 @@ void mainSAS_thread()
                 fileLOGS << "1.0, " << GL_processed << "\n";
 
             }
-            // For GUI testing:  screen_status == repEnd
-            // Final version: (robert.Reached && robert.valid_msg)
+            // The end point has been reached before the stimulation has been triggered
             else if (screen_status == repEnd)
             {
                 // Patient has reached end of repetition
@@ -618,13 +620,14 @@ void mainSAS_thread()
                 msg_main = msg_stimulating;
             }
 
-            if ((screen_status == exDone || screen_status == msgEnd) && !stimulator.active)
+            if ((screen_status == exDone || screen_status == msgEnd || rec_status.error) && !stimulator.active)
             {
                 // Exercise has been aborted
                 msg_main = "Exercise done";
 
                 GL_state = st_repeat;
                 fileLOGS << "3.0, " << GL_processed << "\n";
+                main_force_repeat = rec_status.error;
             }
             // End Point reached or set finished 
             else if (((robert.Reached && robert.valid_msg) || screen_status == setDone) && !stimulator.active)
@@ -647,7 +650,7 @@ void mainSAS_thread()
             // Display message
             msg_main = "Reached end-point. Waiting for robot to return to the start.";
 
-            devicesReady = stim_status.ready && rec_status.ready;
+            devicesReady = stim_status.ready && (rec_status.ready || rec_status.error);
             robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
             // For GUI testing: screen_status == repStart && devicesReady, taken out && robotReady
             // For robot testing ? = devicesReady && robotReady
@@ -660,28 +663,21 @@ void mainSAS_thread()
                 fileLOGS << "4.0, " << GL_sampleNr << "\n";
             }
             // No more repetitions coming
-            else if ((screen_status == setDone || screen_status == msgEnd || screen_status == exDone) && devicesReady)
+            else if ((screen_status == setDone || screen_status == msgEnd || screen_status == exDone || rec_status.error) && devicesReady)
             {
                 GL_UI.hmi_repeat = false;
                 msg_main = "Set finished. Waiting for next set or next exercise.";
                 GL_state = st_repeat;
                 robert.legSaved = false;
+                main_force_repeat = rec_status.error;
             }
-            /*else if ((screen_status == exDone) && devicesReady)
-            {
-                GL_UI.hmi_repeat = false;
-                msg_main = "Exercise finished. Waiting for next one.";
-                // update leg weight value
-                robert.legSaved = false;
-                GL_state = st_init;
-            }*/
 
             break;
 
         case st_repeat:
             main_1stSet = false;
             main_init = false;
-            devicesReady = rec_status.ready && stim_status.ready;
+            devicesReady = rec_status.ready && stim_status.ready && !stim_status.error && !rec_status.error;
             robotReady = robert.valid_msg; // && !robert.Reached 
 
             // 1. Finish program (if required)
@@ -692,9 +688,8 @@ void mainSAS_thread()
                 GL_state = st_end;
             }
             // 2. Next set (keep going)
-            // Maybe modify to: (screen_status == start || screen_status == repStart)
-            //For GUI testing: taken out && robotReady
-            else if (screen_status == start && devicesReady)
+            // this is not available if the connection to the recorder has been lost
+            else if (screen_status == start && devicesReady && !main_force_repeat)
             {
                 msg_main = "Starting next set.";
                 GL_state = st_wait;
@@ -717,6 +712,7 @@ void mainSAS_thread()
 
                 statusList[(int)st_th] = "On hold";
                 GL_state = st_th;
+                main_force_repeat = false;
             }
             // 4. Exercise done. Go back to the beginning
             else if (screen_status == exDone && devicesReady && robotReady)
@@ -726,61 +722,17 @@ void mainSAS_thread()
                 startup_filters();
                 start_files();
                 GL_state = st_init;
+                main_force_repeat = false;
             }
 
             break;
         } // State machine
 
         stimulating_sas();
-        // The robot communication loss has been removed because
-        // this program runs on the same computer as the main ROBERT-UI
-        // and if the communication is lost, the complete platform must be restarted
-        /*
-        // Process handling: if the robot-connection gets lost
-        if (robert.error_lim && MAIN_to_all.ready)
-        {
-            bool jump_cal = (GL_state == st_calA_go) || (GL_state == st_calA_stop);
-            bool jump_run = (GL_state == st_running) || (GL_state == st_wait);
-            bool wait_cal = (GL_state == st_init) || (GL_state == st_calM) || (GL_state == st_th);
 
-            if (jump_cal)
-            {
-                msg_main = "Connection to the robot lost. Switching to manual calibration.";
-                GL_state = st_calM;
-            }
-            else if (jump_run)
-            {
-                msg_main = "Connection to the robot lost. Stopping current repetition";
-                GL_state = st_stop;
-            }
-            else if (wait_cal)
-            {
-                msg_main = "Connection to the robot lost. Process will stop after calibration and threshold set up";
-            }
-            else
-            {
-                msg_main = "Connection to the robot lost. \nProcess will stop after calibration and threshold set up";
-            }
-            MAIN_to_all.ready = false;
-        }
-        else if (!robert.error_lim && !MAIN_to_all.ready)
-        {
-            msg_main = "Connection to the robot restored";
-            MAIN_to_all.ready = true;
-        }
-        */
         // Controlling thread cycle time
         System::Threading::Thread::Sleep(control_thread(MAIN_THREAD, THREAD_END, GL_state));
 
-        /*
-        time3_end = std::chrono::steady_clock::now();
-        if (GL_state != st_init)
-        {
-            time3_diff = time3_end - th1_st;
-            time3_v.push_back((double)time3_diff.count());
-            time3_v2.push_back(GL_state);
-        }
-        */
     }
 
 
@@ -933,17 +885,20 @@ void stimulating_sas()
     bool Move3_user_req = false, Move3_user_gui = false, Move3_user_key = false;
     bool screen_stop = false, robot_stop = true, devAvailable = true;
     
+    // checking device
     if (GL_state != st_init)
     {
         devAvailable = stimulator.checkStatus();
     }
 
+    // set error flag
     if (!devAvailable && !stim_status.error)
     {
         sprintf(msg_stimulating, "Device2 connection lost");
         stim_status.error = true;
     }
 
+    // normal run
     if (devAvailable && !stim_status.error)
     {
         switch (GL_state)
@@ -994,7 +949,7 @@ void stimulating_sas()
             screen_stop = (screen_status == setDone) || (screen_status == exDone);
             robot_stop = !robert.playPause || robert.Reached;
             // Quit
-            if (((Move3_key == Move3_stop || stim_timeout || screen_stop || robot_stop) && stimulator.active))
+            if (((Move3_key == Move3_stop || stim_timeout || screen_stop || robot_stop || rec_status.error) && stimulator.active))
             {
                 stimulator.pause();
                 stim_done = !stimulator.active && stim_timeout;
@@ -1063,7 +1018,7 @@ void stimulating_sas()
             screen_stop = (screen_status == setDone) || (screen_status == exDone) || (screen_status == msgEnd);
             robot_stop = !robert.playPause || robert.Reached;
             // Stop stimulation
-            if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || screen_stop || stim_timeout || robot_stop) && stimulator.active)
+            if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || screen_stop || stim_timeout || robot_stop || rec_status.error) && stimulator.active)
             {
                 stimulator.pause();
                 stim_fl1 = true;
@@ -1229,10 +1184,13 @@ void recording_sas()
 {
     double mean = 0, temp_value = 0, mvc = 0;
     double static value = 0, value_cnt = 0;
-    bool st_wait_jump = false, devAvailable = false;
+    bool st_wait_jump = false, devAvailable = false, received_data;
     unsigned long long int N_len = 0;
-    recAvailable = stimulator.ready || GL_state != st_init; 
 
+
+    // normal process
+    if (!rec_status.error)
+    {
         switch (GL_state)
         {
 
@@ -1260,12 +1218,17 @@ void recording_sas()
                     sprintf(msg_recording, "Recorder ready");
                 }
             }
-            rec_status.ready = recorder.ready;
+            if (recorder.ready && recorder.found)
+            {
+                received_data = recorder.record();
+            }
+            rec_status.ready = recorder.data_start && recorder.ready && recorder.found;
+
             break;
 
         case st_calM:
             // Discard data
-            recorder.record();
+            received_data = recorder.record();
             recorder_emg1.clear();
             MEAN = 0;
             MVC = 0;
@@ -1275,7 +1238,7 @@ void recording_sas()
             break;
 
         case st_th:
-            recorder.record();
+            received_data = recorder.record();
             // Set threshold button has been pressed
             if (rec_status.req && main_thEN)
             {
@@ -1317,8 +1280,6 @@ void recording_sas()
                         }
 
                         sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
-                        //sprintf(msg_main_char, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
-                        //msg_main = msg_main_char;
                         rec_status.th = true;
                         rec_status.req = false;
                     }
@@ -1341,7 +1302,7 @@ void recording_sas()
             break;
 
         case st_mvc:
-            recorder.record();
+            received_data = recorder.record();
             if (!rec_fl5 && GL_UI.set_MVC)
             {
                 GL_processed_MVC = GL_processed + 2 * TH_NR;
@@ -1375,7 +1336,7 @@ void recording_sas()
                         THRESHOLD = MEAN;
                     }
 
-                    //sprintf(msg_recording, "EMG activity: threshold =  %3.6f", THRESHOLD);
+                    sprintf(msg_recording, "EMG activity: threshold =  %3.6f", THRESHOLD);
                     //sprintf(msg_recording, "MEAN = %3.6f, THRESHOLD = %3.6f", MEAN, THRESHOLD);
                     rec_status.th2 = true;
                     rec_status.req = false;
@@ -1385,7 +1346,7 @@ void recording_sas()
 
 
         case st_wait:
-            recorder.record();
+            received_data = recorder.record();
             GL_sampleNr = recorder_emg1.size();
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
@@ -1419,7 +1380,7 @@ void recording_sas()
             break;
 
         case st_running:
-            recorder.record();
+            received_data = recorder.record();
             GL_sampleNr = recorder_emg1.size();
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
@@ -1432,7 +1393,7 @@ void recording_sas()
         case st_stop:
             GL_thWaitCnt = 0;
             rec_fl2 = false;
-            recorder.record();
+            received_data = recorder.record();
             GL_sampleNr = recorder_emg1.size();
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
@@ -1447,7 +1408,7 @@ void recording_sas()
 
         case st_repeat:
             // Discard data between sets
-            recorder.record();
+            received_data = recorder.record();
             GL_sampleNr = recorder_emg1.size();
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
@@ -1467,5 +1428,63 @@ void recording_sas()
             }
             break;
         }
-   
+
+    }
+
+    // checking
+    recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready));
+    //sprintf(msg_recording, "recAva %d, status %d, received %d, start %d", recAvailable, (GL_state == st_init || GL_state == st_end), (received_data&& recorder.data_start), (!recorder.data_start&& recorder.ready));
+
+
+    // checking if there is an error
+    if (!recAvailable && !rec_status.error)
+    {
+        sprintf(msg_recording, "Device connection lost");
+        rec_status.error = true;
+        countPort = 0;
+        if (recorder.ready)
+        {
+            recorder.end();
+        }
+
+    }
+    // restore connection if lost
+    // restore only when state is at the end so it does not consume time
+    if (rec_status.error && (GL_state == st_init || GL_state == st_repeat || GL_state == st_calM))
+    {  
+        if (!recorder.ready)
+        {
+            // Select port from the GUI
+            if (GL_UI.PORT_REC[3] >= '1' && GL_UI.PORT_REC[3] <= '9')
+            {
+                PORT_REC[3] = GL_UI.PORT_REC[3];            // this is maybe too redundant
+            }
+            // normal start up
+            sprintf(msg_recording, "Re-start manually the recorder. Reconnecting recorder on port %s.", PORT_REC);
+            Sleep(2500);
+            recorder.display = true;
+            recorder.init(PORT_REC);
+            if (recorder.found) { 
+                recorder.start(); 
+            }
+
+            // This is just in case the user needs to move the stuff around
+            if (!recorder.ready) {
+                Sleep(2500);
+            }
+        }
+        if (recorder.ready && recorder.found)
+        {
+            sprintf(msg_recording, "Restarting recorder...");
+            received_data = recorder.record();
+        }
+
+        if (recorder.data_start && recorder.ready && recorder.found && (GL_state==st_repeat || GL_state==st_init || GL_state == st_calM))
+        {
+            sprintf(msg_recording, "Communication restored");
+            rec_status.error = false;
+        }
+
+    }
+
 }

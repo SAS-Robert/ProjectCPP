@@ -658,6 +658,7 @@ public:
         packet_number = smpt_packet_number_generator_next(&device_ri);
         smpt_send_dl_start(&device_ri, packet_number);
         ready = true;
+        found = true;
         error = false;
         error_cnt = 0;
         if (display) { sprintf(displayMsg, "Device ready."); }
