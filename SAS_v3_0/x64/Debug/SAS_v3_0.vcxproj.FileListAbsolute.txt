@@ -1,5 +1,0 @@
-D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SAS_v3_0\x64\Debug\SASv30.SASLIBgui.resources
-D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SAS_v3_0\x64\Debug\SAS_v3_0.vcxproj.GenerateResource.cache
-D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SAS_v3_0\x64\Debug\SAS_v3_0.exe
-D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SAS_v3_0\x64\Debug\SAS_v3_0.pdb
-D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\SAS_v3_0\x64\Debug\SAS_v3_0.vcxprojAssemblyReference.cache
