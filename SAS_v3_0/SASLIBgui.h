@@ -68,7 +68,7 @@ namespace SASv30 {
 
 		// For isMoving testing
 		double isVelocity;
-		const double isDelta = 0.1;
+		const double isDelta = 1;
 		
 		System::ComponentModel::BackgroundWorker^ backgroundWorker1;
 		System::Windows::Forms::Label^ statusMsg;
@@ -820,10 +820,12 @@ namespace SASv30 {
 			methodList[4] = "MVC10";
 
 			// for isMoving testing
-			isVelocity = 10.0;
+			isVelocity = 100.0;
 			// Update display
 			std::stringstream tempValue;
-			tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mm/100ms";
+			GL_UI.isVelocity_limit = 100;
+
+			tempValue << std::setprecision(3) << GL_UI.isVelocity_limit << " mm/100ms";
 			string tempString = tempValue.str();
 			this->velValue->Text = gcnew String(tempString.c_str());
 

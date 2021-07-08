@@ -1,0 +1,12 @@
+﻿  Client.cpp
+D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\Complementary programmes\Client\Client.cpp(28,17): warning C4083: expected '('; found identifier 'disable'
+D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\Complementary programmes\Client\Client.cpp(168,18): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\Complementary programmes\Client\Client.cpp(193,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\Complementary programmes\Client\Client.cpp(207,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\Complementary programmes\Client\Client.cpp(318,14): warning C4244: 'argument': conversion from 'SOCKET' to 'int', possible loss of data
+D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\Complementary programmes\Client\Client.cpp(487,15): warning C4305: '=': truncation from 'double' to 'float'
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 93 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Client.vcxproj -> D:\OneDrive - Aalborg Universitet\GitHub\ProjectCPP\Complementary programmes\Client\x64\Release\Client.exe
