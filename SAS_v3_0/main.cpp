@@ -116,7 +116,8 @@ auto time3_end = std::chrono::steady_clock::now();
 // Files variables for names and handling
 char date[DATE_LENGTH];
 // Location on the SAS computer
-char folder[DATE_LENGTH] = "C:\\Users\\User\\Documents\\SASData\\";
+//char folder[DATE_LENGTH] = "C:\\Users\\User\\Documents\\SASData\\";
+char folder[DATE_LENGTH] = "C:\\SAS Interface\\SASData\\";
 //char folder[DATE_LENGTH] = "C:\\Users\\Kasper Leerskov\\Downloads\\SASData\\";
 char Sname[DATE_LENGTH] = "subject";
 char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256], stim_s[256];
@@ -1291,7 +1292,14 @@ void recording_sas()
                 //sprintf(msg_recording, "GL_sampleNr %d", GL_sampleNr);
                 if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
                 {
-                    process_data_iir(GL_sampleNr, recorder_emg1, stimFile, stimulator, Smpt_Channel_Red, robert, screen);
+                    placeholder.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
+                    placeholder.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
+                    placeholder.fq = stimulator.fq[Smpt_Channel_Red];
+                    placeholder.isVelocity = robert.isVelocity;
+                    placeholder.legWeight = robert.legWeight;
+                    placeholder.screenLevel = screen.level;
+
+                    process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
                 }
             }
             break;
@@ -1345,7 +1353,14 @@ void recording_sas()
             GL_sampleNr = recorder_emg1.size();
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
-                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, stimulator, Smpt_Channel_Red, robert, screen);
+                placeholder.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
+                placeholder.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
+                placeholder.fq = stimulator.fq[Smpt_Channel_Red];
+                placeholder.isVelocity = robert.isVelocity;
+                placeholder.legWeight = robert.legWeight;
+                placeholder.screenLevel = screen.level;
+
+                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
 
                 // Original for software 3.0:
                 // st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg; //  && start_train
@@ -1379,7 +1394,14 @@ void recording_sas()
             GL_sampleNr = recorder_emg1.size();
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
-                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, stimulator, Smpt_Channel_Red, robert, screen);
+                placeholder.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
+                placeholder.ramp = stimulator.stim[Smpt_Channel_Red].ramp; 
+                placeholder.fq = stimulator.fq[Smpt_Channel_Red];
+                placeholder.isVelocity = robert.isVelocity;
+                placeholder.legWeight = robert.legWeight;
+                placeholder.screenLevel = screen.level;
+
+                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
             }
             rec_status.ready = false;
             rec_status.start = false;
@@ -1392,7 +1414,14 @@ void recording_sas()
             GL_sampleNr = recorder_emg1.size();
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
-                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, stimulator, Smpt_Channel_Red, robert, screen);
+                placeholder.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
+                placeholder.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
+                placeholder.fq = stimulator.fq[Smpt_Channel_Red];
+                placeholder.isVelocity = robert.isVelocity;
+                placeholder.legWeight = robert.legWeight;
+                placeholder.screenLevel = screen.level;
+
+                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
             }
             rec_status.ready = true;
             rec_status.th = false;
@@ -1407,7 +1436,14 @@ void recording_sas()
             GL_sampleNr = recorder_emg1.size();
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
-                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, stimulator, Smpt_Channel_Red, robert, screen);
+                placeholder.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
+                placeholder.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
+                placeholder.fq = stimulator.fq[Smpt_Channel_Red];
+                placeholder.isVelocity = robert.isVelocity;
+                placeholder.legWeight = robert.legWeight;
+                placeholder.screenLevel = screen.level;
+
+                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
             }
             //recorder_emg1.clear();
             rec_status.th = false;

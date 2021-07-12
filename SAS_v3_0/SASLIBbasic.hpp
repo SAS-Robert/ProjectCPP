@@ -275,5 +275,16 @@ int control_thread(int thread_nr, bool start, state_Type state)
 
     return output;
 }
+
+// struct for holding info for stimFile printout
+struct stimFileInfo
+{
+    float current;
+    int ramp;
+    float fq;
+    double isVelocity;
+    double legWeight;
+    double screenLevel;
+} placeholder;
 // ------------------------------------------------------------------------
 #endif

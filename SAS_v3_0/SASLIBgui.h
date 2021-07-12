@@ -823,9 +823,8 @@ namespace SASv30 {
 			isVelocity = 100.0;
 			// Update display
 			std::stringstream tempValue;
-			GL_UI.isVelocity_limit = 100;
 
-			tempValue << std::setprecision(3) << GL_UI.isVelocity_limit << " mm/100ms";
+			tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mm/100ms";
 			string tempString = tempValue.str();
 			this->velValue->Text = gcnew String(tempString.c_str());
 
