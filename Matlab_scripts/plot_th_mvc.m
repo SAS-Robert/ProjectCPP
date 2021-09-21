@@ -26,7 +26,9 @@ data_dir=dir([files_dir '_filter_*']);
 full_name = [data_dir(pos).folder '\' data_dir(pos).name]; %Just take the last one
 data = (load(full_name))';
 c_raw = data(1,:);
+%c_raw = c_raw(1:63500);
 c_t = data(3,:);
+%c_t = c_t(1:63500);
 srate = 1000;
 
 t_emg = zeros(1,length(c_t));
@@ -92,26 +94,41 @@ end
 y_t =[];
 if isempty(mvcIdx)
     for i=length(meanIdx)+length(mvcIdx)+1:length(data(1,:))
-        y_temp = mean_v(1,i) * ones(1,N_len(1,i));
+        try    
+            y_temp = mean_v(1,i) * ones(1,N_len(1,i));
+        catch
+            % Do nothing
+        end
         y_t = [y_t y_temp];
     end
 else
     for i=mvcIdx(end)+1:length(data(1,:))
-        y_temp = mean_v(1,i) * ones(1,N_len(1,i));
+        try    
+            y_temp = mean_v(1,i) * ones(1,N_len(1,i));
+        catch
+            % Do nothing
+        end
         y_t = [y_t y_temp];
     end
 end
-if isempty(mvcIdx)
-    t2 = zeros(1,v_size(trainIdx(end))-v_size(meanIdx(end)));
-    for i=1:length(t2)
-        t2(i) = t_th(end) + i/1000;
-    end
-else
-    t2 = zeros(1,v_size(end)-v_size(mvcIdx(end)));
-    for i=1:length(t2)
-        t2(i) = t1(end) + i/1000;
-    end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+t = zeros(1,length(y_t));
+for i=1:length(t)
+    t(i) = t_th(end) + i/1000;
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%if isempty(mvcIdx)
+%    t2 = zeros(1,v_size(trainIdx(end))-v_size(meanIdx(end)));
+%    for i=1:length(t2)
+%        t2(i) = t_th(end) + i/1000;
+%    end
+%else
+%    t2 = zeros(1,v_size(end)-v_size(mvcIdx(end)));
+%    for i=1:length(t2)
+%        t2(i) = t1(end) + i/1000;
+%    end
+%end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % if data(1,1) == 0
 %     th_value = mean(mean_data)+3*std(mean_data);
@@ -169,8 +186,8 @@ if(plot_type=='C')
     if not(isempty(mvcIdx))
         plot3 = plot(t1,y_mvc,'c');
     end
-    plot4 = plot(t2,y_t,'r');
-    plot5 = plot([t2(1) t2(end)], [threshold(trainIdx(end)) threshold(trainIdx(end))],'y');
+    plot4 = plot(t,y_t,'r');
+    plot5 = plot([t(1) t(end)], [threshold(trainIdx(end)) threshold(trainIdx(end))],'y');
     % plot5 = plot([t2(1) t2(end)], [threshold(1) threshold(1)],'y');
     if not(isempty(mvcIdx))
         plot_array = [plot1 plot2 plot3 plot4 plot5];
@@ -181,7 +198,7 @@ if(plot_type=='C')
     %plot(t,ny_t,'k');
     
     title('Retified-Filtered data and mean values');
-    xlim([0 t2(end)]);
+    xlim([0 t_emg(end)]);
     ylim([0 max(c_t(3000:end))+0.0002]);
     
     if data(1,1) == 0
@@ -209,7 +226,7 @@ if(plot_type=='C')
     ma = 0; ka = 0; mc = 0; gx = 0; gt = 0; kc = 0; kt = 0;
     for k=1:length(log_type)
         log_plot = 'b.';
-        temp_x_value = round(t2(1)*1000);
+        temp_x_value = round(t(1)*1000);
         temp_t_value = log_val(k)/1000;
         %tempY= [y_th y_mvc y_t];
         

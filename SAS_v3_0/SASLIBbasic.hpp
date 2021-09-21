@@ -23,11 +23,11 @@ typedef enum
 {
     st_setup = -1,    // Before init, select exercise and re-do stuff
     st_init = 0,       // Start up
-    st_th = 1,         // set threshold
+    st_th = 1,         // Setting threshold
     st_wait = 2,       // Waiting to overcome threshold
     st_running = 3,    // Stimulating
     st_stop = 4,       // Done 1 seq, waiting for next
-    st_end = 5,        // Setting threshold
+    st_end = 5,        // Finish program
     st_calM = 6,      // Stimulation manual calibration
     st_calA_go = 7,   // Stimulation automatic calibration -> stimulator active
     st_calA_stop = 8, // Stimulation automatic calibration -> resting period
@@ -63,6 +63,13 @@ typedef enum
     th_MVC05 = 2,       // MVC*0.05
     th_MVC10 = 3,       // MVC*0.10
 } threshold_Type;
+
+typedef enum
+{
+    emgCh0 = 0,         // Channel not selected - it first need to be selected for the program to run 
+    emgCh1 = 1,         // EMG Channel 1: Red connector/ black stim need to be connected
+    emgCh2 = 2,         // EMG Channel 2: Blue connector/ white stim need to be conected
+} emgCh_Type;
 
 // User options for stimulation and process
 typedef enum

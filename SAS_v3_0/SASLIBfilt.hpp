@@ -17,8 +17,7 @@
 #include "SASLIBbasic.hpp"
 
 // ------------------ Gobal variables ------------------
-// Estas dos variables eran el main pero se movieron aqui porque Kasper era demiasdo tonto 
-// para usarlas como parametros o argumentos en sus th methods
+// Estas dos variables eran el main pero se movieron aqui
 exercise_Type GL_exercise = kneeExt; // upperLeg_extexCircuit;
 
 threshold_Type GL_thMethod = th_SD05; // upperLeg_extexCircuit;
@@ -125,6 +124,7 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
         // Filter data
         bPass_result.push_back(BPass.filter(raw_sample));
         b50_result.push_back(B50.filter(bPass_result[i]));
+
         // Savind data in files will be eventually deleted
         fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n";
 
@@ -150,10 +150,10 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
 
     // Update GL_processed data parameters
     GL_processed = i;
-    for (int i = 4; i >= 1 ; i--)
+    for (int i = 4; i >= 1; i--)
     {
-        old_value[i] = old_value[i-1];
-        old_nr[i] = old_nr[i-1];
+        old_value[i] = old_value[i - 1];
+        old_nr[i] = old_nr[i - 1];
     }
     old_value[0] = mean;
     old_nr[0] = N_len;
@@ -163,8 +163,7 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
 
 // Threshold methods
 /* Estas funciones fueron modificadas por Kasper.
-* Asi que no tengo mucha idea de como funcionan ni tampoco he sido yo quien ha puesto nombres absurdos como
-* "proper_mean" y tonterias varias
+* Asi que no tengo mucha idea de como funcionan 
 */
 static double process_th_mean(unsigned long long int v_size, vector<double> raw_data)
 {
@@ -181,8 +180,9 @@ static double process_th_mean(unsigned long long int v_size, vector<double> raw_
         b50_result.push_back(B50.filter(bPass_result[i]));
 
         // Savind data in files will be eventually deleted
-        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n";
+        fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n"; 
         // Calculating mean of retified EMG
+
         temp = b50_result[i];
         if (b50_result[i] < 0)
         {
@@ -215,7 +215,7 @@ static double process_th_mean(unsigned long long int v_size, vector<double> raw_
 
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
-        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "," << 1 << "\n";
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "," << 1 << "\n"; 
     }
     else {
         fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 1 << "\n";
@@ -297,8 +297,8 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
         if (temp > MVC)
         {
             MVC = temp;
-
         }
+        
     }
     iHolder = i;
 
@@ -326,14 +326,11 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
 
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
-        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "," << 2 << "\n";
-    }
-    else {
-        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 2 << "\n";
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "," << 2 << "\n"; 
     }
 
     // Update amount of GL_processed data
-    GL_processed = iHolder;
+    GL_processed = iHolder; 
     //for (int i = 4; i >= 1; i--)
     //{
     //    old_value[i] = old_value[i - 1];

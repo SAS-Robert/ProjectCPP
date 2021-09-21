@@ -89,13 +89,13 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SAS_v3_0\64bit lib;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SAS_v3_0\iir;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\AAS\Documents\GitHub\ProjectCPP\SAS_v3_0\64bit lib;C:\Users\AAS\Documents\GitHub\ProjectCPP\SAS_v3_0\iir;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libsmpt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>Main</EntryPointSymbol>
-      <AdditionalLibraryDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SAS_v3_0\64bit lib;%(AdditionalIncludeDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\AAS\Documents\GitHub\ProjectCPP\SAS_v3_0\64bit lib;%(AdditionalIncludeDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -112,11 +112,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SAS_v3_0\64bit lib;C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SAS_v3_0\iir;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\AAS\Documents\GitHub\ProjectCPP\SAS_v3_0\64bit lib;C:\Users\AAS\Documents\GitHub\ProjectCPP\SAS_v3_0\iir;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libsmpt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\Carolina\Desktop\net_shared\ProjectCPP\SAS_v3_0\64bit lib;%(AdditionalIncludeDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\AAS\Documents\GitHub\ProjectCPP\SAS_v3_0\64bit lib;%(AdditionalIncludeDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>Main</EntryPointSymbol>
     </Link>

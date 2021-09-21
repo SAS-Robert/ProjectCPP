@@ -9,8 +9,8 @@ addpath(fcn_path);
 % addpath(fig_path);
 
 % Data directory
-folder = 'SASData\';    % folder name from SAS.cpp on string format
-SASshared = 'C:\Users\Kasper Leerskov\Downloads\';
+folder = 'Trash\';    % folder name from SAS.cpp on string format
+SASshared = 'C:\Users\AAS\Documents\LSR\Toni\SAS_Data\';
 SASshared_full = [SASshared folder];
 SS_path = genpath(SASshared_full);
 addpath(SS_path);
@@ -31,7 +31,7 @@ data_dir = dir([SASshared folder name '_filter*.txt']);
 % frequency domain, start-end of repetitions, triggers, etc
 files_dir = [SASshared_full  name];
 for k=1:amount
-    name = ['Recording XXth January, nr.' num2str(k)];
+    name = ['Test wires nr.' num2str(k)];
     data = plot_th_mvc(files_dir,name,k,'C');  
 end
 
