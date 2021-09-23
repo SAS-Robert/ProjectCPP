@@ -278,7 +278,7 @@ public:
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
     {
         itoa(WSAGetLastError(), itoaNr, 10);
-        displayMsg = "Failed. Error Code : ";// +string(itoaNr).c_str();
+        displayMsg = "Failed. Error Code : ";
         displayMsg += string(itoaNr).c_str();
         error = true;
     }
@@ -612,54 +612,20 @@ struct UdpServer
       error_lim = error_cnt >= ERROR_CNT_LIM;
   }
 
-  // method with timeout control
-  /*
-  void check()
-  {
-      // Wait until timeout or data received.
-      FD_ZERO(&fds);
-      FD_SET(s, &fds);
-      n = select(s, &fds, NULL, NULL, &timeout);
-      if ((n == 0) || (n == -1))
-      {
-          if (n == 0 && display)
-          {
-              printf("UDP Server - Timeout\n");
-          }
-          else if (display)
-          {
-              printf("UDP Server - Error while receiving.\n");
-          }
-          error = true;
-          error_cnt++;
-      }
-      // Data has been received
-      if (!error)
-      {
-          //clear the buffer(s)
-          fflush(stdout);
-          memset(recvbuf, '\0', BUFLEN);
-          //try to receive some data, this is a blocking call
-          recv_len = recvfrom(s, recvbuf, BUFLEN, 0, (struct sockaddr*)&si_other, &slen);
-          //print details of the client/peer and the data received
-          //printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-          if (display)
-          {
-              printf("UDP Server received data: %s\n", recvbuf);
-          }
-      }
-      error_lim = error_cnt >= ERROR_CNT_LIM;
-
-  }
-  */
-  void stream()
+  void stream(double data)
   {
     if (display)
     {
-        displayMsg = "UDP Sending: ";
-        displayMsg += string(senbuf).c_str();
+        if (data != 0)
+        {
+            string temp = to_string(data);
+            strcpy(senbuf, temp.c_str());
+            displayMsg = "UDP Sending: ";
+            displayMsg += string(senbuf).c_str();
+        }
     }
-    if (sendto(s, senbuf, BUFLEN, 0, (struct sockaddr *)&si_other, slen) == SOCKET_ERROR)
+    int sendOk = sendto(s, senbuf, BUFLEN, 0, (struct sockaddr*)&si_other, slen);
+    if (sendOk == SOCKET_ERROR)
     {
       if (display)
       {
@@ -668,6 +634,7 @@ struct UdpServer
           displayMsg += string(itoaNr).c_str();
       }
     }
+    memset(senbuf, '\0', BUFLEN);
   }
 
   void end()

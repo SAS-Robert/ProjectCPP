@@ -53,6 +53,7 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 
 // ------------------------- Devices handling --------------------------------
 bool stim_abort = false, stimAvailable = false, recAvailable = false;
+double fixed_value = 969;
 
 //char PORT_STIM[5] = "COM6";   // Laptop
 char PORT_STIM[5] = "COM6";     // Robot
@@ -79,8 +80,10 @@ UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
 
 char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address
 char SCREEN_PORT[15] = "30002";
+char SCREEN_EMG_PORT[15] = "30005";
 // TcpServer screen(SCREEN_PORT); // Using TCP-IP protocol
-UdpServer screen(SCREEN_ADDRESS, SCREEN_PORT); // Using UDP-IP protocol
+UdpServer screen(SCREEN_ADDRESS, SCREEN_PORT); // Using UDP-IP protocol 
+UdpServer screenEMG(SCREEN_ADDRESS, SCREEN_EMG_PORT); // Using UPD-IP protocol for sending EMG permanently when recording
 tcp_msg_Type screen_status;
 
 bool start_train = false;
@@ -134,8 +137,10 @@ bool GL_tcpActive = true;
 char msg_modify[512], msg_stimulating[512], msg_recording[512], msg_main_char[512];
 
 // Interface functions
-string msg_connect = "", msg_main = "", msg_extGui = "", msg_gui = "";
+string msg_connect = "", msg_main = "", msg_extGui = "", msg_gui = "", msg_connect_2 = "";
+double live_data, live_previous = -1111;
 bool connect_thread_ready = false, run_extGui_ready = false;
+void sendEmgData_thread();
 void robot_thread();
 void screen_thread();
 void update_localGui();
@@ -147,7 +152,6 @@ static void recording_sas();
 void start_files();
 void end_files();
 
-// ------------------------------ Main  -----------------------------
 void mainSAS_thread();
 
 [STAThread]
@@ -159,6 +163,7 @@ int Main()
     std::thread stateMachine(mainSAS_thread);
     std::thread robot(robot_thread);
     std::thread extGUI(screen_thread);
+    std::thread sendtoScreen(sendEmgData_thread);
 
     // Run local GUI
     Application::EnableVisualStyles();
@@ -172,6 +177,7 @@ int Main()
     GL_UI.END_GUI = true;
     // Wait for the other threads to join
     robot.join();
+    sendtoScreen.join();
     stateMachine.join();
     //extGUI.join();
 
@@ -248,6 +254,95 @@ void update_localGui() {
     GL_UI.isVelocity = robert.isVelocity;
 }
 
+/* ---------------------------- File function definitions --------------------------
+- fileFILTERS: values regarding the EMG recorded
+- fileVALUES: values of the method used, the mean, Threshold, v_size, N_len and exercise
+- fileLOGS: events happening 
+- stimFILE: values of the stimulation applied
+- time3_f: time samples 
+*/
+void start_files()
+{
+    // initialize files names
+    generate_date(date); //get current date/time in format YYMMDD_hhmm
+
+    sprintf(filter_s, "%s%s_filter_%s.txt", folder, Sname, date);
+    sprintf(time3_s, "%s%s_time_%s.txt", folder, Sname, date);
+    sprintf(th_s, "%s%s_th_%s.txt", folder, Sname, date);
+    sprintf(logs_s, "%s%s_log_%s.txt", folder, Sname, date);
+    sprintf(stim_s, "%s%s_stim_%s.txt", folder, Sname, date);
+
+    fileLOGS.open(logs_s);
+    stimFile.open(stim_s);
+}
+
+void end_files()
+{
+    fileFILTERS.close();
+    fileVALUES.close();
+    fileLOGS.close();
+    stimFile.close();
+    // Safe here the time samples on a file
+    time3_f.open(time3_s);
+    if (time3_f.is_open() && time3_v.size() >= 2)
+    {
+        for (int k = 0; k < time3_v.size(); k++)
+        {
+            time3_f << time3_v[k] << ", " << time3_v2[k] << ";" << endl;
+        }
+        // printf("Main: time measurement t3 saved in file.\n");
+    }
+    else
+    {
+        printf("Main: Data t3 could not be saved.\n");
+    }
+    time3_f.close();
+
+    time3_v.clear();
+    time3_v2.clear();
+}
+
+/* ---------------------------- Threads function definitions --------------------------
+The are several threads running in parallel for handling the data communication in between
+SAS - control software of the robot - the screen. There is a UDP protocol listening for the input
+into SAS from the control software and another one listening from the screen. There is another UDP
+for live-stream sending EMG data to the screen. 
+*/
+// Thread for the UDP communication for sending - screen is the UdpServer
+void sendEmgData_thread()
+{
+    screenEMG.display = true;
+    do
+    {
+        screenEMG.start();
+    } while (screenEMG.error && !MAIN_to_all.end);
+    screenEMG.display = true;
+
+    screenEMG.check();
+
+    // main loop of the sending thread
+    while (!MAIN_to_all.end && (GL_state != st_end))
+    {
+        if (GL_state == st_th || GL_state == st_calM || GL_state == st_running || GL_state == st_wait || GL_state == st_mvc) 
+        {
+            // message for debugging
+            //screenEMG.stream(fixed_value);
+
+            // message for real data sent
+            if  (live_data != live_previous)
+            {
+                screenEMG.stream(live_data);
+                live_previous = live_data;
+            }
+        }
+
+        //System::Threading::Thread::Sleep(250);
+    }
+
+    screenEMG.end();
+}
+
+// Thread for the UDP communication - robert is the UdpClient
 void robot_thread()
 {
     // start up
@@ -295,12 +390,13 @@ void robot_thread()
     robert.end();
 } // thread
 
+// Thread for the UDP communication for receiving - screen is the UdpServer
 void screen_thread()
 {
     // to send: stimulation parameters + exercise settings + current status -> guiMsg
-    char stimMsg[BUFLEN], setMsg[BUFLEN], disMsg[BUFLEN], guiMsg[BUFLEN];
+    // char stimMsg[BUFLEN], setMsg[BUFLEN], disMsg[BUFLEN], guiMsg[BUFLEN];
+    // char itoaNr[32];
     bool decode_successful;
-    char itoaNr[32];
     char longMsg[BUFLEN];
     // Start
     screen.display = true;
@@ -364,50 +460,9 @@ void screen_thread()
     screen.end();
 }
 
-// ---------------------------- File function definitions --------------------------
-void start_files()
-{
-    // initialize files names
-    generate_date(date); //get current date/time in format YYMMDD_hhmm
-
-    sprintf(filter_s, "%s%s_filter_%s.txt", folder, Sname, date);
-    sprintf(time3_s, "%s%s_time_%s.txt", folder, Sname, date);
-    sprintf(th_s, "%s%s_th_%s.txt", folder, Sname, date);
-    sprintf(logs_s, "%s%s_log_%s.txt", folder, Sname, date);
-    sprintf(stim_s, "%s%s_stim_%s.txt", folder, Sname, date);
-
-    fileLOGS.open(logs_s);
-    stimFile.open(stim_s);
-}
-
-void end_files()
-{
-    fileFILTERS.close();
-    fileVALUES.close();
-    fileLOGS.close();
-    stimFile.close();
-    // Safe here the time samples on a file
-    time3_f.open(time3_s);
-    if (time3_f.is_open() && time3_v.size() >= 2)
-    {
-        for (int k = 0; k < time3_v.size(); k++)
-        {
-            time3_f << time3_v[k] << ", " << time3_v2[k] << ";" << endl;
-        }
-        // printf("Main: time measurement t3 saved in file.\n");
-    }
-    else
-    {
-        printf("Main: Data t3 could not be saved.\n");
-    }
-    time3_f.close();
-
-    time3_v.clear();
-    time3_v2.clear();
-}
-
-// ---------------------------- MAIN ALGORITHM  --------------------------
-
+/* ---------------------------- MAIN ALGORITHM  --------------------------
+This thread handles the main algorithm of SAS. Here a state machine loop is used.
+*/
 void mainSAS_thread()
 {
     // ------------- Start up -------------
@@ -1356,11 +1411,11 @@ void recording_sas()
                 {
                     if (emgCH == emgCh1)
                     {
-                        process_data_iir(GL_sampleNr, recorder_emg1); // returned value not used, only FILTERS & VALUES files updated
+                        tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg1); // returned value sent to the main SCREEN for live streaming
                     }
                     else if (emgCH == emgCh2)
                     {
-                        process_data_iir(GL_sampleNr, recorder_emg2); // returned value not used, only FILTERS & VALUES files updated
+                        tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg2); // returned value sent to the main SCREEN for live streaming
                     }
                 }
             }
@@ -1440,11 +1495,11 @@ void recording_sas()
             {
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg1);
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg2);
                 }
 
                 // Original for software 3.0:
@@ -1488,11 +1543,11 @@ void recording_sas()
             {
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg1);
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg2);
                 }
                 
             }
@@ -1517,11 +1572,11 @@ void recording_sas()
             {
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg1);
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg2);
                 }
                 
             }
@@ -1548,11 +1603,11 @@ void recording_sas()
             {
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg1);
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg2);
                 }
                 
             }

@@ -15,6 +15,7 @@
 
 #include "Iir.h"
 #include "SASLIBbasic.hpp"
+#include<tuple>
 
 // ------------------ Gobal variables ------------------
 // Estas dos variables eran el main pero se movieron aqui
@@ -111,9 +112,10 @@ void startup_filters() {
     }
 }
 // EMG activity
-static double process_data_iir(unsigned long long int v_size, vector<double> raw_data)
+static tuple<double, double> process_data_iir(unsigned long long int v_size, vector<double> raw_data)
 {
     double mean = 0, temp = 0, value = 0, raw_sample = 0.0;
+    double temp_b50;
     double flex_num = 0.0, flex_den = 0.0;
     unsigned long long int i = 0;
     unsigned long long int N_len = v_size - GL_processed;
@@ -127,6 +129,7 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
 
         // Savind data in files will be eventually deleted
         fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n";
+        temp_b50 = b50_result[i];
 
         // Calculating mean of retified EMG
         temp = b50_result[i];
@@ -158,7 +161,7 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
     old_value[0] = mean;
     old_nr[0] = N_len;
 
-    return value;
+    return make_tuple(value, temp_b50);
 }
 
 // Threshold methods
