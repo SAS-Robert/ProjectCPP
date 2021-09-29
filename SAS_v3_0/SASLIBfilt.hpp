@@ -161,7 +161,7 @@ static tuple<double, double> process_data_iir(unsigned long long int v_size, vec
     old_value[0] = mean;
     old_nr[0] = N_len;
 
-    return make_tuple(value, temp_b50);
+    return make_tuple(value, mean);
 }
 
 // Threshold methods
@@ -171,6 +171,7 @@ static tuple<double, double> process_data_iir(unsigned long long int v_size, vec
 static double process_th_mean(unsigned long long int v_size, vector<double> raw_data)
 {
     double mean = 0, temp = 0, sd = 0, value = 0, raw_sample = 0.0;
+    double temp_b50;
     unsigned long long int i = 0;
     unsigned long long int N_len = v_size - GL_processed;
 
@@ -184,6 +185,7 @@ static double process_th_mean(unsigned long long int v_size, vector<double> raw_
 
         // Savind data in files will be eventually deleted
         fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n"; 
+        temp_b50 = b50_result[i];
         // Calculating mean of retified EMG
 
         temp = b50_result[i];

@@ -53,7 +53,7 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 
 // ------------------------- Devices handling --------------------------------
 bool stim_abort = false, stimAvailable = false, recAvailable = false;
-double fixed_value = 969;
+double fixed_value = 0;
 
 //char PORT_STIM[5] = "COM6";   // Laptop
 char PORT_STIM[5] = "COM6";     // Robot
@@ -92,6 +92,7 @@ bool start_train = false;
 // This value will be changed on the SAS interface run-time if needed >> default = CH1
 Smpt_Channel hmi_channel = Smpt_Channel_Black; 
 emgCh_Type emgCH = emgCh0;
+bool* recording;
 bool stim_done = false,
 stim_userX = false, stim_auto_done = false, stim_pause = false;
 
@@ -116,6 +117,8 @@ std::vector<double> time3_v, time3_v2;
 std::chrono::duration<double> time3_diff, time4_diff;
 auto time3_start = std::chrono::steady_clock::now();
 auto time3_end = std::chrono::steady_clock::now();
+// RehaIngest send timing
+double tendEMG;
 
 // Files variables for names and handling
 char date[DATE_LENGTH];
@@ -125,10 +128,10 @@ char date[DATE_LENGTH];
 char folder[DATE_LENGTH] = "C:\\Users\\AAS\\Documents\\LSR\\Toni\\SAS_Data\\Trash\\";
 //char folder[DATE_LENGTH] = "C:\\Users\\Kasper Leerskov\\Downloads\\SASData\\";
 char Sname[DATE_LENGTH] = "subject";
-char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256], stim_s[256];
+char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256], stim_s[256], time_EMG[256];
 char time3_s[256];
 
-ofstream fileLOGS, stimFile;
+ofstream fileLOGS, stimFile, timeEFile;
 bool dummyMain = false, dummyMain2 = false;
 // ---------------------------- Functions declaration  -----------------------------
 bool GL_tcpActive = true;
@@ -138,7 +141,7 @@ char msg_modify[512], msg_stimulating[512], msg_recording[512], msg_main_char[51
 
 // Interface functions
 string msg_connect = "", msg_main = "", msg_extGui = "", msg_gui = "", msg_connect_2 = "";
-double live_data, live_previous = -1111;
+double live_data, live_previous = -11;
 bool connect_thread_ready = false, run_extGui_ready = false;
 void sendEmgData_thread();
 void robot_thread();
@@ -271,9 +274,11 @@ void start_files()
     sprintf(th_s, "%s%s_th_%s.txt", folder, Sname, date);
     sprintf(logs_s, "%s%s_log_%s.txt", folder, Sname, date);
     sprintf(stim_s, "%s%s_stim_%s.txt", folder, Sname, date);
+    sprintf(time_EMG, "%s%s_timeEMG_%s.txt", folder, Sname, date);
 
     fileLOGS.open(logs_s);
     stimFile.open(stim_s);
+    timeEFile.open(time_EMG);
 }
 
 void end_files()
@@ -282,6 +287,7 @@ void end_files()
     fileVALUES.close();
     fileLOGS.close();
     stimFile.close();
+    timeEFile.close();
     // Safe here the time samples on a file
     time3_f.open(time3_s);
     if (time3_f.is_open() && time3_v.size() >= 2)
@@ -323,26 +329,30 @@ void sendEmgData_thread()
     // main loop of the sending thread
     while (!MAIN_to_all.end && (GL_state != st_end))
     {
-        if (GL_state == st_th || GL_state == st_calM || GL_state == st_running || GL_state == st_wait || GL_state == st_mvc) 
+        if (GL_state != st_stop && GL_state != st_repeat)
         {
             // message for debugging
             //screenEMG.stream(fixed_value);
-
-            // message for real data sent
-            if  (live_data != live_previous)
+            
+            if (live_data != live_previous)
             {
                 screenEMG.stream(live_data);
                 live_previous = live_data;
             }
+            else
+            {
+                //screenEMG.stream(fixed_value);
+                //screenEMG.stream(live_data);
+            }
+            
         }
 
-        //System::Threading::Thread::Sleep(250);
     }
 
     screenEMG.end();
 }
 
-// Thread for the UDP communication - robert is the UdpClient
+// Thread for the UDP communication - robert is the UdpSever
 void robot_thread()
 {
     // start up
@@ -390,7 +400,7 @@ void robot_thread()
     robert.end();
 } // thread
 
-// Thread for the UDP communication for receiving - screen is the UdpServer
+// Thread for the UDP communication for receiving - screen is the UdpClient
 void screen_thread()
 {
     // to send: stimulation parameters + exercise settings + current status -> guiMsg
@@ -1268,6 +1278,7 @@ void recording_sas()
     double mean = 0, mean2 = 0, temp_value = 0, mvc = 0, mvc2 = 0;
     double static value = 0, value_cnt = 0;
     bool st_wait_jump = false, devAvailable = false, received_data;
+    //recording = &received_data;
     unsigned long long int N_len = 0;
     unsigned long long int N_len2 = 0;
 
@@ -1314,26 +1325,77 @@ void recording_sas()
             break;
 
         case st_calM:
-            // Discard data
             received_data = recorder.record();
-            recorder_emg1.clear();
-            recorder_emg2.clear();
-            MEAN = 0;
-            MVC = 0;
-            THRESHOLD = 0;
-            rec_fl4 = false;
-            rec_fl5 = false;
+            if (emgCH == emgCh1)
+            {
+                GL_sampleNr = recorder_emg1.size();
+                //string msg = "From EMG1, GL_sampleNr = " + to_string(GL_sampleNr) + "\n";
+                //OutputDebugString(msg.c_str()); // print
+            }
+            else if (emgCH == emgCh2)
+            {
+                GL_sampleNr = recorder_emg2.size();
+                //string msg = "From EMG2, GL_sampleNr = " + to_string(GL_sampleNr) + "\n";
+                //OutputDebugString(msg.c_str()); // print
+            }
+
+            N_len = GL_sampleNr - GL_processed;
+            if (N_len >= SAMPLE_LIM)
+            {
+                // Get mean
+                if (emgCH == emgCh1)
+                {
+                    //int tr;
+                    live_data = process_th_mean(GL_sampleNr, recorder_emg1);
+                    //tr = process_th_proper_mean(GL_sampleNr);
+                    //string msg = "Live data = " + to_string(GL_sampleNr) + "\n";
+                    //OutputDebugString(msg.c_str()); // print
+                }
+                else if (emgCH == emgCh2)
+                {
+                    //int tr;
+                    live_data = process_th_mean(GL_sampleNr, recorder_emg2);
+                    //tr = process_th_proper_mean(GL_sampleNr);
+                    //string msg = "Live data = " + to_string(GL_sampleNr) + "\n";
+                    //OutputDebugString(msg.c_str()); // print
+                }
+            }
+
+            // This data discarding need to be done somewhere else so that in calM state it can be actually 
+            // calibrated by playing around with the graph in the SCREEN interface - Following lines out-commented
+            // Discard data - Old
+            //recorder_emg1.clear();
+            //recorder_emg2.clear();
+            //MEAN = 0;
+            //MVC = 0;
+            //THRESHOLD = 0;
+            //rec_fl4 = false;
+            //rec_fl5 = false;
             break;
 
         case st_th:
             received_data = recorder.record();
+            if (!main_thEN)
+            {
+                // ---- Comes from recording SAS 
+                recorder_emg1.clear();
+                recorder_emg2.clear();
+                MEAN = 0;
+                MVC = 0;
+                THRESHOLD = 0;
+                rec_fl4 = false;
+                rec_fl5 = false;
+                // ----
+            }
             // Set threshold button has been pressed
             if (rec_status.req && main_thEN)
             {
-                if (recorder.data_received && recorder.data_start && !fileFILTERS.is_open() )
+                tic();
+                if (recorder.data_received && recorder.data_start && (!fileFILTERS.is_open() || !fileVALUES.is_open() || !timeEFile.is_open()))
                 {
                     fileFILTERS.open(filter_s);
                     fileVALUES.open(th_s);
+                    timeEFile.open(time_EMG);
                 }
 
                 // EMG
@@ -1353,10 +1415,12 @@ void recording_sas()
                     if (emgCH == emgCh1)
                     {
                         temp_value = process_th_mean(GL_sampleNr, recorder_emg1);
+                        live_data = temp_value;
                     }
                     else if (emgCH == emgCh2)
                     {
                         temp_value = process_th_mean(GL_sampleNr, recorder_emg2);
+                        live_data = temp_value;
                     }
 
                     if (GL_sampleNr >= TH_DISCARD && !rec_status.th)
@@ -1373,17 +1437,21 @@ void recording_sas()
                         {
                         case th_SD05:
                             proper_mean = process_th_proper_mean(GL_sampleNr);
+                            live_data = proper_mean;
                             THRESHOLD = process_th_sd(GL_sampleNr, proper_mean, 3);
                             break;
                         case th_SD03:
                             proper_mean = process_th_proper_mean(GL_sampleNr);
+                            live_data = proper_mean;
                             THRESHOLD = process_th_sd(GL_sampleNr, proper_mean, 2);
                             break;
                         default:
                             THRESHOLD = MEAN;
                         }
 
-                        sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
+                        tendEMG = toc();
+                        timeEFile << tendEMG << "\n";
+                        sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f, time = %1.9f", GL_thMethod, THRESHOLD, tendEMG);
                         rec_status.th = true;
                         rec_status.req = false;
                     }

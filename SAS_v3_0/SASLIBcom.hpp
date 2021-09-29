@@ -624,6 +624,7 @@ struct UdpServer
             displayMsg += string(senbuf).c_str();
         }
     }
+
     int sendOk = sendto(s, senbuf, BUFLEN, 0, (struct sockaddr*)&si_other, slen);
     if (sendOk == SOCKET_ERROR)
     {

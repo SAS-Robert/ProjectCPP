@@ -223,13 +223,13 @@ void tic()
     tstart = std::chrono::steady_clock::now();
 }
 
-bool toc()
+double toc()
 {
     tend = std::chrono::steady_clock::now();
     tstart_tend_diff = tend - tstart;
 
-    bool done = (((double)tstart_tend_diff.count()) >= toc_lim);
-    return done;
+    //bool done = (((double)tstart_tend_diff.count()) >= toc_lim);
+    return tstart_tend_diff.count();
 }
 
 int control_thread(int thread_nr, bool start, state_Type state)
