@@ -109,8 +109,8 @@ bool stimA_active = false, stimM_active = false;
 bool stim_timing = false, stim_timeout = false;
 
 // Assist as need flags and timing - AAN feature 
-int time2trigger = 10.0; // seconds to trigger for starting FES
-int time2complete = 5.0; // seconds to complete exercise with FES
+int time2trigger = 10; // seconds to trigger for starting FES
+int time2complete = 5; // seconds to complete exercise with FES
 std::chrono::duration<double> time2trigger_diff;
 std::chrono::duration<double> time2complete_diff;
 auto time2trigger_start = std::chrono::steady_clock::now();
@@ -655,7 +655,7 @@ void mainSAS_thread()
             {
                 msg_main = "Waiting for trigger.";
             }
-            if (msg_main == "Waiting for trigger." && !robert.playPause)
+            else if (!robert.playPause)
             {
                 msg_main = "Press patient button to allow stimulation.";
                 time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
@@ -683,9 +683,10 @@ void mainSAS_thread()
             {
                 // analyse the timing for the AAN timeout
                 time2trigger_end = std::chrono::steady_clock::now();
-                time2trigger_diff = time2trigger_start - time2trigger_end;
-                if ((double)time2trigger_diff.count() >= time2trigger)
+                time2trigger_diff = time2trigger_end - time2trigger_start;
+                if (time2trigger_diff.count() >= time2trigger)
                 {
+                    //OutputDebugString(std::to_string(time2trigger_diff.count()).c_str());
                     // AAN not triggered in time
                     GL_state = st_running;
                     msg_main = "Stimulation not triggered. Timeout.";
@@ -749,7 +750,7 @@ void mainSAS_thread()
             {
                 // analyse the timing for the AAN timeout
                 time2complete_end = std::chrono::steady_clock::now();
-                time2complete_diff = time2complete_start - time2complete_end;
+                time2complete_diff = time2complete_end - time2complete_start;
                 if ((double)time2complete_diff.count() >= time2complete)
                 {
                     complete_timeout = true;
@@ -762,6 +763,9 @@ void mainSAS_thread()
         case st_stop:
             // Display message
             msg_main = "Reached end-point. Waiting for robot to return to the start.";
+            complete_timeout = false;
+            trigger_timeout = false;
+            //velocity_trigg = false;
 
             devicesReady = stim_status.ready && (rec_status.ready || rec_status.error);
             robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
@@ -790,6 +794,9 @@ void mainSAS_thread()
         case st_repeat:
             main_1stSet = false;
             main_init = false;
+            complete_timeout = false;
+            trigger_timeout = false;
+            //velocity_trigg = false;
             devicesReady = rec_status.ready && stim_status.ready && !stim_status.error && !rec_status.error;
             robotReady = robert.valid_msg; // && !robert.Reached 
 
