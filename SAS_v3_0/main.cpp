@@ -66,6 +66,9 @@ RehaIngest recorder;
 int GL_iterator = 0;
 
 // Flag variables
+// Important ones:
+//  - stim_fl1: true if the stimulation is stopped
+//  - stim_fl2: true if the stimulation is on
 bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
 bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false, rec_fl5 = false;;
 bool main_fl0 = false, main_fl1 = false, main_init = false, main_1stSet = false, main_fl2 = false;;
@@ -104,6 +107,19 @@ auto stimA_end = std::chrono::steady_clock::now();
 bool stimA_start_b = false, stimA_end_b = false;
 bool stimA_active = false, stimM_active = false;
 bool stim_timing = false, stim_timeout = false;
+
+// Assist as need flags and timing - AAN feature 
+int time2trigger = 10.0; // seconds to trigger for starting FES
+int time2complete = 5.0; // seconds to complete exercise with FES
+std::chrono::duration<double> time2trigger_diff;
+std::chrono::duration<double> time2complete_diff;
+auto time2trigger_start = std::chrono::steady_clock::now();
+auto time2trigger_end = std::chrono::steady_clock::now();
+auto time2complete_start = std::chrono::steady_clock::now();
+auto time2complete_end = std::chrono::steady_clock::now();
+bool mech_as_needed = false; // AAN prerequisites: Active return + assist in completion + SASFlag = true
+bool velocity_trigg = false; // AAN prerequisites: Velocity needs to be lower than 7.5mm/s in e.g. 2s
+bool trigger_timeout = false, complete_timeout = false; // Flags for timing handling of AAN
 
 // ------------------------------ Timing -------------------
 // Dummies - Measuring time:
@@ -331,9 +347,6 @@ void sendEmgData_thread()
     {
         if (GL_state != st_stop && GL_state != st_repeat)
         {
-            // message for debugging
-            //screenEMG.stream(fixed_value);
-            
             if (live_data != live_previous)
             {
                 screenEMG.stream(live_data);
@@ -341,12 +354,12 @@ void sendEmgData_thread()
             }
             else
             {
+                // Do nothing
+
                 //screenEMG.stream(fixed_value);
                 //screenEMG.stream(live_data);
             }
-            
         }
-
     }
 
     screenEMG.end();
@@ -645,6 +658,7 @@ void mainSAS_thread()
             if (msg_main == "Waiting for trigger." && !robert.playPause)
             {
                 msg_main = "Press patient button to allow stimulation.";
+                time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
             }
 
             if (screen_status == exDone || screen_status == msgEnd || rec_status.error)
@@ -658,12 +672,29 @@ void mainSAS_thread()
             }
             else if (rec_status.start && robert.playPause)
             {
-                // normal trigger
+                // normal trigger in any case (normal SAS or AAN)
                 GL_state = st_running;
                 msg_main = "Stimulation triggered";
-
                 fileLOGS << "1.0, " << GL_processed << "\n";
-
+                time2complete_start = std::chrono::steady_clock::now();
+                complete_timeout = false;
+            }
+            else if (mech_as_needed && !rec_status.start && robert.playPause)
+            {
+                // analyse the timing for the AAN timeout
+                time2trigger_end = std::chrono::steady_clock::now();
+                time2trigger_diff = time2trigger_start - time2trigger_end;
+                if ((double)time2trigger_diff.count() >= time2trigger)
+                {
+                    // AAN not triggered in time
+                    GL_state = st_running;
+                    msg_main = "Stimulation not triggered. Timeout.";
+                    fileLOGS << "5.0, " << GL_processed << "\n";
+                    // Inmediately after, FES need to be activated - flag updated
+                    trigger_timeout = true;
+                    time2complete_start = std::chrono::steady_clock::now();
+                }
+                complete_timeout = false;
             }
             // The end point has been reached before the stimulation has been triggered
             else if (screen_status == repEnd)
@@ -712,6 +743,19 @@ void mainSAS_thread()
                 GL_state = st_stop;
 
                 fileLOGS << "3.0, " << GL_processed << "\n";
+            }
+            // Completion timeout for AAN
+            else if (mech_as_needed && stimulator.active && (!robert.Reached && robert.valid_msg))
+            {
+                // analyse the timing for the AAN timeout
+                time2complete_end = std::chrono::steady_clock::now();
+                time2complete_diff = time2complete_start - time2complete_end;
+                if ((double)time2complete_diff.count() >= time2complete)
+                {
+                    complete_timeout = true;
+                    // Mechanical assistance needed for completion
+                    msg_main = "Mechanical assistance activated. Waiting to complete exercise.";
+                }
             }
             break;
 
@@ -1085,6 +1129,7 @@ void stimulating_sas()
             stim_fl4 = false;
             stim_status.ready = true;
             stim_done = false;
+            trigger_timeout = false;
             // modify parameters if a button is pressed
             Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start) && (Move3_key != Move3_en_ch);
 
@@ -1136,19 +1181,52 @@ void stimulating_sas()
             // Stimulate
             if (robert.playPause && !stim_timeout && !stim_fl1)
             {
-                sprintf(msg_stimulating, "Stimulation active");
-                stimulator.update2(hmi_channel);
+                // AAN
+                if (mech_as_needed)
+                {
+                    if (trigger_timeout)
+                    {
+                        // Activates stim right away
+                        sprintf(msg_stimulating, "Stimulation active due to timeout without trigger");
+                        stimulator.update2(hmi_channel);   
+                    }
+                    else if(!trigger_timeout)
+                    {
+                        // Waiting for velocity trigger - FES only if needed
+                        if (velocity_trigg)
+                        {
+                            sprintf(msg_stimulating, "Velocity timeout reached");
+                            stimulator.update2(hmi_channel);
+                        }
+                        else if (!velocity_trigg)
+                        {
+                            // Do nothing and wait for end or timeout
+                            sprintf(msg_stimulating, "Velocity timeout not reached yet");
+
+                            // The exercise can be completed without assistance at this point
+                            // stim or mechanical assistance not activated yet
+                        }
+                    }
+                }
+                // Normal SAS
+                else
+                {
+                    sprintf(msg_stimulating, "Stimulation active due to trigger");
+                    stimulator.update2(hmi_channel);
+                }
             }
 
             // Maybe re-take the stimulation if the play is pressed again?
             if (robert.playPause && stim_fl1 && stim_pause && Move3_key == Move3_start)
             {
+                trigger_timeout = false;
                 stim_pause = false;
                 stim_fl1 = false;
                 sprintf(msg_stimulating, "Stimulation re-enabled");
             }
             else if (robert.playPause && stim_fl1 && !stim_pause && Move3_key == Move3_start)
             {
+                trigger_timeout = false;
                 stim_fl1 = false;
                 sprintf(msg_stimulating, "Stimulation resumed");
             }
@@ -1185,6 +1263,7 @@ void stimulating_sas()
                 stim_fl2 = false;
                 stim_fl3 = false;
                 stim_status.ready = true;
+                trigger_timeout = false;
             }
 
             break;
@@ -1198,6 +1277,7 @@ void stimulating_sas()
             stim_done = false;
             start_train = false;
             stim_abort = false;
+            trigger_timeout = false;
             stim_status.ready = (screen_status != exDone);
 
             if (screen_status == exDone) {
@@ -1377,7 +1457,7 @@ void recording_sas()
             received_data = recorder.record();
             if (!main_thEN)
             {
-                // ---- Comes from recording SAS 
+                // ---- Comes from recording SAS - st_calM
                 recorder_emg1.clear();
                 recorder_emg2.clear();
                 MEAN = 0;

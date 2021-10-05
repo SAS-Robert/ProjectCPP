@@ -21,18 +21,18 @@ using namespace std;
 // Types for internal process handling
 typedef enum
 {
-    st_setup = -1,    // Before init, select exercise and re-do stuff
-    st_init = 0,       // Start up
-    st_th = 1,         // Setting threshold
-    st_wait = 2,       // Waiting to overcome threshold
-    st_running = 3,    // Stimulating
-    st_stop = 4,       // Done 1 seq, waiting for next
-    st_end = 5,        // Finish program
-    st_calM = 6,      // Stimulation manual calibration
-    st_calA_go = 7,   // Stimulation automatic calibration -> stimulator active
-    st_calA_stop = 8, // Stimulation automatic calibration -> resting period
-    st_repeat = 9,    // Repeat an exercise
-    st_mvc = 10,    // set MVC threshold
+    st_setup = -1,      // Before init, select exercise and re-do stuff
+    st_init = 0,        // Start up
+    st_th = 1,          // Setting threshold
+    st_wait = 2,        // Waiting to overcome threshold
+    st_running = 3,     // Stimulating
+    st_stop = 4,        // Done 1 seq, waiting for next
+    st_end = 5,         // Finish program
+    st_calM = 6,        // Stimulation manual calibration
+    st_calA_go = 7,     // Stimulation automatic calibration -> stimulator active
+    st_calA_stop = 8,   // Stimulation automatic calibration -> resting period
+    st_repeat = 9,      // Repeat an exercise
+    st_mvc = 10,        // set MVC threshold
 } state_Type;
 
 typedef enum
@@ -83,10 +83,10 @@ typedef enum
     Move3_start = 6,     // Stimulate with initial values
     Move3_done = 7,      // Finish callibration
     Move3_Hz_mr = 8,     // Increase frequency
-    Move3_Hz_ls = 9,    // Decrease Frequency
+    Move3_Hz_ls = 9,     // Decrease Frequency
     Move3_us_mr = 10,    // Increase pulse width
     Move3_us_ls = 11,    // Decrease pulse width
-    Move3_en_ch = 12,     //Enable/disable channel
+    Move3_en_ch = 12,    //Enable/disable channel
 } RehaMove3_Req_Type;
 
 typedef enum
@@ -105,17 +105,17 @@ typedef enum
 typedef enum
 {
     exDone = 0,     // Finish everything
-    start = 1,       // Exercise has started
+    start = 1,      // Exercise has started
     repeat = 2,     // Repeat exercise
     pause = 3,      // Play/Pause button = in pause
-    play = 4,     // Play/Pause button = in play 
+    play = 4,       // Play/Pause button = in play 
     setDone = 5,    // Repetitions-set finished
     repStart = 6,   // Start repetition
     repEnd = 7,     // End repetition
     finish = 8,     // Close socket
-    msgEnd = 9,   // exercise has been aborted
-    msg_none = 10, // You messed up somewhere
-    res1 = 11,       // A resistance value has been received
+    msgEnd = 9,     // exercise has been aborted
+    msg_none = 10,  // You messed up somewhere
+    res1 = 11,      // A resistance value has been received
     res2 = 12,
     res3 = 13,
     res4 = 14,
