@@ -150,6 +150,9 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
     // The following should be removed after testing at RRD or should be implemented nicer - it is simply a bandaid that resolves a current issue of missing data-values to "isVelocity" during testing
     stimFile << placeholder.current << ", " << placeholder.ramp << ", " << placeholder.fq << ", " << GL_exercise << ", " << placeholder.isVelocity << ", " << placeholder.legWeight << ", " << placeholder.screenLevel << ", " << GL_processed << "\n";
 
+    // The following should be removed after testing at RRD or should be implemented nicer - it is simply a bandaid that resolves a current issue of missing data-values to "isVelocity" during testing
+    stimFile << placeholder.current << ", " << placeholder.ramp << ", " << placeholder.fq << ", " << GL_exercise << ", " << placeholder.isVelocity << ", " << placeholder.legWeight << ", " << placeholder.screenLevel << ", " << GL_processed << "\n"; 
+    
     // Update GL_processed data parameters
     GL_processed = i;
     for (int i = 4; i >= 1; i--)

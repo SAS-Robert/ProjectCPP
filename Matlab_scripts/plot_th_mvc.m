@@ -1,4 +1,4 @@
-function data = plot_th_mean_v(files_dir,name,pos,plot_type)
+function data = plot_th_mvc(files_dir,name,pos)
 %(--- First version ---)
 % Plots the data from a single EMG recording in three formats:
 %1. Top-left: raw vs. filtered data in time domain.
@@ -322,34 +322,69 @@ elseif(plot_type=='T')
     xlabel('t (s)');
     ylabel('v (V)');
     
-    subplot(2,2,2)
-    hold on
-    plot_r = fftEMG(c_raw,['Frequency domain EMG'],srate);
-    plot_f = fftEMG(c_t,['Frequency domain EMG'],srate);
-    legend('Raw EMG','Filtered EMG')
-    xlim([0 500])
-    if (max(plot_f)<0.004)
-        ylim([0 max(plot_f)])
-    else
-        ylim([0 0.004])
+    switch log_type(k)
+        case 1                  % magenta asterisk: stimulator triggered
+            log_plot = 'm*';
+            plot_ma = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
+            ma = 1;
+            %             case 2
+            %                 log_plot = 'k*';    % black asterisk = end of repetition (without triggering stimulator)
+            %                 plot_ka = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
+            %                 ka = 1;
+        case 3
+            log_plot = 'm-';    % magenta circle = end of repetition (with stimulator)
+            plot_mc = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) 0.02], log_plot);
+            mc = 1;
+        case 4
+            log_plot = '-';    % gx green X = start repetition
+            plot_gx = plot(temp_t_value*ones(1,3), [0 y_t(log_val(k)-temp_x_value) 0.02], log_plot, 'Color', [0.4660 0.6740 0.1880]);
+            gx = 1;
+        case 5
+            log_plot = 'g^';    % Start training pressed
+            plot_gt = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
+            gt = 1;
+        case 6
+            log_plot = 'y*';    % Stimulator actually being stopped
+            plot_kc = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
+            kc = 1;
+            %              case 7
+            %                 log_plot = 'k^';    % Stimulator stopped by user
+            %                 plot_kt = plot(temp_t_value, y_t(log_val(k)-temp_x_value), log_plot);
+            %                 kt = 1;
     end
-    %
-    subplot(2,1,2)
-    hold on
-    grid on
-    plot(t_th,y_th,'g',t,y_t,'r')
-    plot(t, th_value,'b')
-    plot(t_th,ny_th,'--k',t,ny_t,'k', t, nth_value, '--m');
     
-    title('Comparsion between old and new mean values');
-    xlim([0 t(end)]);
-    ylim([0 max(y_t)+0.0002]);
-    legend('Old resting mean', 'Old mean', 'Old threshold', 'New resting mean', 'New mean', 'New threshold')
-    xlabel('t (s)');
-    ylabel('v (V)');
+end
+% legend and label stuff
+if(gt==1)
+    plot_array = [plot_array plot_gt];
+    plot_names{end+1} = 'Start training';
+end
+if(gx==1)
+    plot_array = [plot_array plot_gx];
+    plot_names{end+1} = 'Start rep';
+end
+if(ma==1)
+    plot_array = [plot_array plot_ma];
+    plot_names{end+1} = 'Trigger(s)';
+end
+if(mc==1)
+    plot_array = [plot_array plot_mc];
+    plot_names{end+1} = 'End rep (with stim)';
+end
+if(kc==1)
+    plot_array = [plot_array plot_kc];
+    plot_names{end+1} = 'Stop stim';
+end
+if(ka==1)
+    plot_array = [plot_array plot_ka];
+    plot_names{end+1} = 'End rep (no stim)';
+end
+if(kt==1)
+    plot_array = [plot_array plot_kt];
+    plot_names{end+1} = 'Stop stim by user';
 end
 
+legend(plot_array,plot_names);
 
-data = c_t;
 end
 

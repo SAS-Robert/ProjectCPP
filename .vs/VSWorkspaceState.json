@@ -2,8 +2,9 @@
   "ExpandedNodes": [
     "",
     "\\Complementary programmes",
+    "\\HMI",
     "\\others"
   ],
-  "SelectedNode": "\\Complementary programmes\\Server",
+  "SelectedNode": "\\HMI\\GUI_SAS_v5.py",
   "PreviewInSolutionExplorer": false
 }

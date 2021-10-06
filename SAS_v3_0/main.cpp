@@ -1242,9 +1242,8 @@ void stimulating_sas()
             if (stimulator.active)
             {
                 // stimFile 
-                stimFile << (float)stimulator.stim[hmi_channel].points[0].current << ", " << (int)stimulator.stim[hmi_channel].ramp << ", " << (float)stimulator.fq[hmi_channel] << ", ";
-                stimFile << GL_exercise << ", " << robert.isVelocity << ", " << robert.legWeight << ", " << screen.level << ", " << GL_processed << "\n";
-                
+                // stimFile << (float)stimulator.stim[hmi_channel].points[0].current << ", " << (int)stimulator.stim[hmi_channel].ramp << ", " << (float)stimulator.fq[hmi_channel] << ", ";
+                // stimFile << GL_exercise << ", " << robert.isVelocity << ", " << robert.legWeight << ", " << screen.level << ", " << GL_processed << "\n";
             }
             break;
 
@@ -1716,7 +1715,6 @@ void recording_sas()
                     mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
                     live_data = mean;
                 }
-                
             }
             rec_status.ready = false;
             rec_status.start = false;
@@ -1754,7 +1752,6 @@ void recording_sas()
                     mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
                     live_data = mean;
                 }
-                
             }
             rec_status.ready = true;
             rec_status.th = false;
@@ -1793,7 +1790,7 @@ void recording_sas()
                     mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
                     live_data = mean;
                 }
-                
+
             }
             recorder_emg1.clear();
             recorder_emg2.clear();

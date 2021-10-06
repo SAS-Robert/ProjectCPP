@@ -68,7 +68,7 @@ namespace SASv30 {
 
 		// For isMoving testing
 		double isVelocity;
-		const double isDelta = 0.1;
+		const double isDelta = 1;
 		
 		System::ComponentModel::BackgroundWorker^ backgroundWorker1;
 		System::Windows::Forms::Label^ statusMsg;

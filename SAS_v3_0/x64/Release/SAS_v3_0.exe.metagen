@@ -1,0 +1,81 @@
+  SASv30.SASLIBgui.resources - Embedded, ContainedInManifestFile, 
+ImageRuntimeVersion: v4.0.30319
+Assembly SAS_v3_0, Version=0.0.*, Culture=Invariant Language (Invariant Country): 
+	hash=SHA1, flags=PublicKey
+Assembly mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a: 
+	hash=None, flags=None
+Assembly System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Xml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Struct mainUI: AutoLayout, AnsiClass, Class, Public, SequentialLayout, Sealed, BeforeFieldInit
+  :System.ValueType
+Class SASv30.MyForm: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :System.Windows.Forms.Form
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    Int32 dummy : Public
+    Int32 nextIndex : Public
+    Int32 nextExercise : Public
+    Int32 nextRecP : Public
+    Int32 nextStimP : Public
+    Int32 UPDATE_PERIOD_MS IsConst : Public
+    RehaMove3_Req_Type Move3_gui : Public
+    User_Req_Type user_gui : Public
+    state_Type state : Public
+    Boolean bUser : Public
+    Boolean bMove3 : Public
+    Boolean bSetupPressed : Public
+    Boolean bSingle_mth : Public
+    Boolean trainStart : Public
+    Boolean stimA_active : Public
+    Boolean stimM_active : Public
+    Boolean gui_repeat : Public
+    Boolean gui_new : Public
+    Double isVelocity : Public
+    Double isDelta IsConst : Public
+    System.ComponentModel.BackgroundWorker backgroundWorker1 : Public
+    System.Windows.Forms.Label statusMsg : Public
+    System.Windows.Forms.Label statusLabel : Public
+    System.Windows.Forms.Label statusTitle : Public
+    System.Windows.Forms.Label stimTitle : Public
+    System.Windows.Forms.Label exerciseTitle : Public
+    System.Windows.Forms.Button thButton : Public
+    System.Windows.Forms.Label rampTitle : Public
+    System.Windows.Forms.Label rampValue : Public
+    System.Windows.Forms.Button rampPlus : Public
+    System.Windows.Forms.Button rampMinus : Public
+    System.Windows.Forms.Button curMinus : Public
+    System.Windows.Forms.Button curPlus : Public
+    System.Windows.Forms.Label curValue : Public
+    System.Windows.Forms.Label curTitle : Public
+    System.Windows.Forms.Button fqMinus : Public
+    System.Windows.Forms.Button fqPlus : Public
+    System.Windows.Forms.Label fqValue : Public
+    System.Windows.Forms.Label fqTitle : Public
+    System.Windows.Forms.Button stimButton : Public
+    System.Windows.Forms.Label nextTitle : Public
+    System.Windows.Forms.ComboBox methodBox : Public
+    System.Windows.Forms.Button velMinus : Public
+    System.Windows.Forms.Button velPlus : Public
+    System.Windows.Forms.Label velValue : Public
+    System.Windows.Forms.Label velTitle : Public
+    System.Windows.Forms.ComboBox exerciseBox : Public
+    System.Windows.Forms.Label nextExTitle : Public
+    System.Windows.Forms.Label velCurrent : Public
+    System.Windows.Forms.BindingSource bindingSource1 : Public
+    System.Windows.Forms.Label stimInfo : Public
+    System.Windows.Forms.Label additionalTitle : Public
+    System.Windows.Forms.Label addLabelFixed : Public
+    System.Windows.Forms.Button windowButton : Public
+    System.Windows.Forms.ComboBox recPBox : Public
+    System.Windows.Forms.Label recPortTitle : Public
+    System.Windows.Forms.ComboBox stimPBox : Public
+    System.Windows.Forms.Label stimPortTitle : Public
+    System.Windows.Forms.Label testText : Public
