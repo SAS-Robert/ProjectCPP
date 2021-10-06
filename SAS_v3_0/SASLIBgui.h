@@ -628,7 +628,7 @@ namespace SASv30 {
 			this->velCurrent->TabIndex = 47;
 			this->velCurrent->Text = L"isVelocity value";
 			this->velCurrent->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
-			this->velCurrent->Click += gcnew System::EventHandler(this, &MyForm::velCurrent_Click);
+			//this->velCurrent->Click += gcnew System::EventHandler(this, &MyForm::velCurrent_Click);
 			// 
 			// stimInfo
 			// 
@@ -881,9 +881,10 @@ namespace SASv30 {
 			emgList[2] = "Emg Channel 2";
 
 			// for isMoving testing
-			isVelocity = 10.0;
+			isVelocity = 100.0;
 			// Update display
 			std::stringstream tempValue;
+
 			tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mm/100ms";
 			string tempString = tempValue.str();
 			this->velValue->Text = gcnew String(tempString.c_str());
@@ -1280,8 +1281,6 @@ namespace SASv30 {
 
 private: System::Void testText_Click(System::Object^ sender, System::EventArgs^ e) {
 
-}
-private: System::Void velCurrent_Click(System::Object^ sender, System::EventArgs^ e) {
 }
 };
 }

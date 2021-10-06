@@ -15,7 +15,6 @@
 
 #include "Iir.h"
 #include "SASLIBbasic.hpp"
-#include<tuple>
 
 // ------------------ Gobal variables ------------------
 // Estas dos variables eran el main pero se movieron aqui
@@ -112,10 +111,9 @@ void startup_filters() {
     }
 }
 // EMG activity
-static double process_data_iir(unsigned long long int v_size, vector<double> raw_data)
+static double process_data_iir(unsigned long long int v_size, vector<double> raw_data, std::ofstream& stimFile, stimFileInfo placeholder)
 {
     double mean = 0, temp = 0, value = 0, raw_sample = 0.0;
-    double temp_b50;
     double flex_num = 0.0, flex_den = 0.0;
     unsigned long long int i = 0;
     unsigned long long int N_len = v_size - GL_processed;
@@ -126,10 +124,8 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
         // Filter data
         bPass_result.push_back(BPass.filter(raw_sample));
         b50_result.push_back(B50.filter(bPass_result[i]));
-
         // Savind data in files will be eventually deleted
         fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n";
-        temp_b50 = b50_result[i];
 
         // Calculating mean of retified EMG
         temp = b50_result[i];
@@ -150,6 +146,9 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
     //fileVALUES << mean << ", 0.0, " << GL_processed << "," << v_size << "," << N_len << "\n";
     // Saving data in files will be eventually deleted
     fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 3 << "\n";
+    
+    // The following should be removed after testing at RRD or should be implemented nicer - it is simply a bandaid that resolves a current issue of missing data-values to "isVelocity" during testing
+    stimFile << placeholder.current << ", " << placeholder.ramp << ", " << placeholder.fq << ", " << GL_exercise << ", " << placeholder.isVelocity << ", " << placeholder.legWeight << ", " << placeholder.screenLevel << ", " << GL_processed << "\n";
 
     // Update GL_processed data parameters
     GL_processed = i;
@@ -171,7 +170,6 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
 static double process_th_mean(unsigned long long int v_size, vector<double> raw_data)
 {
     double mean = 0, temp = 0, sd = 0, value = 0, raw_sample = 0.0;
-    double temp_b50;
     unsigned long long int i = 0;
     unsigned long long int N_len = v_size - GL_processed;
 
@@ -185,9 +183,7 @@ static double process_th_mean(unsigned long long int v_size, vector<double> raw_
 
         // Savind data in files will be eventually deleted
         fileFILTERS << raw_sample << "," << bPass_result[i] << "," << b50_result[i] << "\n"; 
-        temp_b50 = b50_result[i];
         // Calculating mean of retified EMG
-
         temp = b50_result[i];
         if (b50_result[i] < 0)
         {
@@ -332,6 +328,9 @@ static double process_th_mvc(unsigned long long int v_size, vector<double> raw_d
     // Savind data in files will be eventually deleted
     if (GL_processed <= 10) {
         fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << TH_DISCARD << "," << MEAN << "," << GL_exercise << "," << 2 << "\n"; 
+    }
+    else {
+        fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << MVC << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 2 << "\n";
     }
 
     // Update amount of GL_processed data

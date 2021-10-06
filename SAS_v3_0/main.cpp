@@ -95,7 +95,7 @@ bool start_train = false;
 // This value will be changed on the SAS interface run-time if needed >> default = CH1
 Smpt_Channel hmi_channel = Smpt_Channel_Black; 
 emgCh_Type emgCH = emgCh0;
-bool* recording;
+// State process variables
 bool stim_done = false,
 stim_userX = false, stim_auto_done = false, stim_pause = false;
 
@@ -133,8 +133,6 @@ std::vector<double> time3_v, time3_v2;
 std::chrono::duration<double> time3_diff, time4_diff;
 auto time3_start = std::chrono::steady_clock::now();
 auto time3_end = std::chrono::steady_clock::now();
-// RehaIngest send timing
-double tendEMG;
 
 // Files variables for names and handling
 char date[DATE_LENGTH];
@@ -144,10 +142,10 @@ char date[DATE_LENGTH];
 char folder[DATE_LENGTH] = "C:\\Users\\AAS\\Documents\\LSR\\Toni\\SAS_Data\\Trash\\";
 //char folder[DATE_LENGTH] = "C:\\Users\\Kasper Leerskov\\Downloads\\SASData\\";
 char Sname[DATE_LENGTH] = "subject";
-char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256], stim_s[256], time_EMG[256];
+char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256], stim_s[256];
 char time3_s[256];
 
-ofstream fileLOGS, stimFile, timeEFile;
+ofstream fileLOGS, stimFile;
 bool dummyMain = false, dummyMain2 = false;
 // ---------------------------- Functions declaration  -----------------------------
 bool GL_tcpActive = true;
@@ -290,11 +288,9 @@ void start_files()
     sprintf(th_s, "%s%s_th_%s.txt", folder, Sname, date);
     sprintf(logs_s, "%s%s_log_%s.txt", folder, Sname, date);
     sprintf(stim_s, "%s%s_stim_%s.txt", folder, Sname, date);
-    sprintf(time_EMG, "%s%s_timeEMG_%s.txt", folder, Sname, date);
 
     fileLOGS.open(logs_s);
     stimFile.open(stim_s);
-    timeEFile.open(time_EMG);
 }
 
 void end_files()
@@ -303,7 +299,6 @@ void end_files()
     fileVALUES.close();
     fileLOGS.close();
     stimFile.close();
-    timeEFile.close();
     // Safe here the time samples on a file
     time3_f.open(time3_s);
     if (time3_f.is_open() && time3_v.size() >= 2)
@@ -355,9 +350,6 @@ void sendEmgData_thread()
             else
             {
                 // Do nothing
-
-                //screenEMG.stream(fixed_value);
-                //screenEMG.stream(live_data);
             }
         }
     }
@@ -1367,7 +1359,6 @@ void recording_sas()
     bool st_wait_jump = false, devAvailable = false, received_data;
     //recording = &received_data;
     unsigned long long int N_len = 0;
-    unsigned long long int N_len2 = 0;
 
 
     // normal process
@@ -1385,8 +1376,6 @@ void recording_sas()
                 {
                     PORT_REC[3] = GL_UI.PORT_REC[3];            // this is maybe too redundant
                 }
-                // Select recording channel
-                
                 // normal start up
                 sprintf(msg_recording, "Starting recorder on port %s.", PORT_REC);
                 Sleep(250);
@@ -1433,7 +1422,7 @@ void recording_sas()
                 if (emgCH == emgCh1)
                 {
                     //int tr;
-                    live_data = process_data_iir(GL_sampleNr, recorder_emg1);
+                    live_data = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
                     //tr = process_th_proper_mean(GL_sampleNr);
                     //string msg = "Live data = " + to_string(GL_sampleNr) + "\n";
                     //OutputDebugString(msg.c_str()); // print
@@ -1441,7 +1430,7 @@ void recording_sas()
                 else if (emgCH == emgCh2)
                 {
                     //int tr;
-                    live_data = process_data_iir(GL_sampleNr, recorder_emg2);
+                    live_data = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
                     //tr = process_th_proper_mean(GL_sampleNr);
                     //string msg = "Live data = " + to_string(GL_sampleNr) + "\n";
                     //OutputDebugString(msg.c_str()); // print
@@ -1477,12 +1466,11 @@ void recording_sas()
             // Set threshold button has been pressed
             if (rec_status.req && main_thEN)
             {
-                tic();
-                if (recorder.data_received && recorder.data_start && (!fileFILTERS.is_open() || !fileVALUES.is_open() || !timeEFile.is_open()))
+                //tic();
+                if (recorder.data_received && recorder.data_start && (!fileFILTERS.is_open() || !fileVALUES.is_open()))
                 {
                     fileFILTERS.open(filter_s);
                     fileVALUES.open(th_s);
-                    timeEFile.open(time_EMG);
                 }
 
                 // EMG
@@ -1536,9 +1524,9 @@ void recording_sas()
                             THRESHOLD = MEAN;
                         }
 
-                        tendEMG = toc();
-                        timeEFile << tendEMG << "\n";
-                        sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f, time = %1.9f", GL_thMethod, THRESHOLD, tendEMG);
+                        //tendEMG = toc();
+                        //timeEFile << tendEMG << "\n";
+                        sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
                         rec_status.th = true;
                         rec_status.req = false;
                     }
@@ -1564,14 +1552,20 @@ void recording_sas()
                 //sprintf(msg_recording, "GL_sampleNr %d", GL_sampleNr);
                 if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
                 {
+                    placeholder.current = stimulator.stim[hmi_channel].points[0].current;
+                    placeholder.ramp = stimulator.stim[hmi_channel].ramp;
+                    placeholder.fq = stimulator.fq[hmi_channel];
+                    placeholder.isVelocity = robert.isVelocity;
+                    placeholder.legWeight = robert.legWeight;
+                    placeholder.screenLevel = screen.level;
                     if (emgCH == emgCh1)
                     {
-                        mean = process_data_iir(GL_sampleNr, recorder_emg1); // returned value sent to the main SCREEN for live streaming
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder); // returned value sent to the main SCREEN for live streaming
                         live_data = mean;
                     }
                     else if (emgCH == emgCh2)
                     {
-                        mean = process_data_iir(GL_sampleNr, recorder_emg2); // returned value sent to the main SCREEN for live streaming
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder); // returned value sent to the main SCREEN for live streaming
                         live_data = mean;
                     }
                 }
@@ -1650,24 +1644,30 @@ void recording_sas()
             
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
+                placeholder.current = stimulator.stim[hmi_channel].points[0].current;
+                placeholder.ramp = stimulator.stim[hmi_channel].ramp;
+                placeholder.fq = stimulator.fq[hmi_channel];
+                placeholder.isVelocity = robert.isVelocity;
+                placeholder.legWeight = robert.legWeight;
+                placeholder.screenLevel = screen.level;
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
                     live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
                     live_data = mean;
                 }
 
                 // Original for software 3.0:
                 // st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg; //  && start_train
                 // For GUI testing
-                st_wait_jump = !rec_status.start && robert.playPause;
+                //st_wait_jump = !rec_status.start && robert.playPause;
                 // Final version
-                // robert.isMoving = robert.isVelocity >= GL_UI.isVelocity_limit;
-                // st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg && robert.playPause;
+                robert.isMoving = robert.isVelocity >= GL_UI.isVelocity_limit;
+                st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg && robert.playPause;
 
                 if (mean >= THRESHOLD && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)
                 {
@@ -1700,14 +1700,20 @@ void recording_sas()
             
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
+                placeholder.current = stimulator.stim[hmi_channel].points[0].current;
+                placeholder.ramp = stimulator.stim[hmi_channel].ramp;
+                placeholder.fq = stimulator.fq[hmi_channel];
+                placeholder.isVelocity = robert.isVelocity;
+                placeholder.legWeight = robert.legWeight;
+                placeholder.screenLevel = screen.level;
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
                     live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
                     live_data = mean;
                 }
                 
@@ -1731,14 +1737,21 @@ void recording_sas()
             
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
+                placeholder.current = stimulator.stim[hmi_channel].points[0].current;
+                placeholder.ramp = stimulator.stim[hmi_channel].ramp;
+                placeholder.fq = stimulator.fq[hmi_channel];
+                placeholder.isVelocity = robert.isVelocity;
+                placeholder.legWeight = robert.legWeight;
+                placeholder.screenLevel = screen.level;
+
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
                     live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
                     live_data = mean;
                 }
                 
@@ -1764,14 +1777,20 @@ void recording_sas()
             
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
+                placeholder.current = stimulator.stim[hmi_channel].points[0].current;
+                placeholder.ramp = stimulator.stim[hmi_channel].ramp;
+                placeholder.fq = stimulator.fq[hmi_channel];
+                placeholder.isVelocity = robert.isVelocity;
+                placeholder.legWeight = robert.legWeight;
+                placeholder.screenLevel = screen.level;
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
                     live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
                     live_data = mean;
                 }
                 
@@ -1795,7 +1814,6 @@ void recording_sas()
     }
 
     // checking
-    //recAvailable = ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready));
     recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready));
     //sprintf(msg_recording, "recAva %d, status %d, received %d, start %d", recAvailable, (GL_state == st_init || GL_state == st_end), (received_data&& recorder.data_start), (!recorder.data_start&& recorder.ready));
 
