@@ -16,6 +16,7 @@
 #include <sstream>
 #include <string>
 #include <complex>
+#include <WS2tcpip.h>
 
 #ifndef UNICODE
 #define UNICODE
@@ -157,7 +158,7 @@ public:
 		//Initialise winsock
 		if (display)
 		{
-			printf("UPD Connection - starting...\n");
+			printf("UDPConnection - starting...\n");
 		}
 		if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 		{
@@ -216,6 +217,24 @@ public:
 
 		// Receive process has been taken out
 		error_lim = error_cnt >= 10;
+	};
+	void receive()
+	{
+		int bytesIn = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr*)&si_other, &slen);
+		if (bytesIn == SOCKET_ERROR)
+		{
+			cout << "Error receiving from server " << WSAGetLastError() << endl;
+		}
+
+		// Display message and client info
+		char clientIp[256]; // Create enough space to convert the address byte array
+		ZeroMemory(clientIp, 256); // to string of characters
+
+		// Convert from byte array to chars
+		inet_ntop(AF_INET, &si_other.sin_addr, clientIp, 256);
+
+		// Display the message / who sent it
+		cout << "Message recv from " << clientIp << " : " << buf << endl;
 	};
 	void end()
 	{
@@ -611,7 +630,7 @@ void runUDP_30()
 	touchPanel.display = true;
 
 	// run loop
-	while (!end_programme)
+	while (true)
 	{
 		// Get command from keyboard and send it to the SAS program
 		printf("Press a key! (From 1-9, X and I)\n");
@@ -619,10 +638,9 @@ void runUDP_30()
 		printf("\n");
 
 		index = (int)msgList.status;
-		//cout << "Selected : " << msgList.messages[index] << endl;
+		cout << "Selected : " << msgList.messages[index] << endl;
 		sprintf(touchPanel.message, "%s", msgList.messages[index].c_str());
 		touchPanel.get();
-
 	}
 
 	// end

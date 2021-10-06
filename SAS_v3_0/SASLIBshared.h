@@ -44,7 +44,7 @@ public:
 	string screenMessage;
 	bool hmi_repeat, hmi_new, playPause, set_MVC, th1, th2;
 	// Exercise parameters
-	bool main_thEN, recReq, stimActive, recReady, stimReady;
+	bool main_thEN, recReq, stimActive, recReady, stimReady, channelReady;
 	threshold_Type method, next_method;
 	// Stimulation parameters
 	float current, frequency;
@@ -52,6 +52,9 @@ public:
 
 	// For new automatic calibration
 	exercise_Type exercise, next_exercise;
+	
+	// Emg selector
+	emgCh_Type channel, next_channel;
 
 	// ------------ GUI -> SAS
 	RehaMove3_Req_Type Move3_hmi;
@@ -61,6 +64,7 @@ public:
 	// Global additional settings:
 	char PORT_STIM[5] = "COM7";
 	char PORT_REC[5] = "COM4";
+	char EMG_CH[4] = "CH0";
 
 	// for isMoving testing
 	double isVelocity;
@@ -84,9 +88,11 @@ public:
 		current = 0.0;
 		frequency = 30.0;
 		ramp = 3;
+		channel = emgCh0;
 
 		recReady = false;
 		stimReady = false;
+		channelReady = false;
 		// gui -> sas
 		Move3_hmi = Move3_none;
 		User_hmi = User_none;
@@ -103,4 +109,5 @@ mainUI GL_UI;
 // Other variables that for some reason could not be created in the GUI declaration
 string statusList[15];
 string methodList[6];
+string emgList[4];
 string exerciseList[30];

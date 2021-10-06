@@ -178,8 +178,9 @@ static void handleSendLiveDataReceived(Smpt_device *const device, const Smpt_ack
     //value[2] : channel 3, emg 2
     //value[3] : channel 4, analog signal.
     //value[4] : time_ofset between last sample and actual sample
+    
     recorder_emg1.push_back((double)values[1]);
-    // recorder_emg2.push_back((double)values[2]);
+    recorder_emg2.push_back((double)values[2]);
 }
 
 static bool handle_dl_packet_global(Smpt_device *const device)
@@ -308,9 +309,11 @@ private:
     char ID_dev[64], ID_MOVE[64] = "170150307";
 
 public:
-    bool ready, active, display;
+    bool ready, active, display, ch_ready;
     //Smpt_ml_channel_config stim;
     Smpt_ml_channel_config stim[4];
+    // Added for channel selector
+    Smpt_Channel channel;
     double fq[4];
     bool stim_act[4] = {true, false, false, false};
     // From main:
@@ -333,6 +336,8 @@ public:
         active = false;
         turn_on = 2500;
         display = false;
+        channel = Smpt_Channel_Black;
+        ch_ready = false;
     }
     // Functions
     void init(char* port, exercise_Type exercise)
@@ -341,16 +346,16 @@ public:
         // device port
         port_name_rm = port;
         // Stimulation values
-        stim_act[Smpt_Channel_Red] = false;
-        stim[Smpt_Channel_Red].number_of_points = 3; // Set the number of points
-        stim[Smpt_Channel_Red].ramp = 3;             // Three lower pre-pulses
-        stim[Smpt_Channel_Red].period = 20;          // Frequency: 50 Hz
+        stim_act[channel] = false;
+        stim[channel].number_of_points = 3; // Set the number of points
+        stim[channel].ramp = 3;             // Three lower pre-pulses
+        stim[channel].period = 20;          // Frequency: 50 Hz
         // Set the stimulation pulse
-        stim[Smpt_Channel_Red].points[0].current = 0;
-        stim[Smpt_Channel_Red].points[0].time = 300;
-        stim[Smpt_Channel_Red].points[1].time = 300;
-        stim[Smpt_Channel_Red].points[2].current = 0;
-        stim[Smpt_Channel_Red].points[2].time = 300;
+        stim[channel].points[0].current = 0;
+        stim[channel].points[0].time = 300;
+        stim[channel].points[1].time = 300;
+        stim[channel].points[2].current = 0;
+        stim[channel].points[2].time = 300;
 
         // Start Process
         smpt_check = smpt_check_serial_port(port_name_rm);
@@ -358,7 +363,7 @@ public:
 
         fill_ml_init(&device, &ml_init);
         smpt_send_ml_init(&device, &ml_init);
-        fill_ml_update(&device, &ml_update, Smpt_Channel_Red, stim_act[Smpt_Channel_Red], stim[Smpt_Channel_Red]); // <- comment out this one
+        fill_ml_update(&device, &ml_update, channel, stim_act[channel], stim[channel]); // <- comment out this one
         smpt_send_ml_update(&device, &ml_update);
         fill_ml_get_current_data(&device, &ml_get_current_data);
         // This last command check if it's received all the data requested
@@ -404,8 +409,8 @@ public:
                 fq[k] = INIT_FQ;
                 set_stimulation(exercise, stim[k], fq[k]);
             }
-            // Start the channel 1
-            stim_act[Smpt_Channel_Red] = true;
+            // Start the channel 
+            stim_act[channel] = true;
             ready = true;
             if(display) { sprintf(displayMsg, "Device RehaMove3 ready."); }
         }
@@ -433,7 +438,7 @@ public:
     };
     void update()
     {
-        fill_ml_update(&device, &ml_update, Smpt_Channel_Red, true, stim[Smpt_Channel_Red]);
+        fill_ml_update(&device, &ml_update, channel, true, stim[channel]);
         smpt_send_ml_update(&device, &ml_update);
 
         fill_ml_get_current_data(&device, &ml_get_current_data);
@@ -443,8 +448,8 @@ public:
 
     void update2(Smpt_Channel channel_nr)
     {
-        stim_act[channel_nr] = true;
-        fill_ml_update(&device, &ml_update, channel_nr, stim_act[channel_nr], stim[channel_nr]);
+        stim_act[channel] = true;
+        fill_ml_update(&device, &ml_update, channel, stim_act[channel], stim[channel]);
         smpt_send_ml_update(&device, &ml_update);
 
         fill_ml_get_current_data(&device, &ml_get_current_data);
@@ -455,8 +460,8 @@ public:
 
     void stopUpdate2(Smpt_Channel channel_nr)
     {
-        stim_act[channel_nr] = false;
-        fill_ml_update(&device, &ml_update, channel_nr, stim_act[channel_nr], stim[channel_nr]);
+        stim_act[channel] = false;
+        fill_ml_update(&device, &ml_update, channel, stim_act[channel], stim[channel]);
         smpt_send_ml_update(&device, &ml_update);
 
         fill_ml_get_current_data(&device, &ml_get_current_data);
@@ -609,6 +614,7 @@ public:
         if (smpt_next && !smpt_end && !abort) {
             if (display) { sprintf(displayMsg, "Device RehaIngest found."); }
             recorder_emg1.clear();
+            recorder_emg2.clear();
             found = true;
             error = false;
         }
@@ -835,6 +841,7 @@ public:
         if (smpt_next && !smpt_end && !abort) {
             if (display) { sprintf(displayMsg, "Device RehaIngest found."); }
             recorder_emg1.clear();
+            recorder_emg2.clear();
             found = true;
             error = false;
         }

@@ -35,10 +35,14 @@ end
 full_name = strrep(full_name,'_filter_','_th_'); % [th_dir(pos).folder '\' th_dir(pos).name]; %Just take the last one
 data = (load(full_name))';
 mean_v = data(1,:);
+%sd_v = data(2,:);
 sd_v = data(2,:);
-tinit = data(3,:);
-tend = data(4,:);
-toff = data(5,:);
+%tinit = data(3,:);
+%tend = data(4,:);
+%toff = data(5,:);
+tinit = data(2,:);
+tend = data(3,:);
+toff = data(4,:);
 
 % finding position where the threshold is set:
 th_pos_discard = 0; th_pos_start = 0;

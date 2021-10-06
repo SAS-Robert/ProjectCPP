@@ -59,4 +59,5 @@ Other documentation:
 ### Authors ###
 
 Carolina Gomez Salvatierra:             cgs@lifescience-robotics.com
+Antonio Aranzana Sánchez		aas@lifescience-robotics.com
 -----------------------------------------------

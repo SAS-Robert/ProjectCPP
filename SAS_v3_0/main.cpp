@@ -53,18 +53,22 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 
 // ------------------------- Devices handling --------------------------------
 bool stim_abort = false, stimAvailable = false, recAvailable = false;
+double fixed_value = 0;
 
-char PORT_STIM[5] = "COM3";   // Laptop
-//char PORT_STIM[5] = "COM6";     // Robot
+//char PORT_STIM[5] = "COM6";   // Laptop
+char PORT_STIM[5] = "COM6";     // Robot
 RehaMove3 stimulator;
 int countPort = 0;
 
-// char PORT_REC[5] = "COM4";    // Laptop
+//char PORT_REC[5] = "COM4";    // Laptop
 char PORT_REC[5] = "COM4";      // Robot
 RehaIngest recorder;
 int GL_iterator = 0;
 
 // Flag variables
+// Important ones:
+//  - stim_fl1: true if the stimulation is stopped
+//  - stim_fl2: true if the stimulation is on
 bool stim_fl0 = false, stim_fl1 = false, stim_fl2 = false, stim_fl3 = false, stim_fl4 = false;
 bool rec_fl0 = false, rec_fl1 = false, rec_fl2 = false, rec_fl3 = false, rec_fl4 = false, rec_fl5 = false;;
 bool main_fl0 = false, main_fl1 = false, main_init = false, main_1stSet = false, main_fl2 = false;;
@@ -79,14 +83,18 @@ UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
 
 char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address
 char SCREEN_PORT[15] = "30002";
+char SCREEN_EMG_PORT[15] = "30005";
 // TcpServer screen(SCREEN_PORT); // Using TCP-IP protocol
-UdpServer screen(SCREEN_ADDRESS, SCREEN_PORT); // Using UDP-IP protocol
+UdpServer screen(SCREEN_ADDRESS, SCREEN_PORT); // Using UDP-IP protocol 
+UdpServer screenEMG(SCREEN_ADDRESS, SCREEN_EMG_PORT); // Using UPD-IP protocol for sending EMG permanently when recording
 tcp_msg_Type screen_status;
 
 bool start_train = false;
 
 // ------------------------- Stimulator calibration  ------------------------
-Smpt_Channel hmi_channel = Smpt_Channel_Red;
+// This value will be changed on the SAS interface run-time if needed >> default = CH1
+Smpt_Channel hmi_channel = Smpt_Channel_Black; 
+emgCh_Type emgCH = emgCh0;
 // State process variables
 bool stim_done = false,
 stim_userX = false, stim_auto_done = false, stim_pause = false;
@@ -99,6 +107,19 @@ auto stimA_end = std::chrono::steady_clock::now();
 bool stimA_start_b = false, stimA_end_b = false;
 bool stimA_active = false, stimM_active = false;
 bool stim_timing = false, stim_timeout = false;
+
+// Assist as need flags and timing - AAN feature 
+int time2trigger = 10; // seconds to trigger for starting FES
+int time2complete = 5; // seconds to complete exercise with FES
+std::chrono::duration<double> time2trigger_diff;
+std::chrono::duration<double> time2complete_diff;
+auto time2trigger_start = std::chrono::steady_clock::now();
+auto time2trigger_end = std::chrono::steady_clock::now();
+auto time2complete_start = std::chrono::steady_clock::now();
+auto time2complete_end = std::chrono::steady_clock::now();
+bool mech_as_needed = false; // AAN prerequisites: Active return + assist in completion + SASFlag = true
+bool velocity_trigg = false; // AAN prerequisites: Velocity needs to be lower than 7.5mm/s in e.g. 2s
+bool trigger_timeout = false, complete_timeout = false; // Flags for timing handling of AAN
 
 // ------------------------------ Timing -------------------
 // Dummies - Measuring time:
@@ -116,8 +137,9 @@ auto time3_end = std::chrono::steady_clock::now();
 // Files variables for names and handling
 char date[DATE_LENGTH];
 // Location on the SAS computer
-//char folder[DATE_LENGTH] = "C:\\Users\\User\\Documents\\SASData\\";
-char folder[DATE_LENGTH] = "C:\\SAS Interface\\SASData\\";
+//char folder[DATE_LENGTH] = "C:\\Users\\User\\Documents\\SASData\\"; // Old version
+//char folder[DATE_LENGTH] = "C:\\SAS Interface\\SASData\\";
+char folder[DATE_LENGTH] = "C:\\Users\\AAS\\Documents\\LSR\\Toni\\SAS_Data\\Trash\\";
 //char folder[DATE_LENGTH] = "C:\\Users\\Kasper Leerskov\\Downloads\\SASData\\";
 char Sname[DATE_LENGTH] = "subject";
 char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256], stim_s[256];
@@ -132,8 +154,10 @@ bool GL_tcpActive = true;
 char msg_modify[512], msg_stimulating[512], msg_recording[512], msg_main_char[512];
 
 // Interface functions
-string msg_connect = "", msg_main = "", msg_extGui = "", msg_gui = "";
+string msg_connect = "", msg_main = "", msg_extGui = "", msg_gui = "", msg_connect_2 = "";
+double live_data, live_previous = -11;
 bool connect_thread_ready = false, run_extGui_ready = false;
+void sendEmgData_thread();
 void robot_thread();
 void screen_thread();
 void update_localGui();
@@ -145,18 +169,18 @@ static void recording_sas();
 void start_files();
 void end_files();
 
-// ------------------------------ Main  -----------------------------
 void mainSAS_thread();
 
 [STAThread]
 //void Main(array<String^>^ args)
 
-void Main()
+int Main()
 {
     // Start threads 
     std::thread stateMachine(mainSAS_thread);
     std::thread robot(robot_thread);
     std::thread extGUI(screen_thread);
+    std::thread sendtoScreen(sendEmgData_thread);
 
     // Run local GUI
     Application::EnableVisualStyles();
@@ -170,8 +194,11 @@ void Main()
     GL_UI.END_GUI = true;
     // Wait for the other threads to join
     robot.join();
+    sendtoScreen.join();
     stateMachine.join();
     //extGUI.join();
+
+    return 0;
 }
 
 // ---------------------------- Interface function definitions --------------------------
@@ -179,18 +206,18 @@ void update_localGui() {
     // ------------- sas -> gui -------------
     // status
     GL_UI.status = GL_state;
-    GL_UI.screenMessage = "INFO: ";
-    GL_UI.screenMessage += msg_main;
+    //GL_UI.screenMessage = "INFO: ";
+    //GL_UI.screenMessage += msg_main;
     // --- This is only for debugging ---
     //GL_UI.screenMessage += "\nRobot-IP status: ";
     //GL_UI.screenMessage += msg_connect;
     //GL_UI.screenMessage += "\nScreen-IP status: ";
     //GL_UI.screenMessage += msg_extGui;
-    //GL_UI.screenMessage = "";
-    //GL_UI.screenMessage += "RehaMove3: ";
-    //GL_UI.screenMessage += msg_stimulating;
-    //GL_UI.screenMessage += "\nRehaIngest: ";
-    //GL_UI.screenMessage += msg_recording;
+    GL_UI.screenMessage = "";
+    GL_UI.screenMessage += "RehaMove3: ";
+    GL_UI.screenMessage += msg_stimulating;
+    GL_UI.screenMessage += "\nRehaIngest: ";
+    GL_UI.screenMessage += msg_recording;
     GL_UI.END_GUI = MAIN_to_all.end;
 
     // Exercise settings
@@ -199,11 +226,15 @@ void update_localGui() {
     GL_UI.method = GL_thMethod;
     GL_UI.exercise = GL_exercise;
 
+    // Emg channel
+    GL_UI.channel = emgCH;
+    GL_UI.channelReady = stimulator.ch_ready;
+
     // stimulation parameters
     GL_UI.stimActive = stimulator.active;
-    GL_UI.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
-    GL_UI.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
-    GL_UI.frequency = stimulator.fq[Smpt_Channel_Red];
+    GL_UI.current = stimulator.stim[hmi_channel].points[0].current;
+    GL_UI.ramp = stimulator.stim[hmi_channel].ramp;
+    GL_UI.frequency = stimulator.fq[hmi_channel];
     GL_UI.playPause = robert.playPause;
 
     // Threshold variables
@@ -240,6 +271,93 @@ void update_localGui() {
     GL_UI.isVelocity = robert.isVelocity;
 }
 
+/* ---------------------------- File function definitions --------------------------
+- fileFILTERS: values regarding the EMG recorded
+- fileVALUES: values of the method used, the mean, Threshold, v_size, N_len and exercise
+- fileLOGS: events happening 
+- stimFILE: values of the stimulation applied
+- time3_f: time samples 
+*/
+void start_files()
+{
+    // initialize files names
+    generate_date(date); //get current date/time in format YYMMDD_hhmm
+
+    sprintf(filter_s, "%s%s_filter_%s.txt", folder, Sname, date);
+    sprintf(time3_s, "%s%s_time_%s.txt", folder, Sname, date);
+    sprintf(th_s, "%s%s_th_%s.txt", folder, Sname, date);
+    sprintf(logs_s, "%s%s_log_%s.txt", folder, Sname, date);
+    sprintf(stim_s, "%s%s_stim_%s.txt", folder, Sname, date);
+
+    fileLOGS.open(logs_s);
+    stimFile.open(stim_s);
+}
+
+void end_files()
+{
+    fileFILTERS.close();
+    fileVALUES.close();
+    fileLOGS.close();
+    stimFile.close();
+    // Safe here the time samples on a file
+    time3_f.open(time3_s);
+    if (time3_f.is_open() && time3_v.size() >= 2)
+    {
+        for (int k = 0; k < time3_v.size(); k++)
+        {
+            time3_f << time3_v[k] << ", " << time3_v2[k] << ";" << endl;
+        }
+        // printf("Main: time measurement t3 saved in file.\n");
+    }
+    else
+    {
+        printf("Main: Data t3 could not be saved.\n");
+    }
+    time3_f.close();
+
+    time3_v.clear();
+    time3_v2.clear();
+}
+
+/* ---------------------------- Threads function definitions --------------------------
+The are several threads running in parallel for handling the data communication in between
+SAS - control software of the robot - the screen. There is a UDP protocol listening for the input
+into SAS from the control software and another one listening from the screen. There is another UDP
+for live-stream sending EMG data to the screen. 
+*/
+// Thread for the UDP communication for sending - screen is the UdpServer
+void sendEmgData_thread()
+{
+    screenEMG.display = true;
+    do
+    {
+        screenEMG.start();
+    } while (screenEMG.error && !MAIN_to_all.end);
+    screenEMG.display = true;
+
+    screenEMG.check();
+
+    // main loop of the sending thread
+    while (!MAIN_to_all.end && (GL_state != st_end))
+    {
+        if (GL_state != st_stop && GL_state != st_repeat)
+        {
+            if (live_data != live_previous)
+            {
+                screenEMG.stream(live_data);
+                live_previous = live_data;
+            }
+            else
+            {
+                // Do nothing
+            }
+        }
+    }
+
+    screenEMG.end();
+}
+
+// Thread for the UDP communication - robert is the UdpSever
 void robot_thread()
 {
     // start up
@@ -287,12 +405,13 @@ void robot_thread()
     robert.end();
 } // thread
 
+// Thread for the UDP communication for receiving - screen is the UdpClient
 void screen_thread()
 {
     // to send: stimulation parameters + exercise settings + current status -> guiMsg
-    char stimMsg[BUFLEN], setMsg[BUFLEN], disMsg[BUFLEN], guiMsg[BUFLEN];
+    // char stimMsg[BUFLEN], setMsg[BUFLEN], disMsg[BUFLEN], guiMsg[BUFLEN];
+    // char itoaNr[32];
     bool decode_successful;
-    char itoaNr[32];
     char longMsg[BUFLEN];
     // Start
     screen.display = true;
@@ -356,50 +475,9 @@ void screen_thread()
     screen.end();
 }
 
-// ---------------------------- File function definitions --------------------------
-void start_files()
-{
-    // initialize files names
-    generate_date(date); //get current date/time in format YYMMDD_hhmm
-
-    sprintf(filter_s, "%s%s_filter_%s.txt", folder, Sname, date);
-    sprintf(time3_s, "%s%s_time_%s.txt", folder, Sname, date);
-    sprintf(th_s, "%s%s_th_%s.txt", folder, Sname, date);
-    sprintf(logs_s, "%s%s_log_%s.txt", folder, Sname, date);
-    sprintf(stim_s, "%s%s_stim_%s.txt", folder, Sname, date);
-
-    fileLOGS.open(logs_s);
-    stimFile.open(stim_s);
-}
-
-void end_files()
-{
-    fileFILTERS.close();
-    fileVALUES.close();
-    fileLOGS.close();
-    stimFile.close();
-    // Safe here the time samples on a file
-    time3_f.open(time3_s);
-    if (time3_f.is_open() && time3_v.size() >= 2)
-    {
-        for (int k = 0; k < time3_v.size(); k++)
-        {
-            time3_f << time3_v[k] << ", " << time3_v2[k] << ";" << endl;
-        }
-        // printf("Main: time measurement t3 saved in file.\n");
-    }
-    else
-    {
-        printf("Main: Data t3 could not be saved.\n");
-    }
-    time3_f.close();
-
-    time3_v.clear();
-    time3_v2.clear();
-}
-
-// ---------------------------- MAIN ALGORITHM  --------------------------
-
+/* ---------------------------- MAIN ALGORITHM  --------------------------
+This thread handles the main algorithm of SAS. Here a state machine loop is used.
+*/
 void mainSAS_thread()
 {
     // ------------- Start up -------------
@@ -569,9 +647,10 @@ void mainSAS_thread()
             {
                 msg_main = "Waiting for trigger.";
             }
-            if (msg_main == "Waiting for trigger." && !robert.playPause)
+            else if (!robert.playPause)
             {
                 msg_main = "Press patient button to allow stimulation.";
+                time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
             }
 
             if (screen_status == exDone || screen_status == msgEnd || rec_status.error)
@@ -585,12 +664,30 @@ void mainSAS_thread()
             }
             else if (rec_status.start && robert.playPause)
             {
-                // normal trigger
+                // normal trigger in any case (normal SAS or AAN)
                 GL_state = st_running;
                 msg_main = "Stimulation triggered";
-
                 fileLOGS << "1.0, " << GL_processed << "\n";
-
+                time2complete_start = std::chrono::steady_clock::now();
+                complete_timeout = false;
+            }
+            else if (mech_as_needed && !rec_status.start && robert.playPause)
+            {
+                // analyse the timing for the AAN timeout
+                time2trigger_end = std::chrono::steady_clock::now();
+                time2trigger_diff = time2trigger_end - time2trigger_start;
+                if (time2trigger_diff.count() >= time2trigger)
+                {
+                    //OutputDebugString(std::to_string(time2trigger_diff.count()).c_str());
+                    // AAN not triggered in time
+                    GL_state = st_running;
+                    msg_main = "Stimulation not triggered. Timeout.";
+                    fileLOGS << "5.0, " << GL_processed << "\n";
+                    // Inmediately after, FES need to be activated - flag updated
+                    trigger_timeout = true;
+                    time2complete_start = std::chrono::steady_clock::now();
+                }
+                complete_timeout = false;
             }
             // The end point has been reached before the stimulation has been triggered
             else if (screen_status == repEnd)
@@ -640,11 +737,27 @@ void mainSAS_thread()
 
                 fileLOGS << "3.0, " << GL_processed << "\n";
             }
+            // Completion timeout for AAN
+            else if (mech_as_needed && stimulator.active && (!robert.Reached && robert.valid_msg))
+            {
+                // analyse the timing for the AAN timeout
+                time2complete_end = std::chrono::steady_clock::now();
+                time2complete_diff = time2complete_end - time2complete_start;
+                if ((double)time2complete_diff.count() >= time2complete)
+                {
+                    complete_timeout = true;
+                    // Mechanical assistance needed for completion
+                    msg_main = "Mechanical assistance activated. Waiting to complete exercise.";
+                }
+            }
             break;
 
         case st_stop:
             // Display message
             msg_main = "Reached end-point. Waiting for robot to return to the start.";
+            complete_timeout = false;
+            trigger_timeout = false;
+            //velocity_trigg = false;
 
             devicesReady = stim_status.ready && (rec_status.ready || rec_status.error);
             robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
@@ -673,6 +786,9 @@ void mainSAS_thread()
         case st_repeat:
             main_1stSet = false;
             main_init = false;
+            complete_timeout = false;
+            trigger_timeout = false;
+            //velocity_trigg = false;
             devicesReady = rec_status.ready && stim_status.ready && !stim_status.error && !rec_status.error;
             robotReady = robert.valid_msg; // && !robert.Reached 
 
@@ -890,7 +1006,7 @@ void stimulating_sas()
     // set error flag
     if (!devAvailable && !stim_status.error)
     {
-        sprintf(msg_stimulating, "Device2 connection lost");
+        sprintf(msg_stimulating, "Device connection lost");
         stim_status.error = true;
     }
 
@@ -901,7 +1017,28 @@ void stimulating_sas()
         {
         case st_init:
             // initialization
-            if (!stimulator.ready)
+            // Select Stimulation Channel = Recording Channel
+            if (!stimulator.ch_ready)
+            {
+                emgCH = GL_UI.next_channel;
+            }
+            if (emgCH == emgCh1)
+            {
+                hmi_channel = Smpt_Channel_Black;
+                stimulator.channel = hmi_channel;
+                stimulator.ch_ready = true;
+            }
+            else if (emgCH == emgCh2)
+            {
+                hmi_channel = Smpt_Channel_White;
+                stimulator.channel = hmi_channel;
+                stimulator.ch_ready = true;
+            }
+            else if (emgCH == emgCh0) // Channel not selected yet
+            {
+                stimulator.ch_ready = false;
+            }
+            if (!stimulator.ready && stimulator.ch_ready)
             {
                 // Select port from the GUI
                 if (GL_UI.PORT_STIM[3] >= '1' && GL_UI.PORT_STIM[3] <= '9')
@@ -917,10 +1054,10 @@ void stimulating_sas()
                 //sprintf(msg_stimulating, "%s", stimulator.displayMsg);
                 stim_fl1 = false;
             }
-            else
+            else if(stimulator.ready && stimulator.ch_ready)
             {
-                stimulator.fq[Smpt_Channel_Red] = INIT_FQ;
-                set_stimulation(GL_exercise, stimulator.stim[Smpt_Channel_Red], INIT_FQ);
+                stimulator.fq[hmi_channel] = INIT_FQ;
+                set_stimulation(GL_exercise, stimulator.stim[hmi_channel], INIT_FQ);
                 sprintf(msg_stimulating, "Stimulator ready");
             }
             stim_status.ready = stimulator.ready;
@@ -933,8 +1070,8 @@ void stimulating_sas()
                 sprintf(msg_stimulating, " ");
                 stim_fl2 = true;
                 // load initial values
-                stimulator.fq[Smpt_Channel_Red] = INIT_FQ;
-                set_stimulation(GL_exercise, stimulator.stim[Smpt_Channel_Red], INIT_FQ);
+                stimulator.fq[hmi_channel] = INIT_FQ;
+                set_stimulation(GL_exercise, stimulator.stim[hmi_channel], INIT_FQ);
             }
             Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start);
             //Update stimulation parameters if a key associated with parameters has been pressed
@@ -972,11 +1109,11 @@ void stimulating_sas()
             {
                 if (Move3_hmi == Move3_start || Move3_key == Move3_start)
                 {
-                    stimulator.stim_act[Smpt_Channel_Red] = true;
+                    stimulator.stim_act[hmi_channel] = true;
                 }
                 sprintf(msg_stimulating, "Stimulation active");
 
-                stimulator.update();
+                stimulator.update2(hmi_channel);
             }
             break;
 
@@ -991,12 +1128,13 @@ void stimulating_sas()
             stim_fl4 = false;
             stim_status.ready = true;
             stim_done = false;
+            trigger_timeout = false;
             // modify parameters if a button is pressed
             Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start) && (Move3_key != Move3_en_ch);
 
             if (Move3_user_key)
             {
-                modify_stimulation(Move3_key, Smpt_Channel_Red);
+                modify_stimulation(Move3_key, hmi_channel);
             }
             break;
 
@@ -1006,7 +1144,7 @@ void stimulating_sas()
 
             if (Move3_user_key)
             {
-                modify_stimulation(Move3_key, Smpt_Channel_Red);
+                modify_stimulation(Move3_key, hmi_channel);
                 Move3_hmi = Move3_none;
                 Move3_key = Move3_none;
             }
@@ -1042,19 +1180,52 @@ void stimulating_sas()
             // Stimulate
             if (robert.playPause && !stim_timeout && !stim_fl1)
             {
-                sprintf(msg_stimulating, "Stimulation active");
-                stimulator.update();
+                // AAN
+                if (mech_as_needed)
+                {
+                    if (trigger_timeout)
+                    {
+                        // Activates stim right away
+                        sprintf(msg_stimulating, "Stimulation active due to timeout without trigger");
+                        stimulator.update2(hmi_channel);   
+                    }
+                    else if(!trigger_timeout)
+                    {
+                        // Waiting for velocity trigger - FES only if needed
+                        if (velocity_trigg)
+                        {
+                            sprintf(msg_stimulating, "Velocity timeout reached");
+                            stimulator.update2(hmi_channel);
+                        }
+                        else if (!velocity_trigg)
+                        {
+                            // Do nothing and wait for end or timeout
+                            sprintf(msg_stimulating, "Velocity timeout not reached yet");
+
+                            // The exercise can be completed without assistance at this point
+                            // stim or mechanical assistance not activated yet
+                        }
+                    }
+                }
+                // Normal SAS
+                else
+                {
+                    sprintf(msg_stimulating, "Stimulation active due to trigger");
+                    stimulator.update2(hmi_channel);
+                }
             }
 
             // Maybe re-take the stimulation if the play is pressed again?
             if (robert.playPause && stim_fl1 && stim_pause && Move3_key == Move3_start)
             {
+                trigger_timeout = false;
                 stim_pause = false;
                 stim_fl1 = false;
                 sprintf(msg_stimulating, "Stimulation re-enabled");
             }
             else if (robert.playPause && stim_fl1 && !stim_pause && Move3_key == Move3_start)
             {
+                trigger_timeout = false;
                 stim_fl1 = false;
                 sprintf(msg_stimulating, "Stimulation resumed");
             }
@@ -1070,8 +1241,9 @@ void stimulating_sas()
             // Recording stimulation
             if (stimulator.active)
             {
-               // stimFile << (float)stimulator.stim[Smpt_Channel_Red].points[0].current << ", " << (int)stimulator.stim[Smpt_Channel_Red].ramp << ", " << (float)stimulator.fq[Smpt_Channel_Red] << ", ";
-               // stimFile << GL_exercise << ", " << robert.isVelocity << ", " << robert.legWeight << ", " << screen.level << ", " << GL_processed << "\n";
+                // stimFile 
+                // stimFile << (float)stimulator.stim[hmi_channel].points[0].current << ", " << (int)stimulator.stim[hmi_channel].ramp << ", " << (float)stimulator.fq[hmi_channel] << ", ";
+                // stimFile << GL_exercise << ", " << robert.isVelocity << ", " << robert.legWeight << ", " << screen.level << ", " << GL_processed << "\n";
             }
             break;
 
@@ -1089,6 +1261,7 @@ void stimulating_sas()
                 stim_fl2 = false;
                 stim_fl3 = false;
                 stim_status.ready = true;
+                trigger_timeout = false;
             }
 
             break;
@@ -1102,11 +1275,12 @@ void stimulating_sas()
             stim_done = false;
             start_train = false;
             stim_abort = false;
+            trigger_timeout = false;
             stim_status.ready = (screen_status != exDone);
 
             if (screen_status == exDone) {
-                stimulator.fq[Smpt_Channel_Red] = INIT_FQ;
-                set_stimulation(GL_exercise, stimulator.stim[Smpt_Channel_Red], INIT_FQ);
+                stimulator.fq[hmi_channel] = INIT_FQ;
+                set_stimulation(GL_exercise, stimulator.stim[hmi_channel], INIT_FQ);
                 stim_status.ready = true;
             }
 
@@ -1172,15 +1346,17 @@ void stimulating_sas()
 
     // For the GUI
     stimAvailable = stimulator.ready || (GL_state != st_init && devAvailable);
+    //stimulator.ch_ready = stimulator.ready;
 
 }
 //================================================
 
 void recording_sas()
 {
-    double mean = 0, temp_value = 0, mvc = 0;
+    double mean = 0, mean2 = 0, temp_value = 0, mvc = 0, mvc2 = 0;
     double static value = 0, value_cnt = 0;
     bool st_wait_jump = false, devAvailable = false, received_data;
+    //recording = &received_data;
     unsigned long long int N_len = 0;
 
 
@@ -1191,6 +1367,7 @@ void recording_sas()
         {
 
         case st_init:
+
             if (!recorder.ready)
             {
                 // Select port from the GUI
@@ -1200,16 +1377,16 @@ void recording_sas()
                 }
                 // normal start up
                 sprintf(msg_recording, "Starting recorder on port %s.", PORT_REC);
-                Sleep(2500);
+                Sleep(250);
                 recorder.display = true;
-                recorder.init(PORT_REC);
+                recorder.init_hasomed(PORT_REC);
                 if (recorder.found) { recorder.start(); }
 
                 // This is just in case the user needs to move the stuff around
-                if (!recorder.ready) {
-                    Sleep(2500);
-                }
-                else
+                //if (!recorder.ready) {
+                    //Sleep(2500);
+                //}
+                if (recorder.ready)
                 {
                     sprintf(msg_recording, "Recorder ready");
                 }
@@ -1223,33 +1400,102 @@ void recording_sas()
             break;
 
         case st_calM:
-            // Discard data
             received_data = recorder.record();
-            recorder_emg1.clear();
-            MEAN = 0;
-            MVC = 0;
-            THRESHOLD = 0;
-            rec_fl4 = false;
-            rec_fl5 = false;
+            if (emgCH == emgCh1)
+            {
+                GL_sampleNr = recorder_emg1.size();
+                //string msg = "From EMG1, GL_sampleNr = " + to_string(GL_sampleNr) + "\n";
+                //OutputDebugString(msg.c_str()); // print
+            }
+            else if (emgCH == emgCh2)
+            {
+                GL_sampleNr = recorder_emg2.size();
+                //string msg = "From EMG2, GL_sampleNr = " + to_string(GL_sampleNr) + "\n";
+                //OutputDebugString(msg.c_str()); // print
+            }
+
+            N_len = GL_sampleNr - GL_processed;
+            if (N_len >= SAMPLE_LIM)
+            {
+                // Get mean
+                if (emgCH == emgCh1)
+                {
+                    //int tr;
+                    live_data = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
+                    //tr = process_th_proper_mean(GL_sampleNr);
+                    //string msg = "Live data = " + to_string(GL_sampleNr) + "\n";
+                    //OutputDebugString(msg.c_str()); // print
+                }
+                else if (emgCH == emgCh2)
+                {
+                    //int tr;
+                    live_data = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
+                    //tr = process_th_proper_mean(GL_sampleNr);
+                    //string msg = "Live data = " + to_string(GL_sampleNr) + "\n";
+                    //OutputDebugString(msg.c_str()); // print
+                }
+            }
+
+            // This data discarding need to be done somewhere else so that in calM state it can be actually 
+            // calibrated by playing around with the graph in the SCREEN interface - Following lines out-commented
+            // Discard data - Old
+            //recorder_emg1.clear();
+            //recorder_emg2.clear();
+            //MEAN = 0;
+            //MVC = 0;
+            //THRESHOLD = 0;
+            //rec_fl4 = false;
+            //rec_fl5 = false;
             break;
 
         case st_th:
             received_data = recorder.record();
+            if (!main_thEN)
+            {
+                // ---- Comes from recording SAS - st_calM
+                recorder_emg1.clear();
+                recorder_emg2.clear();
+                MEAN = 0;
+                MVC = 0;
+                THRESHOLD = 0;
+                rec_fl4 = false;
+                rec_fl5 = false;
+                // ----
+            }
             // Set threshold button has been pressed
             if (rec_status.req && main_thEN)
             {
-                if (recorder.data_received && recorder.data_start && !fileFILTERS.is_open())
+                //tic();
+                if (recorder.data_received && recorder.data_start && (!fileFILTERS.is_open() || !fileVALUES.is_open()))
                 {
                     fileFILTERS.open(filter_s);
                     fileVALUES.open(th_s);
                 }
 
-                GL_sampleNr = recorder_emg1.size();
+                // EMG
+                if (emgCH == emgCh1)
+                {
+                    GL_sampleNr = recorder_emg1.size();
+                }
+                else if (emgCH == emgCh2)
+                {
+                    GL_sampleNr = recorder_emg2.size();
+                }
+                
                 N_len = GL_sampleNr - GL_processed;
                 if (N_len >= SAMPLE_LIM)
                 {
                     // Get mean
-                    temp_value = process_th_mean(GL_sampleNr, recorder_emg1);
+                    if (emgCH == emgCh1)
+                    {
+                        temp_value = process_th_mean(GL_sampleNr, recorder_emg1);
+                        live_data = temp_value;
+                    }
+                    else if (emgCH == emgCh2)
+                    {
+                        temp_value = process_th_mean(GL_sampleNr, recorder_emg2);
+                        live_data = temp_value;
+                    }
 
                     if (GL_sampleNr >= TH_DISCARD && !rec_status.th)
                     {
@@ -1265,41 +1511,62 @@ void recording_sas()
                         {
                         case th_SD05:
                             proper_mean = process_th_proper_mean(GL_sampleNr);
+                            live_data = proper_mean;
                             THRESHOLD = process_th_sd(GL_sampleNr, proper_mean, 3);
                             break;
                         case th_SD03:
                             proper_mean = process_th_proper_mean(GL_sampleNr);
+                            live_data = proper_mean;
                             THRESHOLD = process_th_sd(GL_sampleNr, proper_mean, 2);
                             break;
                         default:
                             THRESHOLD = MEAN;
                         }
 
+                        //tendEMG = toc();
+                        //timeEFile << tendEMG << "\n";
                         sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
                         rec_status.th = true;
                         rec_status.req = false;
                     }
                 }
+
             }
             else if (rec_status.th == false && (GL_thMethod != th_MVC05 || GL_thMethod != th_MVC10))
             {
                 // Discard data until button is pressed
                 recorder_emg1.clear();
+                recorder_emg2.clear();
             }
             else if (rec_status.th == true && (GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && !GL_UI.set_MVC)
             {
-                GL_sampleNr = recorder_emg1.size();
+                if (emgCH == emgCh1)
+                {
+                    GL_sampleNr = recorder_emg1.size();
+                }
+                else if (emgCH == emgCh2)
+                {
+                    GL_sampleNr = recorder_emg2.size();
+                }
                 //sprintf(msg_recording, "GL_sampleNr %d", GL_sampleNr);
                 if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
                 {
-                    placeholder.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
-                    placeholder.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
-                    placeholder.fq = stimulator.fq[Smpt_Channel_Red];
+                    placeholder.current = stimulator.stim[hmi_channel].points[0].current;
+                    placeholder.ramp = stimulator.stim[hmi_channel].ramp;
+                    placeholder.fq = stimulator.fq[hmi_channel];
                     placeholder.isVelocity = robert.isVelocity;
                     placeholder.legWeight = robert.legWeight;
                     placeholder.screenLevel = screen.level;
-
-                    process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
+                    if (emgCH == emgCh1)
+                    {
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder); // returned value sent to the main SCREEN for live streaming
+                        live_data = mean;
+                    }
+                    else if (emgCH == emgCh2)
+                    {
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder); // returned value sent to the main SCREEN for live streaming
+                        live_data = mean;
+                    }
                 }
             }
             break;
@@ -1314,14 +1581,28 @@ void recording_sas()
                 GL_iterator = 0;
             }
 
-            GL_sampleNr = recorder_emg1.size();
+            if (emgCH == emgCh1)
+            {
+                GL_sampleNr = recorder_emg1.size();
+            }
+            else if (emgCH == emgCh2)
+            {
+                GL_sampleNr = recorder_emg2.size();
+            }
             //sprintf(msg_recording, "GL_sampleNr %d", GL_sampleNr);
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
                 GL_iterator++;
                 unsigned long long int sampleCounter = GL_processed;
                 //sprintf(msg_recording, "MCV GL_iterator %d, samples needed = %d, Current processed samples =  %d, GL_sampleNr = %d", GL_iterator, GL_processed_MVC, sampleCounter, GL_sampleNr);
-                mvc = process_th_mvc(GL_sampleNr, recorder_emg1);
+                if (emgCH == emgCh1)
+                {
+                    mvc = process_th_mvc(GL_sampleNr, recorder_emg1);
+                }
+                else if (emgCH == emgCh2)
+                {
+                    mvc = process_th_mvc(GL_sampleNr, recorder_emg2);
+                }
                 //std::cout << "Processed, now pointer on " << GL_processed << endl;
 
                 if (GL_processed >= GL_processed_MVC)
@@ -1340,6 +1621,7 @@ void recording_sas()
                     }
 
                     sprintf(msg_recording, "EMG activity: threshold =  %3.6f", THRESHOLD);
+                    
                     //sprintf(msg_recording, "MEAN = %3.6f, THRESHOLD = %3.6f", MEAN, THRESHOLD);
                     rec_status.th2 = true;
                     rec_status.req = false;
@@ -1350,30 +1632,45 @@ void recording_sas()
 
         case st_wait:
             received_data = recorder.record();
-            GL_sampleNr = recorder_emg1.size();
+            if (emgCH == emgCh1)
+            {
+                GL_sampleNr = recorder_emg1.size();
+            }
+            else if (emgCH == emgCh2)
+            {
+                GL_sampleNr = recorder_emg2.size();
+            }
+            
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
-                placeholder.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
-                placeholder.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
-                placeholder.fq = stimulator.fq[Smpt_Channel_Red];
+                placeholder.current = stimulator.stim[hmi_channel].points[0].current;
+                placeholder.ramp = stimulator.stim[hmi_channel].ramp;
+                placeholder.fq = stimulator.fq[hmi_channel];
                 placeholder.isVelocity = robert.isVelocity;
                 placeholder.legWeight = robert.legWeight;
                 placeholder.screenLevel = screen.level;
-
-                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
+                if (emgCH == emgCh1)
+                {
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
+                    live_data = mean;
+                }
+                else if (emgCH == emgCh2)
+                {
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
+                    live_data = mean;
+                }
 
                 // Original for software 3.0:
                 // st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg; //  && start_train
                 // For GUI testing
-                //st_wait_jump = !rec_status.start;
+                //st_wait_jump = !rec_status.start && robert.playPause;
                 // Final version
                 robert.isMoving = robert.isVelocity >= GL_UI.isVelocity_limit;
                 st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg && robert.playPause;
 
-
-                if ((mean >= THRESHOLD) && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)
+                if (mean >= THRESHOLD && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)
                 {
-                    sprintf(msg_recording, "EMG activity: threshold overpassed");
+                    sprintf(msg_recording, "EMG activity: threshold exceeded");
                     rec_status.start = true;
                     rec_fl2 = false;
                 }
@@ -1391,17 +1688,33 @@ void recording_sas()
 
         case st_running:
             received_data = recorder.record();
-            GL_sampleNr = recorder_emg1.size();
+            if (emgCH == emgCh1)
+            {
+                GL_sampleNr = recorder_emg1.size();
+            }
+            else if (emgCH == emgCh2)
+            {
+                GL_sampleNr = recorder_emg2.size();
+            }
+            
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
-                placeholder.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
-                placeholder.ramp = stimulator.stim[Smpt_Channel_Red].ramp; 
-                placeholder.fq = stimulator.fq[Smpt_Channel_Red];
+                placeholder.current = stimulator.stim[hmi_channel].points[0].current;
+                placeholder.ramp = stimulator.stim[hmi_channel].ramp;
+                placeholder.fq = stimulator.fq[hmi_channel];
                 placeholder.isVelocity = robert.isVelocity;
                 placeholder.legWeight = robert.legWeight;
                 placeholder.screenLevel = screen.level;
-
-                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
+                if (emgCH == emgCh1)
+                {
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
+                    live_data = mean;
+                }
+                else if (emgCH == emgCh2)
+                {
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
+                    live_data = mean;
+                }
             }
             rec_status.ready = false;
             rec_status.start = false;
@@ -1411,17 +1724,34 @@ void recording_sas()
             GL_thWaitCnt = 0;
             rec_fl2 = false;
             received_data = recorder.record();
-            GL_sampleNr = recorder_emg1.size();
+            if (emgCH == emgCh1)
+            {
+                GL_sampleNr = recorder_emg1.size();
+            }
+            else if (emgCH == emgCh2)
+            {
+                GL_sampleNr = recorder_emg2.size();
+            }
+            
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
-                placeholder.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
-                placeholder.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
-                placeholder.fq = stimulator.fq[Smpt_Channel_Red];
+                placeholder.current = stimulator.stim[hmi_channel].points[0].current;
+                placeholder.ramp = stimulator.stim[hmi_channel].ramp;
+                placeholder.fq = stimulator.fq[hmi_channel];
                 placeholder.isVelocity = robert.isVelocity;
                 placeholder.legWeight = robert.legWeight;
                 placeholder.screenLevel = screen.level;
 
-                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
+                if (emgCH == emgCh1)
+                {
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
+                    live_data = mean;
+                }
+                else if (emgCH == emgCh2)
+                {
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
+                    live_data = mean;
+                }
             }
             rec_status.ready = true;
             rec_status.th = false;
@@ -1433,19 +1763,37 @@ void recording_sas()
         case st_repeat:
             // Discard data between sets
             received_data = recorder.record();
-            GL_sampleNr = recorder_emg1.size();
+            if (emgCH == emgCh1)
+            {
+                GL_sampleNr = recorder_emg1.size();
+            }
+            else if (emgCH == emgCh2)
+            {
+                GL_sampleNr = recorder_emg2.size();
+            }
+            
             if (GL_sampleNr - GL_processed >= SAMPLE_LIM)
             {
-                placeholder.current = stimulator.stim[Smpt_Channel_Red].points[0].current;
-                placeholder.ramp = stimulator.stim[Smpt_Channel_Red].ramp;
-                placeholder.fq = stimulator.fq[Smpt_Channel_Red];
+                placeholder.current = stimulator.stim[hmi_channel].points[0].current;
+                placeholder.ramp = stimulator.stim[hmi_channel].ramp;
+                placeholder.fq = stimulator.fq[hmi_channel];
                 placeholder.isVelocity = robert.isVelocity;
                 placeholder.legWeight = robert.legWeight;
                 placeholder.screenLevel = screen.level;
+                if (emgCH == emgCh1)
+                {
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
+                    live_data = mean;
+                }
+                else if (emgCH == emgCh2)
+                {
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
+                    live_data = mean;
+                }
 
-                mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
             }
-            //recorder_emg1.clear();
+            recorder_emg1.clear();
+            recorder_emg2.clear();
             rec_status.th = false;
             rec_status.th2 = false;
             rec_status.req = false;
@@ -1477,8 +1825,8 @@ void recording_sas()
         {
             recorder.end();
         }
-
     }
+
     // restore connection if lost
     // restore only when state is at the end so it does not consume time
     if (rec_status.error && (GL_state == st_init || GL_state == st_repeat || GL_state == st_calM))
@@ -1494,15 +1842,16 @@ void recording_sas()
             sprintf(msg_recording, "Re-start manually the recorder. Reconnecting recorder on port %s.", PORT_REC);
             Sleep(2500);
             recorder.display = true;
-            recorder.init(PORT_REC);
+            recorder.init_hasomed(PORT_REC);
             if (recorder.found) { 
                 recorder.start(); 
             }
 
             // This is just in case the user needs to move the stuff around
-            if (!recorder.ready) {
-                Sleep(2500);
-            }
+            //if (!recorder.ready) 
+            //{
+            //    Sleep(2500);
+            //}
         }
         if (recorder.ready && recorder.found)
         {
@@ -1515,7 +1864,6 @@ void recording_sas()
             sprintf(msg_recording, "Communication restored");
             rec_status.error = false;
         }
-
     }
-
+    
 }
