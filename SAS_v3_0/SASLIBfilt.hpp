@@ -112,7 +112,7 @@ void startup_filters() {
     }
 }
 // EMG activity
-static tuple<double, double> process_data_iir(unsigned long long int v_size, vector<double> raw_data)
+static double process_data_iir(unsigned long long int v_size, vector<double> raw_data)
 {
     double mean = 0, temp = 0, value = 0, raw_sample = 0.0;
     double temp_b50;
@@ -161,7 +161,7 @@ static tuple<double, double> process_data_iir(unsigned long long int v_size, vec
     old_value[0] = mean;
     old_nr[0] = N_len;
 
-    return make_tuple(value, mean);
+    return value;
 }
 
 // Threshold methods

@@ -1433,7 +1433,7 @@ void recording_sas()
                 if (emgCH == emgCh1)
                 {
                     //int tr;
-                    live_data = process_th_mean(GL_sampleNr, recorder_emg1);
+                    live_data = process_data_iir(GL_sampleNr, recorder_emg1);
                     //tr = process_th_proper_mean(GL_sampleNr);
                     //string msg = "Live data = " + to_string(GL_sampleNr) + "\n";
                     //OutputDebugString(msg.c_str()); // print
@@ -1441,7 +1441,7 @@ void recording_sas()
                 else if (emgCH == emgCh2)
                 {
                     //int tr;
-                    live_data = process_th_mean(GL_sampleNr, recorder_emg2);
+                    live_data = process_data_iir(GL_sampleNr, recorder_emg2);
                     //tr = process_th_proper_mean(GL_sampleNr);
                     //string msg = "Live data = " + to_string(GL_sampleNr) + "\n";
                     //OutputDebugString(msg.c_str()); // print
@@ -1566,11 +1566,13 @@ void recording_sas()
                 {
                     if (emgCH == emgCh1)
                     {
-                        tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg1); // returned value sent to the main SCREEN for live streaming
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1); // returned value sent to the main SCREEN for live streaming
+                        live_data = mean;
                     }
                     else if (emgCH == emgCh2)
                     {
-                        tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg2); // returned value sent to the main SCREEN for live streaming
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2); // returned value sent to the main SCREEN for live streaming
+                        live_data = mean;
                     }
                 }
             }
@@ -1650,11 +1652,13 @@ void recording_sas()
             {
                 if (emgCH == emgCh1)
                 {
-                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg1);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg2);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    live_data = mean;
                 }
 
                 // Original for software 3.0:
@@ -1698,11 +1702,13 @@ void recording_sas()
             {
                 if (emgCH == emgCh1)
                 {
-                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg1);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg2);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    live_data = mean;
                 }
                 
             }
@@ -1727,11 +1733,13 @@ void recording_sas()
             {
                 if (emgCH == emgCh1)
                 {
-                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg1);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg2);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    live_data = mean;
                 }
                 
             }
@@ -1758,11 +1766,13 @@ void recording_sas()
             {
                 if (emgCH == emgCh1)
                 {
-                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg1);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg1);
+                    live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    tie(mean, live_data) = process_data_iir(GL_sampleNr, recorder_emg2);
+                    mean = process_data_iir(GL_sampleNr, recorder_emg2);
+                    live_data = mean;
                 }
                 
             }
