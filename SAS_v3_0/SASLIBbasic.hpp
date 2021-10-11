@@ -125,9 +125,26 @@ typedef enum
     res8 = 18,
     res9 = 19,
     res10 = 20,
+    // Additions for the SAS implementation to the interface
+    pulseWidth = 21,
+    amplitude = 22,
+    freq = 23,
+    exercise = 24,
+    method = 25,
+    triggerGain = 26,
+    startBut = 27,
+    stopbut = 28,
+    autoTrigg = 29,
+    timeVelTh = 30,
+    velTh = 31,
+    stimPort = 32,
+    recPort = 33,
+    channel = 34,
+    velocity = 35,
 } tcp_msg_Type;
 
 const int MSG_AMOUNT = (int)res10 + 1;
+const int MSG_SCREEN_COUNT = (int)velocity + 1; // Number of messages that may be valid for reception
 // ------------------ Global variables ------------------
 const int DATE_LENGTH = 256;
 // Threads cycles

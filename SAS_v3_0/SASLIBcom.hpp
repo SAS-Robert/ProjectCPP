@@ -70,6 +70,22 @@ public:
         messages[res8] = "RESISTANCE;8";
         messages[res9] = "RESISTANCE;9";
         messages[res10] = "RESISTANCE;10";
+        // Additions for the SAS implementation to the interface
+        messages[pulseWidth] = "PULSE_WIDTH";
+        messages[amplitude] = "AMPLITUDE";
+        messages[freq] = "FREQUENCY";
+        messages[exercise] = "EXERCISE";
+        messages[method] = "METHOD";
+        messages[triggerGain] = "TRIGGER_GAIN";
+        messages[startBut] = "START";
+        messages[stopbut] = "STOP";
+        messages[autoTrigg] = "AUTO_TRIGGER";
+        messages[timeVelTh] = "TIME_VEL_THRESHOLD";
+        messages[velTh] = "VEL_THRESHOLD";
+        messages[stimPort] = "STIM_PORT";
+        messages[recPort] = "RECORD_PORT";
+        messages[channel] = "CHANNEL";
+        messages[velocity] = "VELOCITY";
         status = msg_none;
     }
 
@@ -213,6 +229,49 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
     //{
     //    result = msg_none;
     //}
+
+    return valid_msg;
+}
+
+bool decode_screen(char* message, bool& finished, bool& playPause, int& level, string stim_port, string rec_port, string channel, int velocity, string method, string exercise, int pulse_width, int current, int frequency, tcp_msg_Type& result)
+{
+    string delimiter = ";";
+    char* token;
+    int length = strlen(message);
+    string messageStr = convert_to_string(message, length);
+    strcpy(token, (messageStr.substr(0, messageStr.find(delimiter))).c_str());
+    bool valid_msg = false;
+
+    for (int i = 0; i < MSG_SCREEN_COUNT; i++)
+    {
+        valid_msg = (strcmp(token, msgList.messages[i].c_str()) == 0);
+        if (valid_msg)
+        {
+            msgList.status = (tcp_msg_Type)i;
+            break;
+        }
+    }
+
+    if (valid_msg)
+    {
+        result = msgList.status;
+        // Update Play-Pause button status
+        if (msgList.status == play)
+        {
+            playPause = true;
+        }
+        else if (msgList.status == pause)
+        {
+            playPause = false;
+        }
+        // resistance level update 
+        if (msgList.status >= res1 && msgList.status <= res10)
+        {
+            level = ((int)msgList.status) - 10;
+        }
+        // In case the program has finished
+        finished = (msgList.status == finish);
+    }
 
     return valid_msg;
 }

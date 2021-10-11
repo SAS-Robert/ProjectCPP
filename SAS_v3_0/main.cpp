@@ -84,9 +84,11 @@ UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
 char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address
 char SCREEN_PORT[15] = "30002";
 char SCREEN_EMG_PORT[15] = "30005";
+char SCREEN_DATA_PORT[15] = "30011";
 // TcpServer screen(SCREEN_PORT); // Using TCP-IP protocol
 UdpServer screen(SCREEN_ADDRESS, SCREEN_PORT); // Using UDP-IP protocol 
 UdpServer screenEMG(SCREEN_ADDRESS, SCREEN_EMG_PORT); // Using UPD-IP protocol for sending EMG permanently when recording
+UdpServer screenData(SCREEN_ADDRESS, SCREEN_DATA_PORT);
 tcp_msg_Type screen_status;
 
 bool start_train = false;
@@ -157,6 +159,7 @@ char msg_modify[512], msg_stimulating[512], msg_recording[512], msg_main_char[51
 string msg_connect = "", msg_main = "", msg_extGui = "", msg_gui = "", msg_connect_2 = "";
 double live_data, live_previous = -11;
 bool connect_thread_ready = false, run_extGui_ready = false;
+void sendData_thread();
 void sendEmgData_thread();
 void robot_thread();
 void screen_thread();
@@ -181,6 +184,7 @@ int Main()
     std::thread robot(robot_thread);
     std::thread extGUI(screen_thread);
     std::thread sendtoScreen(sendEmgData_thread);
+    //std::thread sendData(sendData_thread);
 
     // Run local GUI
     Application::EnableVisualStyles();
@@ -195,6 +199,7 @@ int Main()
     // Wait for the other threads to join
     robot.join();
     sendtoScreen.join();
+    //sendData.join();
     stateMachine.join();
     //extGUI.join();
 
@@ -325,6 +330,33 @@ SAS - control software of the robot - the screen. There is a UDP protocol listen
 into SAS from the control software and another one listening from the screen. There is another UDP
 for live-stream sending EMG data to the screen. 
 */
+
+void send_thread() 
+{
+    screenData.display = true;
+    do
+    {
+        screenData.start();
+    } while (screenData.error && !MAIN_to_all.end);
+    screenData.display = true;
+
+    screenData.check();
+
+    // main loop of the sending thread
+    while (!MAIN_to_all.end && (GL_state != st_end))
+    {
+        if (stimulator.active)
+        {
+            screenData.stream(1);
+        }
+        else {
+            screenData.stream(0);
+        }
+    }
+
+    screenData.end();
+}
+
 // Thread for the UDP communication for sending - screen is the UdpServer
 void sendEmgData_thread()
 {
@@ -1811,7 +1843,8 @@ void recording_sas()
     }
 
     // checking
-    recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready));
+    //recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready));
+    recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (recorder.found && recorder.ready)); // NEW handling for REHAINGEST disconnection
     //sprintf(msg_recording, "recAva %d, status %d, received %d, start %d", recAvailable, (GL_state == st_init || GL_state == st_end), (received_data&& recorder.data_start), (!recorder.data_start&& recorder.ready));
 
 
