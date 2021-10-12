@@ -458,13 +458,16 @@ void screen_thread()
 
         if (!screen.error && GL_tcpActive)
         {
-            decode_successful = decode_extGui(screen.recvbuf, screen.finish, screen.playPause, screen.level, screen_status);
+            decode_successful = decode_successful = decode_screen(screen.recvbuf, screen.finish, screen.playPause, screen.res_level, screen.pulse_width,
+                screen.amplitude, screen.frequency, screen.exercise, screen.method, screen.trigger_gain, screen.start_stop,
+                screen.auto_trigger, screen.time_vel_th, screen.vel_th, screen.stim_port, screen.rec_port, screen.channel, screen.velocity,
+                screen_status);
 
             if (decode_successful)
             {
                 if (screen.display)
                 {
-                    sprintf(longMsg, "From SCREEN received: finish = %d, button= %d, status = %d, level = %d, msg = %s ", screen.finish, screen.playPause, screen_status, screen.level, screen.recvbuf);
+                    sprintf(longMsg, "From SCREEN received: finish = %d, button= %d, status = %d, level = %d, msg = %s ", screen.finish, screen.playPause, screen_status, screen.res_level, screen.recvbuf);
                     msg_extGui = string(longMsg).c_str();
                 }
                 // Actions related to what is has been received
@@ -1588,7 +1591,7 @@ void recording_sas()
                     placeholder.fq = stimulator.fq[hmi_channel];
                     placeholder.isVelocity = robert.isVelocity;
                     placeholder.legWeight = robert.legWeight;
-                    placeholder.screenLevel = screen.level;
+                    placeholder.screenLevel = screen.res_level;
                     if (emgCH == emgCh1)
                     {
                         mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder); // returned value sent to the main SCREEN for live streaming
@@ -1680,7 +1683,7 @@ void recording_sas()
                 placeholder.fq = stimulator.fq[hmi_channel];
                 placeholder.isVelocity = robert.isVelocity;
                 placeholder.legWeight = robert.legWeight;
-                placeholder.screenLevel = screen.level;
+                placeholder.screenLevel = screen.res_level;
                 if (emgCH == emgCh1)
                 {
                     mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
@@ -1736,7 +1739,7 @@ void recording_sas()
                 placeholder.fq = stimulator.fq[hmi_channel];
                 placeholder.isVelocity = robert.isVelocity;
                 placeholder.legWeight = robert.legWeight;
-                placeholder.screenLevel = screen.level;
+                placeholder.screenLevel = screen.res_level;
                 if (emgCH == emgCh1)
                 {
                     mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
@@ -1772,7 +1775,7 @@ void recording_sas()
                 placeholder.fq = stimulator.fq[hmi_channel];
                 placeholder.isVelocity = robert.isVelocity;
                 placeholder.legWeight = robert.legWeight;
-                placeholder.screenLevel = screen.level;
+                placeholder.screenLevel = screen.res_level;
 
                 if (emgCH == emgCh1)
                 {
@@ -1811,7 +1814,7 @@ void recording_sas()
                 placeholder.fq = stimulator.fq[hmi_channel];
                 placeholder.isVelocity = robert.isVelocity;
                 placeholder.legWeight = robert.legWeight;
-                placeholder.screenLevel = screen.level;
+                placeholder.screenLevel = screen.res_level;
                 if (emgCH == emgCh1)
                 {
                     mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);

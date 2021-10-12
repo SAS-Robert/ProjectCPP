@@ -91,31 +91,31 @@ typedef enum
 
 typedef enum
 {
-    User_none = 0, // Nothing to do
-    User_CM = 1,   // Manual calibration
-    User_CA = 2,   // Automatic calibration
-    User_X = 3,    // Quit calibration
-    User_th = 4,   // Start threshold
-    User_st = 5,   // Start training
-    User_ex = 6,   // User must select an exercise
-    User_rep = 7,  // Repeat same exercise
-    User_new = 8,  // Do a new type of exercise
+    User_none = 0,       // Nothing to do
+    User_CM = 1,         // Manual calibration
+    User_CA = 2,         // Automatic calibration
+    User_X = 3,          // Quit calibration
+    User_th = 4,         // Start threshold
+    User_st = 5,         // Start training
+    User_ex = 6,         // User must select an exercise
+    User_rep = 7,        // Repeat same exercise
+    User_new = 8,        // Do a new type of exercise
 } User_Req_Type;
 
 typedef enum
 {
-    exDone = 0,     // Finish everything
-    start = 1,      // Exercise has started
-    repeat = 2,     // Repeat exercise
-    pause = 3,      // Play/Pause button = in pause
-    play = 4,       // Play/Pause button = in play 
-    setDone = 5,    // Repetitions-set finished
-    repStart = 6,   // Start repetition
-    repEnd = 7,     // End repetition
-    finish = 8,     // Close socket
-    msgEnd = 9,     // exercise has been aborted
-    msg_none = 10,  // You messed up somewhere
-    res1 = 11,      // A resistance value has been received
+    exDone = 0,          // Finish everything
+    start = 1,           // Exercise has started
+    repeat = 2,          // Repeat exercise
+    pause = 3,           // Play/Pause button = in pause
+    play = 4,            // Play/Pause button = in play 
+    setDone = 5,         // Repetitions-set finished
+    repStart = 6,        // Start repetition
+    repEnd = 7,          // End repetition
+    finish = 8,          // Close socket
+    msgEnd = 9,          // exercise has been aborted
+    msg_none = 10,       // You messed up somewhere
+    res1 = 11,           // A resistance value has been received
     res2 = 12,
     res3 = 13,
     res4 = 14,
@@ -126,21 +126,21 @@ typedef enum
     res9 = 19,
     res10 = 20,
     // Additions for the SAS implementation to the interface
-    pulseWidth = 21,
-    amplitude = 22,
-    freq = 23,
-    exercise = 24,
-    method = 25,
-    triggerGain = 26,
-    startBut = 27,
-    stopbut = 28,
-    autoTrigg = 29,
-    timeVelTh = 30,
-    velTh = 31,
-    stimPort = 32,
-    recPort = 33,
-    channel = 34,
-    velocity = 35,
+    pulseWidth = 21,     // Pulse width corresponds to the ramp value in the old SAS
+    amplitude = 22,      // Amplitude of the signal of the stim
+    frequency = 23,      // Frequency of the signal of the stim
+    exercise = 24,       // Exercise selected in main screen
+    method = 25,         // Method for threshold collection
+    triggerGain = 26,    // Trigger gain for the threshold (multiplier)
+    startBut = 27,       // Start button pressed on the Screen
+    stopbut = 28,        // Stop button pressed on the Screen
+    autoTrigg = 29,      // Auto trigger
+    timeVelTh = 30,      // Time velocity threshold - AAN variable to be fixed
+    velTh = 31,          // Velocity threshold - AAN variable to be fixed
+    stimPort = 32,       // Stimulator port selected on SCREEN
+    recPort = 33,        // Recorder port selected on SCREEN
+    channel = 34,        // Channel selected for SAS use
+    velocity = 35,       // Velocity value corresponding minVelocity in the old SAS
 } tcp_msg_Type;
 
 const int MSG_AMOUNT = (int)res10 + 1;

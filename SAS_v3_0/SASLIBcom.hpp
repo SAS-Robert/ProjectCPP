@@ -73,7 +73,7 @@ public:
         // Additions for the SAS implementation to the interface
         messages[pulseWidth] = "PULSE_WIDTH";
         messages[amplitude] = "AMPLITUDE";
-        messages[freq] = "FREQUENCY";
+        messages[frequency] = "FREQUENCY";
         messages[exercise] = "EXERCISE";
         messages[method] = "METHOD";
         messages[triggerGain] = "TRIGGER_GAIN";
@@ -233,16 +233,24 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
     return valid_msg;
 }
 
-bool decode_screen(char* message, bool& finished, bool& playPause, int& level, string stim_port, string rec_port, string channel, int velocity, string method, string exercise, int pulse_width, int current, int frequency, tcp_msg_Type& result)
+bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
+        int & _amplitude, int& _frequency, int& _exercise, int& _method, int& _triggerGain, bool& _startStop,
+        bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, int& _channel, double& _velocity,
+        tcp_msg_Type& result)
 {
     string delimiter = ";";
-    char* token;
-    int length = strlen(message);
+    char *token, *value;
+    int length = strlen(message), i = 0;
     string messageStr = convert_to_string(message, length);
-    strcpy(token, (messageStr.substr(0, messageStr.find(delimiter))).c_str());
     bool valid_msg = false;
 
-    for (int i = 0; i < MSG_SCREEN_COUNT; i++)
+    // Store the data received, the string contains: "MSG_TYPE;msg_value" 
+    // >> token = MSG_TYPE, value = msg_value
+    strcpy(token, (messageStr.substr(0, messageStr.find(delimiter))).c_str());
+    strcpy(value, (messageStr.substr(1, messageStr.find(delimiter))).c_str());
+   
+
+    for (i; i < MSG_SCREEN_COUNT; i++)
     {
         valid_msg = (strcmp(token, msgList.messages[i].c_str()) == 0);
         if (valid_msg)
@@ -254,23 +262,59 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& level, s
 
     if (valid_msg)
     {
-        result = msgList.status;
-        // Update Play-Pause button status
-        if (msgList.status == play)
-        {
-            playPause = true;
-        }
-        else if (msgList.status == pause)
-        {
-            playPause = false;
-        }
-        // resistance level update 
+        if (i < 11)     // screen_status will update with the state of the program only (exDone - msgEnd)
+            result = msgList.status;
+
+        if (msgList.status == (play || pause))
+            playPause = (bool)value;
+
         if (msgList.status >= res1 && msgList.status <= res10)
-        {
-            level = ((int)msgList.status) - 10;
-        }
-        // In case the program has finished
-        finished = (msgList.status == finish);
+            res_level = (int)value;
+
+        if (msgList.status == finish)
+            finished = (bool)value;
+        
+        if (msgList.status == pulseWidth)
+            pulse_width = (int)value;
+
+        if (msgList.status == amplitude)
+            _amplitude = (int)value;
+
+        if (msgList.status == frequency)
+            _frequency = (int)value;
+
+        if (msgList.status == exercise)
+            _exercise = (int)value;
+
+        if (msgList.status == method)
+            _method = (int)value;
+
+        if (msgList.status == triggerGain)
+            _triggerGain = (int)value;
+
+        if (msgList.status == (startBut || stopbut))
+            _startStop = (bool)value;
+
+        if (msgList.status == autoTrigg)
+            _autoTrigg = (bool)value;
+
+        if (msgList.status == timeVelTh)
+            _timeVel = (int)value;
+
+        if (msgList.status == velTh)
+            _velTh = (int)velTh;
+
+        if (msgList.status == stimPort)
+            stim_port = (int)value;
+
+        if (msgList.status == recPort)
+            rec_port = (int)value;
+
+        if (msgList.status == channel)
+            _channel = (int)value;
+
+        if (msgList.status == velocity)
+            _velocity = (int)value;
     }
 
     return valid_msg;
@@ -568,24 +612,39 @@ struct UdpServer
   public:
     char recvbuf[BUFLEN];
     char senbuf[BUFLEN];
-    bool error, new_message, finish, display, error_lim, playPause;
+    bool error, new_message, finish, display, error_lim, playPause, start_stop, auto_trigger;
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
-    int level;
+    int res_level, pulse_width, amplitude, frequency, trigger_gain, time_vel_th, vel_th, stim_port, rec_port, channel, method, exercise;
+    double velocity;
     // constructor
     UdpServer(char *S_address, char *PORTc)
     {
         nPORT = 30001;
         slen = sizeof(si_other);
         display = false;
-        playPause = true;         // lets assume that it starts like that
+        playPause = true;         // Assume play = true
         finish = false;
         nPORT = atoi(PORTc);
         strcpy(SERVERc, S_address);
         ERROR_CNT_LIM = 5;
         displayMsg = " ";
-        level = 5;
+        res_level = 5;
+        pulse_width = 0;
+        amplitude = 0;
+        frequency = 0;
+        trigger_gain = 0;
+        time_vel_th = 0;
+        vel_th = 0;
+        stim_port = 1;
+        rec_port = 1;
+        channel = emgCh0;
+        velocity = 1;
+        start_stop = true;      // Assume starts = true
+        auto_trigger = false;
+        exercise = kneeExt;
+        method = th_SD05;
     }
     // methods
     void start()
