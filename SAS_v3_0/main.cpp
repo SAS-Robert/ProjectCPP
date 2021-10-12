@@ -184,7 +184,7 @@ int Main()
     std::thread robot(robot_thread);
     std::thread extGUI(screen_thread);
     std::thread sendtoScreen(sendEmgData_thread);
-    //std::thread sendData(sendData_thread);
+    std::thread sendData(sendData_thread);
 
     // Run local GUI
     Application::EnableVisualStyles();
@@ -199,7 +199,7 @@ int Main()
     // Wait for the other threads to join
     robot.join();
     sendtoScreen.join();
-    //sendData.join();
+    sendData.join();
     stateMachine.join();
     //extGUI.join();
 
@@ -211,18 +211,6 @@ void update_localGui() {
     // ------------- sas -> gui -------------
     // status
     GL_UI.status = GL_state;
-    //GL_UI.screenMessage = "INFO: ";
-    //GL_UI.screenMessage += msg_main;
-    // --- This is only for debugging ---
-    //GL_UI.screenMessage += "\nRobot-IP status: ";
-    //GL_UI.screenMessage += msg_connect;
-    //GL_UI.screenMessage += "\nScreen-IP status: ";
-    //GL_UI.screenMessage += msg_extGui;
-    GL_UI.screenMessage = "";
-    GL_UI.screenMessage += "RehaMove3: ";
-    GL_UI.screenMessage += msg_stimulating;
-    GL_UI.screenMessage += "\nRehaIngest: ";
-    GL_UI.screenMessage += msg_recording;
     GL_UI.END_GUI = MAIN_to_all.end;
 
     // Exercise settings
@@ -331,8 +319,12 @@ into SAS from the control software and another one listening from the screen. Th
 for live-stream sending EMG data to the screen. 
 */
 
-void send_thread() 
+void sendData_thread() 
 {
+    // Initial values of the variables in the SCREEN
+    bool stimulating_previous = false, disconnected_previous = false;
+    double threshold_saved = 0.0;
+
     screenData.display = true;
     do
     {
@@ -345,12 +337,32 @@ void send_thread()
     // main loop of the sending thread
     while (!MAIN_to_all.end && (GL_state != st_end))
     {
-        if (stimulator.active)
+        bool stimulating_now = stimulator.active;
+        bool disconnection_now = (stim_status.error || rec_status.error);
+        double threshold_now = THRESHOLD;
+
+        if (stimulating_now != stimulating_previous)
         {
-            screenData.stream(1);
+            ostringstream now_str;
+            now_str << boolalpha << stimulating_now;
+            screenData.streamCommands("STIM_STATUS;" + now_str.str());
+            stimulating_previous = stimulating_now;
         }
-        else {
-            screenData.stream(0);
+
+        if (threshold_now != threshold_saved)
+        {
+            string now_th;
+            now_th = to_string(threshold_now);
+            screenData.streamCommands("THRESHOLD_VALUE;" + now_th);
+            threshold_saved = threshold_now;
+        }
+
+        if (disconnection_now != disconnected_previous)
+        {
+            ostringstream disc_now;
+            disc_now << boolalpha << disconnection_now;
+            screenData.streamCommands("DISCONNECTED;" + disc_now.str());
+            disconnected_previous = disconnection_now;
         }
     }
 
@@ -467,7 +479,7 @@ void screen_thread()
             {
                 if (screen.display)
                 {
-                    sprintf(longMsg, "From SCREEN received: finish = %d, button= %d, status = %d, level = %d, msg = %s ", screen.finish, screen.playPause, screen_status, screen.res_level, screen.recvbuf);
+                    sprintf(longMsg, "Message from SCREEN received");
                     msg_extGui = string(longMsg).c_str();
                 }
                 // Actions related to what is has been received

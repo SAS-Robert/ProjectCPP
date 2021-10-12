@@ -188,6 +188,7 @@ bool decode_robot_weight(char* message, double& value1)
     return valid_msg;
 }
 
+// Old decoding function
 bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, tcp_msg_Type& result)
 {
     int length = strlen(message);
@@ -730,6 +731,32 @@ struct UdpServer
         error_lim = error_cnt >= ERROR_CNT_LIM;
     }
 
+    void streamCommands(string message)
+    {
+        if (display)
+        {
+            if (message != "\0")
+            {
+                strcpy(senbuf, message.c_str());
+                displayMsg = "UDP Sending: ";
+                displayMsg += string(senbuf).c_str();
+            }
+        }
+
+        int sendOk = sendto(s, senbuf, BUFLEN, 0, (struct sockaddr*)&si_other, slen);
+        if (sendOk == SOCKET_ERROR)
+        {
+            if (display)
+            {
+                itoa(WSAGetLastError(), itoaNr, 10);
+                displayMsg = "sendto() failed with error code : ";
+                displayMsg += string(itoaNr).c_str();
+            }
+        }
+        memset(senbuf, '\0', BUFLEN);
+    }
+
+    // Old method to send data
     void stream(double data)
     {
         if (display)
