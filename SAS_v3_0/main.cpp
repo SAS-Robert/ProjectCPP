@@ -207,13 +207,21 @@ int Main()
 }
 
 // ---------------------------- Interface function definitions --------------------------
+void update_local_variables() {
+    // TODO: include all local variables and check they are being updated
+    GL_exercise = screen.exercise;
+    GL_thMethod = screen.method;
+    emgCH = screen.channel;
+}
+
 void update_localGui() {
-    // ------------- sas -> gui -------------
+    // ------------- sas -> gui ------------- 
+    // Only used for debugging purposes and see whether the workflow after the merge with SCREEN works
     // status
     GL_UI.status = GL_state;
     GL_UI.END_GUI = MAIN_to_all.end;
 
-    // Exercise settings
+    // Exercise settings updated from SCREEN instead of local interface variables
     GL_UI.recReq = rec_status.req;
     GL_UI.main_thEN = main_thEN;
     GL_UI.method = GL_thMethod;
@@ -243,7 +251,7 @@ void update_localGui() {
     Move3_key = GL_UI.Move3_hmi;
     user_gui = GL_UI.User_hmi;
 
-    // Logical operations based on the user commands 
+    // Logical operations based on the user commands - What is this ?? (12.10.21)
     switch (user_gui)
     {
     case User_th:
@@ -477,6 +485,8 @@ void screen_thread()
 
             if (decode_successful)
             {
+                update_local_variables();
+                update_localGui();
                 if (screen.display)
                 {
                     sprintf(longMsg, "Message from SCREEN received");
@@ -588,7 +598,8 @@ void mainSAS_thread()
                 msg_main += msg_recording;
             }
 
-            GL_exercise = GL_UI.next_exercise;
+            //GL_exercise = GL_UI.next_exercise;
+            GL_exercise = screen.exercise;
             break;
 
         case st_calM:

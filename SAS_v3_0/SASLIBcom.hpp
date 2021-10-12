@@ -235,8 +235,8 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 }
 
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
-        int & _amplitude, int& _frequency, int& _exercise, int& _method, int& _triggerGain, bool& _startStop,
-        bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, int& _channel, double& _velocity,
+        int & _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, int& _triggerGain, bool& _startStop,
+        bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity,
         tcp_msg_Type& result)
 {
     string delimiter = ";";
@@ -284,11 +284,15 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         if (msgList.status == frequency)
             _frequency = (int)value;
 
-        if (msgList.status == exercise)
-            _exercise = (int)value;
+        if (msgList.status == exercise){
+            int e = (int)value;
+            _exercise = (exercise_Type)e;
+        }
 
-        if (msgList.status == method)
-            _method = (int)value;
+        if (msgList.status == method){
+            int m = (int)value;
+            _method = (threshold_Type)m;
+        }
 
         if (msgList.status == triggerGain)
             _triggerGain = (int)value;
@@ -311,8 +315,10 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         if (msgList.status == recPort)
             rec_port = (int)value;
 
-        if (msgList.status == channel)
-            _channel = (int)value;
+        if (msgList.status == channel){
+            int c = (int)value;
+            _channel = (emgCh_Type)c;
+        }
 
         if (msgList.status == velocity)
             _velocity = (int)value;
@@ -617,8 +623,11 @@ struct UdpServer
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
-    int res_level, pulse_width, amplitude, frequency, trigger_gain, time_vel_th, vel_th, stim_port, rec_port, channel, method, exercise;
+    int res_level, pulse_width, amplitude, frequency, trigger_gain, time_vel_th, vel_th, stim_port, rec_port;
+    threshold_Type method;
     double velocity;
+    exercise_Type exercise;
+    emgCh_Type channel;
     // constructor
     UdpServer(char *S_address, char *PORTc)
     {
