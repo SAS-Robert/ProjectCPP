@@ -86,6 +86,7 @@ public:
         messages[recPort] = "RECORD_PORT";
         messages[channel] = "CHANNEL";
         messages[velocity] = "VELOCITY";
+        messages[th_start] = "THRESHOLD_PRESSED";
         status = msg_none;
     }
 
@@ -235,8 +236,8 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 }
 
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
-        int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, int& _triggerGain, bool& _startStop,
-        bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity,
+        int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, int& _triggerGain, RehaMove3_Req_Type& _startStop,
+        bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity, User_Req_Type& theshold_pressed,
         tcp_msg_Type& result)
 {
     string delimiter = ";";
@@ -274,7 +275,7 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
 
         if (msgList.status == finish)
             finished = (bool)value;
-        
+
         if (msgList.status == pulseWidth)
             pulse_width = (int)value;
 
@@ -284,12 +285,12 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         if (msgList.status == frequency)
             _frequency = (int)value;
 
-        if (msgList.status == exercise){
+        if (msgList.status == exercise) {
             int e = (int)value;
             _exercise = (exercise_Type)e;
         }
 
-        if (msgList.status == method){
+        if (msgList.status == method) {
             int m = (int)value;
             _method = (threshold_Type)m;
         }
@@ -297,8 +298,10 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         if (msgList.status == triggerGain)
             _triggerGain = (int)value;
 
-        if (msgList.status == (startBut || stopbut))
-            _startStop = (bool)value;
+        if (msgList.status == (startBut || stopbut)) {
+        int ss = (int)value;
+        _startStop = (RehaMove3_Req_Type)ss;
+        }
 
         if (msgList.status == autoTrigg)
             _autoTrigg = (bool)value;
@@ -322,6 +325,11 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
 
         if (msgList.status == velocity)
             _velocity = (int)value;
+
+        if (msgList.status == th_start){
+            int t = (int)value;
+            theshold_pressed = (User_Req_Type)t;
+        }
     }
 
     return valid_msg;
@@ -619,7 +627,7 @@ struct UdpServer
   public:
     char recvbuf[BUFLEN];
     char senbuf[BUFLEN];
-    bool error, new_message, finish, display, error_lim, playPause, start_stop, auto_trigger;
+    bool error, new_message, finish, display, error_lim, playPause, auto_trigger;
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
@@ -628,6 +636,8 @@ struct UdpServer
     double velocity;
     exercise_Type exercise;
     emgCh_Type channel;
+    RehaMove3_Req_Type start_stop;
+    User_Req_Type threshold_pressed;
     // constructor
     UdpServer(char *S_address, char *PORTc)
     {
@@ -651,10 +661,11 @@ struct UdpServer
         rec_port = 1;
         channel = emgCh1;
         velocity = 1;
-        start_stop = false;      // Assume starts = false
+        start_stop = Move3_stop;      // Assume starts = false
         auto_trigger = false;
         exercise = kneeExt;
         method = th_SD05;
+        threshold_pressed = User_none;
     }
     // methods
     void start()

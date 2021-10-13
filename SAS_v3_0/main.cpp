@@ -217,26 +217,27 @@ void update_local_variables() {
     // SAS channel from screen
     emgCH = screen.channel;
 
-    // Connecting stimulation channel if modifyied
+    // Connecting stimulation channel if modified
     if (previous_channel != emgCH)
     {
         if (emgCH == emgCh1)
         {
             hmi_channel = Smpt_Channel_Black;
-                stimulator.channel = hmi_channel;
-                stimulator.ch_ready = true;
+            stimulator.channel = hmi_channel;
+            stimulator.ch_ready = true;
         }
         else if (emgCH == emgCh2)
         {
             hmi_channel = Smpt_Channel_White;
-                stimulator.channel = hmi_channel;
-                stimulator.ch_ready = true;
+            stimulator.channel = hmi_channel;
+            stimulator.ch_ready = true;
         }
         previous_channel = emgCH;
     }
     // Modifying stimulation 
     modify_stimulation(hmi_channel);
-
+    Move3_key = screen.start_stop;
+    user_gui = screen.threshold_pressed;
 }
 
 void update_localGui() {
@@ -279,9 +280,9 @@ void update_localGui() {
     GL_UI.stimReady = stimAvailable && !stim_status.error;
 
     // ------------- gui -> sas -------------
-    // Keys
-    //Move3_key = GL_UI.Move3_hmi;  // All user interactions to the stim values removed 
-    user_gui = GL_UI.User_hmi;
+    // Keys ----- These keys are now updated from the screen in update_local_variables
+    //Move3_key = GL_UI.Move3_gui;  // All user interactions to the stim values removed 
+    //user_gui = GL_UI.User_hmi;    // All user interactions to the threshold flag removed
 
     // Logical operations based on the user commands - What is this ?? (12.10.21)
     switch (user_gui)
@@ -295,10 +296,10 @@ void update_localGui() {
         break;
     }
 
-    // Pull down command flags
-    user_gui = User_none;
-    GL_UI.User_hmi = User_none;
-    GL_UI.Move3_hmi = Move3_none;
+    // Pull down command flags ---- These flags are technically pulled down from the screen
+    //user_gui = User_none;
+    //GL_UI.User_hmi = User_none;
+    //GL_UI.Move3_hmi = Move3_none;
 
     // For isMoving testing
     GL_UI.isVelocity = robert.isVelocity;
@@ -512,7 +513,7 @@ void screen_thread()
         {
             decode_successful = decode_successful = decode_screen(screen.recvbuf, screen.finish, screen.playPause, screen.res_level, screen.pulse_width,
                 screen.amplitude, screen.frequency, screen.exercise, screen.method, screen.trigger_gain, screen.start_stop,
-                screen.auto_trigger, screen.time_vel_th, screen.vel_th, screen.stim_port, screen.rec_port, screen.channel, screen.velocity,
+                screen.auto_trigger, screen.time_vel_th, screen.vel_th, screen.stim_port, screen.rec_port, screen.channel, screen.velocity, screen.threshold_pressed,
                 screen_status);
 
             if (decode_successful)
@@ -693,7 +694,8 @@ void mainSAS_thread()
             else if (!rec_status.req && !rec_status.th)
             {
                 //msg_main = "Choose a method and press SET THRESHOLD";
-                GL_thMethod = GL_UI.next_method;
+                //GL_thMethod = GL_UI.next_method;
+                GL_thMethod = screen.method;
             }
 
             // Abort
@@ -1059,7 +1061,7 @@ void modify_stimulation(Smpt_Channel sel_ch)
     {
         next_val.points[0].current = MIN_STIM_CUR;
         next_val.points[2].current = MIN_STIM_CUR;
-    }
+    }Move3_user
     
     if (next_fq > MAX_STIM_FQ)
     {

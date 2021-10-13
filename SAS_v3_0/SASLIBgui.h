@@ -912,6 +912,7 @@ namespace SASv30 {
 
 	}
 
+	// This is never used
 	private: System::Void click_trainButton(System::Object^ sender, System::EventArgs^ e) {
 		user_gui = User_st;
 	}
@@ -929,6 +930,7 @@ namespace SASv30 {
 		}
 	}
 
+	// RepeatButton and newButton are never used
 	private: System::Void click_repeatButton(System::Object^ sender, System::EventArgs^ e) {
 		user_gui = User_rep;
 	}
@@ -962,7 +964,6 @@ namespace SASv30 {
 	}
 	*/
 	private: System::Void click_stimButton(System::Object^ sender, System::EventArgs^ e) {
-		/*
 		if ((state == st_calM || state == st_running) && !GL_UI.stimActive && GL_UI.playPause && GL_UI.stimReady)
 		{
 			// Start stimulation command
@@ -973,7 +974,6 @@ namespace SASv30 {
 			// Stop stimulation command
 			Move3_gui = Move3_stop;
 		}
-		*/
 	}
 
 	private: System::Void methodBox_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
