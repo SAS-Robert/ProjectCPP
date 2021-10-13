@@ -46,10 +46,11 @@ struct device_to_device
 threshold_Type GL_thhmi = th_SD05;
 
 // User options
-RehaMove3_Req_Type Move3_cmd = Move3_none;
-RehaMove3_Req_Type Move3_hmi = Move3_none;
+//RehaMove3_Req_Type Move3_cmd = Move3_none; // I believe this variable is not doing anything
+//RehaMove3_Req_Type Move3_hmi = Move3_none; // I believe this variable is not doing anything
 RehaMove3_Req_Type Move3_key = Move3_none;
-User_Req_Type User_cmd = User_none, user_gui = User_none;
+User_Req_Type user_gui = User_none;
+//User_Req_Type User_cmd = User_none, user_gui = User_none;
 
 // ------------------------- Devices handling --------------------------------
 bool stim_abort = false, stimAvailable = false, recAvailable = false;
@@ -1080,9 +1081,9 @@ void modify_stimulation(Smpt_Channel sel_ch)
     sprintf(msg_modify, "RehaMove3 message: Stimulation update -> current = %2.2f, period = %2.7f, frequency = %2.2f\n", stimulator.stim[sel_ch].points[0].current, stimulator.stim[sel_ch].period, stimulator.fq[sel_ch]);
     // Update commands
     //code = Move3_none;
-    Move3_cmd = Move3_none;
-    Move3_key = Move3_none;
-    GL_UI.Move3_hmi = Move3_none;
+    //Move3_cmd = Move3_none;
+    Move3_key = Move3_none; // Should this flag come down or just wait for screen to set it down?
+    GL_UI.Move3_hmi = Move3_none;   // Should this flag come down or just wait for screen to set it down?
 }
 
 void stimulating_sas()
@@ -1146,8 +1147,8 @@ void stimulating_sas()
                 {
                     PORT_STIM[3] = GL_UI.PORT_STIM[3];
                 }
-                countPort++;
                 */
+                countPort++;
                 // Connect to the device and initialize settings
                 sprintf(msg_stimulating, "Starting stimulator on port %s, try nr %d", PORT_STIM, countPort);
                 load_stim_settings();
@@ -1202,13 +1203,13 @@ void stimulating_sas()
                     sprintf(msg_stimulating, "Stimulation timeout");
                 }
 
-                Move3_hmi = Move3_none;
-                Move3_key = Move3_none;
+                //Move3_hmi = Move3_none;
+                Move3_key = Move3_none; // Should this flag come down or just wait for screen to set it down?
             }
 
-            if ((stimulator.active || Move3_hmi == Move3_start || Move3_key == Move3_start) && !stim_timeout && robert.playPause)
+            if ((stimulator.active || Move3_key == Move3_start) && !stim_timeout && robert.playPause)
             {
-                if (Move3_hmi == Move3_start || Move3_key == Move3_start)
+                if (Move3_key == Move3_start)
                 {
                     stimulator.stim_act[hmi_channel] = true;
                 }
@@ -1246,14 +1247,14 @@ void stimulating_sas()
             if (Move3_user_key)
             {
                 //modify_stimulation(Move3_key, hmi_channel);
-                Move3_hmi = Move3_none;
-                Move3_key = Move3_none;
+                //Move3_hmi = Move3_none;
+                Move3_key = Move3_none; // Should this flag come down or just wait for screen to set it down?
             }
 
             screen_stop = (screen_status == setDone) || (screen_status == exDone) || (screen_status == msgEnd);
             robot_stop = !robert.playPause || robert.Reached;
             // Stop stimulation
-            if ((Move3_hmi == Move3_stop || Move3_key == Move3_stop || screen_stop || stim_timeout || robot_stop || rec_status.error) && stimulator.active)
+            if ((Move3_key == Move3_stop || screen_stop || stim_timeout || robot_stop || rec_status.error) && stimulator.active)
             {
                 stimulator.pause();
                 stim_fl1 = true;
@@ -1261,7 +1262,7 @@ void stimulating_sas()
                 // abort exercise
                 stim_abort = screen_stop;
                 // screen message
-                if (Move3_hmi == Move3_stop || Move3_key == Move3_stop)
+                if (Move3_key == Move3_stop)
                 {
                     sprintf(msg_stimulating, "Stimulation stopped");
                 }
@@ -1274,8 +1275,8 @@ void stimulating_sas()
                     sprintf(msg_stimulating, "Stimulation timeout");
                 }
 
-                Move3_hmi = Move3_none;
-                Move3_key = Move3_none;
+                //Move3_hmi = Move3_none;
+                Move3_key = Move3_none; // Should this flag come down or just wait for screen to set it down?
             }
 
             // Stimulate
@@ -1409,10 +1410,12 @@ void stimulating_sas()
         if (!stimulator.ready)
         {
             // Select port from the GUI
+            /*
             if (GL_UI.PORT_STIM[3] >= '1' && GL_UI.PORT_STIM[3] <= '9')
             {
                 PORT_STIM[3] = GL_UI.PORT_STIM[3];
             }
+            */
             countPort++;
             // Connect to the device and initialize settings
             sprintf(msg_stimulating, "Starting stimulator on port %s, try nr %d", PORT_STIM, countPort);
@@ -1936,11 +1939,13 @@ void recording_sas()
         if (!recorder.ready)
         {
             // Select port from the GUI
+            /*
             if (GL_UI.PORT_REC[3] >= '1' && GL_UI.PORT_REC[3] <= '9')
             {
                 PORT_REC[3] = GL_UI.PORT_REC[3];            // this is maybe too redundant
             }
             // normal start up
+            */
             sprintf(msg_recording, "Re-start manually the recorder. Reconnecting recorder on port %s.", PORT_REC);
             Sleep(2500);
             recorder.display = true;

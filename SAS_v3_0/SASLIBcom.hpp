@@ -89,7 +89,6 @@ public:
         messages[th_start] = "THRESHOLD_PRESSED";
         status = msg_none;
     }
-
 };
 tcp_msg_struct msgList;
 // ------------------ Functions definition ------------------
