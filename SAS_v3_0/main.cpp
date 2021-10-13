@@ -96,7 +96,8 @@ bool start_train = false;
 // ------------------------- Stimulator calibration  ------------------------
 // This value will be changed on the SAS interface run-time if needed >> default = CH1
 Smpt_Channel hmi_channel = Smpt_Channel_Black; 
-emgCh_Type emgCH = emgCh0;
+emgCh_Type emgCH = emgCh1;
+emgCh_Type previous_channel = emgCh0;
 // State process variables
 bool stim_done = false,
 stim_userX = false, stim_auto_done = false, stim_pause = false;
@@ -165,7 +166,7 @@ void robot_thread();
 void screen_thread();
 void update_localGui();
 // Devices functions
-void modify_stimulation(RehaMove3_Req_Type& code, Smpt_Channel sel_ch);
+void modify_stimulation(Smpt_Channel sel_ch);
 static void stimulating_sas();
 static void recording_sas();
 // files functions
@@ -209,14 +210,45 @@ int Main()
 // ---------------------------- Interface function definitions --------------------------
 void update_local_variables() {
     // TODO: include all local variables and check they are being updated
+    // Exercise from screen
     GL_exercise = screen.exercise;
+    // Threshold method from screen
     GL_thMethod = screen.method;
+    // SAS channel from screen
     emgCH = screen.channel;
+
+    // Connecting stimulation channel if modifyied
+    if (previous_channel != emgCH)
+    {
+        if (emgCH == emgCh1)
+        {
+            hmi_channel = Smpt_Channel_Black;
+                stimulator.channel = hmi_channel;
+                stimulator.ch_ready = true;
+        }
+        else if (emgCH == emgCh2)
+        {
+            hmi_channel = Smpt_Channel_White;
+                stimulator.channel = hmi_channel;
+                stimulator.ch_ready = true;
+        }
+        previous_channel = emgCH;
+    }
+    // Modifying stimulation 
+    modify_stimulation(hmi_channel);
+
 }
 
 void update_localGui() {
     // ------------- sas -> gui ------------- 
     // Only used for debugging purposes and see whether the workflow after the merge with SCREEN works
+    // screen messages of devices
+    GL_UI.screenMessage = "";
+    GL_UI.screenMessage += "RehaMove3: ";
+    GL_UI.screenMessage += msg_stimulating;
+    GL_UI.screenMessage += "\nRehaIngest: ";
+    GL_UI.screenMessage += msg_recording;
+
     // status
     GL_UI.status = GL_state;
     GL_UI.END_GUI = MAIN_to_all.end;
@@ -248,7 +280,7 @@ void update_localGui() {
 
     // ------------- gui -> sas -------------
     // Keys
-    Move3_key = GL_UI.Move3_hmi;
+    //Move3_key = GL_UI.Move3_hmi;  // All user interactions to the stim values removed 
     user_gui = GL_UI.User_hmi;
 
     // Logical operations based on the user commands - What is this ?? (12.10.21)
@@ -928,14 +960,11 @@ void mainSAS_thread()
 
 // ---------------------------- Devices function definitions  --------------------------
 
-void modify_stimulation(RehaMove3_Req_Type& code, Smpt_Channel sel_ch)
+void modify_stimulation(Smpt_Channel sel_ch)
 {
-    // current_Val = real values on the stimulator
-    // next_val = values that are going to be assigned
-    // code = command (what to change)
+    // Values that are going to be assigned
     Smpt_ml_channel_config next_val = stimulator.stim[sel_ch];
-    double next_fq = stimulator.fq[sel_ch];
-    //next_val = stimulator.stim[Smpt_Channel_Red]; // Old
+
     float Dcurr = 0.0, DHz = 0.0;
     uint8_t Dramp = 0, Dnr = 0;
     bool autoCal_process = (GL_state == st_calA_go) || (GL_state == st_calA_stop); // Automatic cal in progress
@@ -971,9 +1000,15 @@ void modify_stimulation(RehaMove3_Req_Type& code, Smpt_Channel sel_ch)
         DHz = D_FQ_MAN;
     }
 
-    // Apply increments 
-    switch (code)
-    {
+    // Apply changes
+    next_val.points[0].current = screen.amplitude;
+    next_val.period = screen.frequency;
+    // TODO
+    //nex_val.pulse_width = screen.pulse_width;
+        
+    //switch (code) --- OLD
+    //{
+        /*  RAMP is hardcoded to 10 in the final version of SAS and cannot be modified from the interface
     case Move3_ramp_more:
         next_val.number_of_points += Dnr;
         next_val.ramp += Dramp;
@@ -982,6 +1017,7 @@ void modify_stimulation(RehaMove3_Req_Type& code, Smpt_Channel sel_ch)
         next_val.number_of_points -= Dnr;
         next_val.ramp -= Dramp;
         break;
+        // Rest of the values are assigned to the value that comes from SCREEN - Old interface removed
     case Move3_decr:
         next_val.points[0].current -= Dcurr;
         next_val.points[2].current += Dcurr;
@@ -998,9 +1034,11 @@ void modify_stimulation(RehaMove3_Req_Type& code, Smpt_Channel sel_ch)
         next_fq -= DHz;
         next_val.period = MS_TO_HZ / next_fq;
         break;
-    }
+        */
+    //}
 
     // Checking max and min possible values:
+    /*
     if (next_val.ramp > MAX_STIM_RAMP)
     {
         next_val.ramp = MAX_STIM_RAMP;
@@ -1011,7 +1049,7 @@ void modify_stimulation(RehaMove3_Req_Type& code, Smpt_Channel sel_ch)
         next_val.ramp = MIN_STIM_RAMP;
         next_val.number_of_points = MIN_STIM_RAMP;
     }
-
+    
     if (next_val.points[0].current > MAX_STIM_CUR)
     {
         next_val.points[0].current = MAX_STIM_CUR;
@@ -1022,7 +1060,7 @@ void modify_stimulation(RehaMove3_Req_Type& code, Smpt_Channel sel_ch)
         next_val.points[0].current = MIN_STIM_CUR;
         next_val.points[2].current = MIN_STIM_CUR;
     }
-
+    
     if (next_fq > MAX_STIM_FQ)
     {
         next_fq = MAX_STIM_FQ;
@@ -1033,17 +1071,13 @@ void modify_stimulation(RehaMove3_Req_Type& code, Smpt_Channel sel_ch)
         next_fq = MIN_STIM_FQ;
         next_val.period = MS_TO_HZ / next_fq;
     }
+    */
     // Update values
     stimulator.stim[sel_ch] = next_val;
-    stimulator.fq[sel_ch] = next_fq;
-    // stimulator.stim[Smpt_Channel_Red] = next_val; // Old
-    //if ((code != Move3_stop) && (code != Move3_start) && (screen.display))
-    //{
+    //stimulator.fq[sel_ch] = next_fq;
     sprintf(msg_modify, "RehaMove3 message: Stimulation update -> current = %2.2f, period = %2.7f, frequency = %2.2f\n", stimulator.stim[sel_ch].points[0].current, stimulator.stim[sel_ch].period, stimulator.fq[sel_ch]);
-    //%2.1f is the format to show a float number, 2.1 means 2 units and 1 decimal
-//}
-// Update commands
-    code = Move3_none;
+    // Update commands
+    //code = Move3_none;
     Move3_cmd = Move3_none;
     Move3_key = Move3_none;
     GL_UI.Move3_hmi = Move3_none;
@@ -1075,7 +1109,9 @@ void stimulating_sas()
         {
         case st_init:
             // initialization
-            // Select Stimulation Channel = Recording Channel
+            // Select Stimulation Channel = Recording Channel 
+            /* This is all handled in a new thread that updates the port and channel variables
+            * which values come from the screen
             if (!stimulator.ch_ready)
             {
                 emgCH = GL_UI.next_channel;
@@ -1092,24 +1128,29 @@ void stimulating_sas()
                 stimulator.channel = hmi_channel;
                 stimulator.ch_ready = true;
             }
-            else if (emgCH == emgCh0) // Channel not selected yet
+            */
+            // For debugging purposes --- OUTCOMMENT NEXT LINE FOR REAL UDP SCREEN-SAS
+            update_local_variables();
+
+            if (emgCH == emgCh0) // Channel not selected yet
             {
                 stimulator.ch_ready = false;
             }
             if (!stimulator.ready && stimulator.ch_ready)
             {
+                /*
                 // Select port from the GUI
                 if (GL_UI.PORT_STIM[3] >= '1' && GL_UI.PORT_STIM[3] <= '9')
                 {
                     PORT_STIM[3] = GL_UI.PORT_STIM[3];
                 }
                 countPort++;
+                */
                 // Connect to the device and initialize settings
                 sprintf(msg_stimulating, "Starting stimulator on port %s, try nr %d", PORT_STIM, countPort);
                 load_stim_settings();
                 stimulator.display = true;
                 stimulator.init(PORT_STIM, GL_exercise);
-                //sprintf(msg_stimulating, "%s", stimulator.displayMsg);
                 stim_fl1 = false;
             }
             else if(stimulator.ready && stimulator.ch_ready)
@@ -1135,7 +1176,7 @@ void stimulating_sas()
             //Update stimulation parameters if a key associated with parameters has been pressed
             if (Move3_user_key)
             {
-                modify_stimulation(Move3_key, hmi_channel);
+                //modify_stimulation(Move3_key, hmi_channel);
             }
             screen_stop = (screen_status == setDone) || (screen_status == exDone);
             robot_stop = !robert.playPause || robert.Reached;
@@ -1192,17 +1233,17 @@ void stimulating_sas()
 
             if (Move3_user_key)
             {
-                modify_stimulation(Move3_key, hmi_channel);
+                //modify_stimulation(Move3_key, hmi_channel);
             }
             break;
 
         case st_running:
-            // modify parameters if a button is pressed
+            // modify parameters if a button is pressed - No longer done in the old interface
             Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start);
 
             if (Move3_user_key)
             {
-                modify_stimulation(Move3_key, hmi_channel);
+                //modify_stimulation(Move3_key, hmi_channel);
                 Move3_hmi = Move3_none;
                 Move3_key = Move3_none;
             }
@@ -1869,8 +1910,8 @@ void recording_sas()
     }
 
     // checking
-    //recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready));
-    recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (recorder.found && recorder.ready)); // NEW handling for REHAINGEST disconnection
+    recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready));
+    //recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (recorder.found && recorder.ready)); // NEW handling for REHAINGEST disconnection
     //sprintf(msg_recording, "recAva %d, status %d, received %d, start %d", recAvailable, (GL_state == st_init || GL_state == st_end), (received_data&& recorder.data_start), (!recorder.data_start&& recorder.ready));
 
 

@@ -235,7 +235,7 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 }
 
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
-        int & _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, int& _triggerGain, bool& _startStop,
+        int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, int& _triggerGain, bool& _startStop,
         bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity,
         tcp_msg_Type& result)
 {
@@ -642,16 +642,16 @@ struct UdpServer
         displayMsg = " ";
         res_level = 5;
         pulse_width = 0;
-        amplitude = 0;
-        frequency = 0;
+        amplitude = 2;
+        frequency = 50;
         trigger_gain = 0;
         time_vel_th = 0;
         vel_th = 0;
         stim_port = 1;
         rec_port = 1;
-        channel = emgCh0;
+        channel = emgCh1;
         velocity = 1;
-        start_stop = true;      // Assume starts = true
+        start_stop = false;      // Assume starts = false
         auto_trigger = false;
         exercise = kneeExt;
         method = th_SD05;

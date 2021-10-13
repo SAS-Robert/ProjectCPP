@@ -97,7 +97,7 @@ void enable_ml_update(Smpt_device *const device, Smpt_ml_update *const ml_update
     ml_update->packet_number = smpt_packet_number_generator_next(device);
 
     ml_update->channel_config[sel_ch].number_of_points = 3;
-    ml_update->channel_config[sel_ch].ramp = 3;
+    ml_update->channel_config[sel_ch].ramp = 10;    // Final hardcoded value of the ramp
     ml_update->channel_config[sel_ch].period = 20;
     ml_update->channel_config[sel_ch].points[0].current = 0.0;
     ml_update->channel_config[sel_ch].points[0].time = 300;
@@ -235,7 +235,7 @@ void load_stim_settings() {
 
     // Upper leg extension
     UPPERLEG_SET.number_of_points = 3; 
-    UPPERLEG_SET.ramp = 3;             
+    UPPERLEG_SET.ramp = 10;             
     UPPERLEG_SET.period = 33;               // 1/frequency (ms)
     UPPERLEG_SET.points[0].current = 5;    // amplitude (mA)
     UPPERLEG_SET.points[0].time = 300;
@@ -245,7 +245,7 @@ void load_stim_settings() {
 
     // Lower leg extension
     LOWERLEG_SET.number_of_points = 3;
-    LOWERLEG_SET.ramp = 3;
+    LOWERLEG_SET.ramp = 10;
     LOWERLEG_SET.period = 33;
     LOWERLEG_SET.points[0].current = 5;
     LOWERLEG_SET.points[0].time = 300;
@@ -255,7 +255,7 @@ void load_stim_settings() {
 
     // Electrical circuit
     CIRCUIT_SET.number_of_points = 3;
-    CIRCUIT_SET.ramp = 3;
+    CIRCUIT_SET.ramp = 10;
     CIRCUIT_SET.period = 33;
     CIRCUIT_SET.points[0].current = 5;
     CIRCUIT_SET.points[0].time = 300;

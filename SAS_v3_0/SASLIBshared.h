@@ -87,7 +87,7 @@ public:
 		// Stimulation parameters
 		current = 0.0;
 		frequency = 30.0;
-		ramp = 3;
+		ramp = 10;
 		channel = emgCh0;
 
 		recReady = false;
