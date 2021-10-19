@@ -46,23 +46,21 @@ struct device_to_device
 threshold_Type GL_thhmi = th_SD05;
 
 // User options
-//RehaMove3_Req_Type Move3_cmd = Move3_none; // I believe this variable is not doing anything
-//RehaMove3_Req_Type Move3_hmi = Move3_none; // I believe this variable is not doing anything
+RehaMove3_Req_Type Move3_cmd = Move3_none; // I believe this variable is not doing anything
+RehaMove3_Req_Type Move3_hmi = Move3_none; // I believe this variable is not doing anything
 RehaMove3_Req_Type Move3_key = Move3_none;
-User_Req_Type user_gui = User_none;
-//User_Req_Type User_cmd = User_none, user_gui = User_none;
+//User_Req_Type user_gui = User_none;
+User_Req_Type User_cmd = User_none, user_gui = User_none;
 
 // ------------------------- Devices handling --------------------------------
 bool stim_abort = false, stimAvailable = false, recAvailable = false;
 double fixed_value = 0;
 
-//char PORT_STIM[5] = "COM6";   // Laptop
-char PORT_STIM[5] = "COM6";     // Robot
+char PORT_STIM[5] = "COM6";
 RehaMove3 stimulator;
 int countPort = 0;
 
-//char PORT_REC[5] = "COM4";    // Laptop
-char PORT_REC[5] = "COM4";      // Robot
+char PORT_REC[5] = "COM4";
 RehaIngest recorder;
 int GL_iterator = 0;
 
@@ -96,8 +94,8 @@ bool start_train = false;
 
 // ------------------------- Stimulator calibration  ------------------------
 // This value will be changed on the SAS interface run-time if needed >> default = CH1
-Smpt_Channel hmi_channel = Smpt_Channel_Black; 
-emgCh_Type emgCH = emgCh1;
+Smpt_Channel hmi_channel = Smpt_Channel_Undefined; 
+emgCh_Type emgCH = emgCh0;
 emgCh_Type previous_channel = emgCh0;
 // State process variables
 bool stim_done = false,
@@ -125,7 +123,7 @@ bool mech_as_needed = false; // AAN prerequisites: Active return + assist in com
 bool velocity_trigg = false; // AAN prerequisites: Velocity needs to be lower than 7.5mm/s in e.g. 2s
 bool trigger_timeout = false, complete_timeout = false; // Flags for timing handling of AAN
 
-// ------------------------------ Timing -------------------
+// ----------------------------- Timing -----------------------------
 // Dummies - Measuring time:
 //-time 1 = from when threshold has been passed until the stimulator starts (FES_cnt)
 //-time 2 = filtering perfomance (EMG_tic)
@@ -233,7 +231,7 @@ void update_local_variables() {
             stimulator.channel = hmi_channel;
             stimulator.ch_ready = true;
         }
-        previous_channel = emgCH;
+        // previous_channel = emgCH; // This value gets updated in stimulating_sas() after reconnecting to the new channel
     }
     // Modifying stimulation 
     modify_stimulation(hmi_channel);
@@ -242,7 +240,7 @@ void update_local_variables() {
 }
 
 void update_localGui() {
-    // ------------- sas -> gui ------------- 
+    // ----------------------------- sas -> gui ----------------------------- 
     // Only used for debugging purposes and see whether the workflow after the merge with SCREEN works
     // screen messages of devices
     GL_UI.screenMessage = "";
@@ -280,7 +278,7 @@ void update_localGui() {
     GL_UI.recReady = recorder.ready;// && !rec_status.error;
     GL_UI.stimReady = stimAvailable && !stim_status.error;
 
-    // ------------- gui -> sas -------------
+    // ----------------------------- gui -> sas -----------------------------
     // Keys ----- These keys are now updated from the screen in update_local_variables
     //Move3_key = GL_UI.Move3_gui;  // All user interactions to the stim values removed 
     //user_gui = GL_UI.User_hmi;    // All user interactions to the threshold flag removed
@@ -426,18 +424,18 @@ void sendEmgData_thread()
     // main loop of the sending thread
     while (!MAIN_to_all.end && (GL_state != st_end))
     {
-        if (GL_state != st_stop && GL_state != st_repeat)
+        //if (GL_state != st_stop && GL_state != st_repeat)
+        //{
+        if (live_data != live_previous)
         {
-            if (live_data != live_previous)
-            {
-                screenEMG.stream(live_data);
-                live_previous = live_data;
-            }
-            else
-            {
-                // Do nothing
-            }
+            screenEMG.stream(live_data);
+            live_previous = live_data;
         }
+        else
+        {
+            // Do nothing
+        }
+        //}
     }
 
     screenEMG.end();
@@ -512,10 +510,10 @@ void screen_thread()
 
         if (!screen.error && GL_tcpActive)
         {
-            decode_successful = decode_successful = decode_screen(screen.recvbuf, screen.finish, screen.playPause, screen.res_level, screen.pulse_width,
+            decode_successful = decode_screen(screen.recvbuf, screen.finish, screen.playPause, screen.res_level, screen.pulse_width,
                 screen.amplitude, screen.frequency, screen.exercise, screen.method, screen.trigger_gain, screen.start_stop,
-                screen.auto_trigger, screen.time_vel_th, screen.vel_th, screen.stim_port, screen.rec_port, screen.channel, screen.velocity, screen.threshold_pressed,
-                screen_status);
+                screen.auto_trigger, screen.time_vel_th, screen.vel_th, screen.stim_port, screen.rec_port, screen.channel, screen.velocity,
+                screen.threshold_pressed, screen_status);
 
             if (decode_successful)
             {
@@ -1005,6 +1003,7 @@ void modify_stimulation(Smpt_Channel sel_ch)
 
     // Apply changes
     next_val.points[0].current = screen.amplitude;
+    next_val.points[2].current = -screen.amplitude;     // Biphasic pulse with the same amplitude --ии|__--
     next_val.period = screen.frequency;
     // TODO
     //nex_val.pulse_width = screen.pulse_width;
@@ -1398,6 +1397,31 @@ void stimulating_sas()
     
     }
     
+    // Channgel was change runtime
+    if (previous_channel != emgCH) {
+
+        sprintf(msg_stimulating, "Setting up new channel");
+
+        if (stimulator.ready)
+        {
+            stimulator.end();
+            countPort = 0;
+        }
+        if (!stimulator.ready && stimulator.ch_ready)
+        {
+            countPort++;
+            // Connect to the device and initialize settings
+            sprintf(msg_stimulating, "Starting stimulator on port %s, try nr %d", PORT_STIM, countPort);
+            stimulator.display = true;
+            stimulator.init(PORT_STIM, GL_exercise);
+            stim_status.error = !stimulator.ready;
+        }
+        if (!stim_status.error) {
+            sprintf(msg_stimulating, "Stimulator connected", PORT_STIM, countPort);
+            previous_channel = emgCH;
+        }
+    }
+
     // Stimulator connection lost
     if (!devAvailable && stim_status.error)
     {
@@ -1407,7 +1431,7 @@ void stimulating_sas()
             stimulator.end();
             countPort = 0;
         }
-        if (!stimulator.ready)
+        if (!stimulator.ready && stimulator.ch_ready)
         {
             // Select port from the GUI
             /*
@@ -1475,10 +1499,12 @@ void recording_sas()
             if (!recorder.ready)
             {
                 // Select port from the GUI
+                /*
                 if (GL_UI.PORT_REC[3] >= '1' && GL_UI.PORT_REC[3] <= '9')
                 {
                     PORT_REC[3] = GL_UI.PORT_REC[3];            // this is maybe too redundant
                 }
+                */
                 // normal start up
                 sprintf(msg_recording, "Starting recorder on port %s.", PORT_REC);
                 Sleep(250);
@@ -1915,8 +1941,8 @@ void recording_sas()
     }
 
     // checking
-    recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready));
-    //recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (recorder.found && recorder.ready)); // NEW handling for REHAINGEST disconnection
+    recAvailable = ((GL_state == st_init || GL_state == st_end) || (received_data && recorder.data_start) || (recorder.found && recorder.ready && recorder.data_start));
+    //recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready)); // old handling for REHAINGEST disconnection
     //sprintf(msg_recording, "recAva %d, status %d, received %d, start %d", recAvailable, (GL_state == st_init || GL_state == st_end), (received_data&& recorder.data_start), (!recorder.data_start&& recorder.ready));
 
 

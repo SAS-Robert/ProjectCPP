@@ -79,14 +79,14 @@ namespace SASv30 {
 		System::Windows::Forms::Button^ thButton;
 		System::Windows::Forms::Label^ rampTitle;
 		System::Windows::Forms::Label^ rampValue;
-		//System::Windows::Forms::Button^ rampPlus;
-		//System::Windows::Forms::Button^ rampMinus;
-		//System::Windows::Forms::Button^ curMinus;
-		//System::Windows::Forms::Button^ curPlus;
+		System::Windows::Forms::Button^ rampPlus;
+		System::Windows::Forms::Button^ rampMinus;
+		System::Windows::Forms::Button^ curMinus;
+		System::Windows::Forms::Button^ curPlus;
 		System::Windows::Forms::Label^ curValue;
 		System::Windows::Forms::Label^ curTitle;
-		//System::Windows::Forms::Button^ fqMinus;
-		//System::Windows::Forms::Button^ fqPlus;
+		System::Windows::Forms::Button^ fqMinus;
+		System::Windows::Forms::Button^ fqPlus;
 		System::Windows::Forms::Label^ fqValue;
 		System::Windows::Forms::Label^ fqTitle;
 
@@ -154,14 +154,14 @@ namespace SASv30 {
 			this->thButton = (gcnew System::Windows::Forms::Button());
 			this->rampTitle = (gcnew System::Windows::Forms::Label());
 			this->rampValue = (gcnew System::Windows::Forms::Label());
-			//this->rampPlus = (gcnew System::Windows::Forms::Button());
-			//this->rampMinus = (gcnew System::Windows::Forms::Button());
-			//this->curMinus = (gcnew System::Windows::Forms::Button());
-			//this->curPlus = (gcnew System::Windows::Forms::Button());
+			this->rampPlus = (gcnew System::Windows::Forms::Button());
+			this->rampMinus = (gcnew System::Windows::Forms::Button());
+			this->curMinus = (gcnew System::Windows::Forms::Button());
+			this->curPlus = (gcnew System::Windows::Forms::Button());
 			this->curValue = (gcnew System::Windows::Forms::Label());
 			this->curTitle = (gcnew System::Windows::Forms::Label());
-			//this->fqMinus = (gcnew System::Windows::Forms::Button());
-			//this->fqPlus = (gcnew System::Windows::Forms::Button());
+			this->fqMinus = (gcnew System::Windows::Forms::Button());
+			this->fqPlus = (gcnew System::Windows::Forms::Button());
 			this->fqValue = (gcnew System::Windows::Forms::Label());
 			this->fqTitle = (gcnew System::Windows::Forms::Label());
 			this->stimButton = (gcnew System::Windows::Forms::Button());
@@ -261,7 +261,7 @@ namespace SASv30 {
 			// 
 			// thButton
 			// 
-			this->thButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->thButton->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->thButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->thButton->FlatAppearance->BorderSize = 0;
@@ -306,8 +306,7 @@ namespace SASv30 {
 			// 
 			// rampPlus
 			// 
-			/*
-			this->rampPlus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->rampPlus->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->rampPlus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->rampPlus->FlatAppearance->BorderSize = 0;
@@ -322,11 +321,10 @@ namespace SASv30 {
 			this->rampPlus->TabIndex = 16;
 			this->rampPlus->Text = L"+";
 			this->rampPlus->UseVisualStyleBackColor = false;
-			this->rampPlus->Click += gcnew System::EventHandler(this, &MyForm::click_rampPlus);
 			// 
 			// rampMinus
 			// 
-			this->rampMinus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->rampMinus->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->rampMinus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->rampMinus->FlatAppearance->BorderSize = 0;
@@ -340,13 +338,10 @@ namespace SASv30 {
 			this->rampMinus->TabIndex = 17;
 			this->rampMinus->Text = L"-";
 			this->rampMinus->UseVisualStyleBackColor = false;
-			this->rampMinus->Click += gcnew System::EventHandler(this, &MyForm::click_rampMinus);
-			*/
 			// 
 			// curMinus
 			// 
-			/*
-			this->curMinus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->curMinus->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->curMinus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->curMinus->FlatAppearance->BorderSize = 0;
@@ -360,11 +355,10 @@ namespace SASv30 {
 			this->curMinus->TabIndex = 21;
 			this->curMinus->Text = L"-";
 			this->curMinus->UseVisualStyleBackColor = false;
-			this->curMinus->Click += gcnew System::EventHandler(this, &MyForm::click_curMinus);
 			// 
 			// curPlus
 			// 
-			this->curPlus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->curPlus->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->curPlus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->curPlus->FlatAppearance->BorderSize = 0;
@@ -379,8 +373,6 @@ namespace SASv30 {
 			this->curPlus->TabIndex = 20;
 			this->curPlus->Text = L"+";
 			this->curPlus->UseVisualStyleBackColor = false;
-			this->curPlus->Click += gcnew System::EventHandler(this, &MyForm::click_curPlus);
-			*/
 			// 
 			// curValue
 			// 
@@ -410,8 +402,7 @@ namespace SASv30 {
 			// 
 			// fqMinus
 			// 
-			/*
-			this->fqMinus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->fqMinus->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->fqMinus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->fqMinus->FlatAppearance->BorderSize = 0;
@@ -425,11 +416,10 @@ namespace SASv30 {
 			this->fqMinus->TabIndex = 25;
 			this->fqMinus->Text = L"-";
 			this->fqMinus->UseVisualStyleBackColor = false;
-			this->fqMinus->Click += gcnew System::EventHandler(this, &MyForm::click_fqMinus);
 			// 
 			// fqPlus
 			// 
-			this->fqPlus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->fqPlus->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->fqPlus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->fqPlus->FlatAppearance->BorderSize = 0;
@@ -444,8 +434,6 @@ namespace SASv30 {
 			this->fqPlus->TabIndex = 24;
 			this->fqPlus->Text = L"+";
 			this->fqPlus->UseVisualStyleBackColor = false;
-			this->fqPlus->Click += gcnew System::EventHandler(this, &MyForm::click_fqPlus);
-			*/
 			// 
 			// fqValue
 			// 
@@ -475,7 +463,7 @@ namespace SASv30 {
 			// 
 			// stimButton
 			// 
-			this->stimButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->stimButton->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->stimButton->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->stimButton->FlatAppearance->BorderSize = 0;
@@ -526,7 +514,7 @@ namespace SASv30 {
 			// 
 			// velMinus
 			// 
-			this->velMinus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->velMinus->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->velMinus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->velMinus->FlatAppearance->BorderSize = 0;
@@ -544,7 +532,7 @@ namespace SASv30 {
 			// 
 			// velPlus
 			// 
-			this->velPlus->BackColor = System::Drawing::SystemColors::Highlight;
+			this->velPlus->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->velPlus->FlatAppearance->BorderColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)),
 				static_cast<System::Int32>(static_cast<System::Byte>(255)), static_cast<System::Int32>(static_cast<System::Byte>(192)));
 			this->velPlus->FlatAppearance->BorderSize = 0;
@@ -559,7 +547,6 @@ namespace SASv30 {
 			this->velPlus->TabIndex = 40;
 			this->velPlus->Text = L"+";
 			this->velPlus->UseVisualStyleBackColor = false;
-			this->velPlus->Click += gcnew System::EventHandler(this, &MyForm::click_velPlus);
 			// 
 			// velValue
 			// 
@@ -634,7 +621,6 @@ namespace SASv30 {
 			this->velCurrent->TabIndex = 47;
 			this->velCurrent->Text = L"isVelocity value";
 			this->velCurrent->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
-			//this->velCurrent->Click += gcnew System::EventHandler(this, &MyForm::velCurrent_Click);
 			// 
 			// stimInfo
 			// 
@@ -820,16 +806,16 @@ namespace SASv30 {
 			this->Controls->Add(this->methodBox);
 			this->Controls->Add(this->nextTitle);
 			this->Controls->Add(this->stimButton);
-			//this->Controls->Add(this->fqMinus);
-			//this->Controls->Add(this->fqPlus);
+			this->Controls->Add(this->fqMinus);
+			this->Controls->Add(this->fqPlus);
 			this->Controls->Add(this->fqValue);
 			this->Controls->Add(this->fqTitle);
-			//this->Controls->Add(this->curMinus);
-			//this->Controls->Add(this->curPlus);
+			this->Controls->Add(this->curMinus);
+			this->Controls->Add(this->curPlus);
 			this->Controls->Add(this->curValue);
 			this->Controls->Add(this->curTitle);
-			//this->Controls->Add(this->rampMinus);
-			//this->Controls->Add(this->rampPlus);
+			this->Controls->Add(this->rampMinus);
+			this->Controls->Add(this->rampPlus);
 			this->Controls->Add(this->rampValue);
 			this->Controls->Add(this->rampTitle);
 			this->Controls->Add(this->thButton);
@@ -938,7 +924,7 @@ namespace SASv30 {
 	private: System::Void click_newButton(System::Object^ sender, System::EventArgs^ e) {
 		user_gui = User_new;
 	}
-	/*
+
 	private: System::Void click_rampPlus(System::Object^ sender, System::EventArgs^ e) {
 		Move3_gui = Move3_ramp_more;
 	}
@@ -962,7 +948,7 @@ namespace SASv30 {
 	private: System::Void click_fqMinus(System::Object^ sender, System::EventArgs^ e) {
 		Move3_gui = Move3_Hz_ls;
 	}
-	*/
+
 	private: System::Void click_stimButton(System::Object^ sender, System::EventArgs^ e) {
 		if ((state == st_calM || state == st_running) && !GL_UI.stimActive && GL_UI.playPause && GL_UI.stimReady)
 		{
@@ -1042,7 +1028,6 @@ namespace SASv30 {
 
 	// For isMoving testing (that it was at the end shipped to Holland because why not)
 	private: System::Void click_velMinus(System::Object^ sender, System::EventArgs^ e) {
-		/*
 		isVelocity -= isDelta;
 		// Update SAS
 		GL_UI.isVelocity_limit = isVelocity;
@@ -1051,10 +1036,8 @@ namespace SASv30 {
 		tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mms/s";
 		string tempString = tempValue.str();
 		this->velValue->Text = gcnew String(tempString.c_str());
-		*/
 	}
 	private: System::Void click_velPlus(System::Object^ sender, System::EventArgs^ e) {
-		/*
 		isVelocity += isDelta;
 		// Update SAS
 		GL_UI.isVelocity_limit = isVelocity;
@@ -1063,7 +1046,6 @@ namespace SASv30 {
 		tempValue << std::setprecision(2) << GL_UI.isVelocity_limit << " mms/s";
 		string tempString = tempValue.str();
 		this->velValue->Text = gcnew String(tempString.c_str());
-		*/
 	}
 
 // ---------------- Background worker: be careful when modifying these ----------------

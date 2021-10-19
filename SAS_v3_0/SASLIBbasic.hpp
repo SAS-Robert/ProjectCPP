@@ -108,7 +108,7 @@ typedef enum
     start = 1,           // Exercise has started
     repeat = 2,          // Repeat exercise
     pause = 3,           // Play/Pause button = in pause
-    play = 4,            // Play/Pause button = in play 
+    play = 4,            // Play/Pause button = in play (resume)
     setDone = 5,         // Repetitions-set finished
     repStart = 6,        // Start repetition
     repEnd = 7,          // End repetition

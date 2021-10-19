@@ -76,6 +76,23 @@ enum tcp_msg_Type
 	res8 = 18,
 	res9 = 19,
 	res10 = 20,
+	// Additions for the SAS implementation to the interface
+	pulseWidth = 21,     // Pulse width corresponds to the ramp value in the old SAS
+	amplitude = 22,      // Amplitude of the signal of the stim
+	frequency = 23,      // Frequency of the signal of the stim
+	exercise = 24,       // Exercise selected in main screen
+	method = 25,         // Method for threshold collection
+	triggerGain = 26,    // Trigger gain for the threshold (multiplier)
+	startBut = 27,       // Start button pressed on the Screen
+	stopbut = 28,        // Stop button pressed on the Screen
+	autoTrigg = 29,      // Auto trigger
+	timeVelTh = 30,      // Time velocity threshold - AAN variable to be fixed
+	velTh = 31,          // Velocity threshold - AAN variable to be fixed
+	stimPort = 32,       // Stimulator port selected on SCREEN
+	recPort = 33,        // Recorder port selected on SCREEN
+	channel = 34,        // Channel selected for SAS use
+	velocity = 35,       // Velocity value corresponding minVelocity in the old SAS
+	th_start = 36,       // Threshold button has been pressed
 } ;
 
 struct tcp_msg_struct
@@ -83,21 +100,21 @@ struct tcp_msg_struct
 public:
 	const int size = 11;
 	tcp_msg_Type status;
-	string messages[30];
+	string messages[40];
 	// Constructor
 	tcp_msg_struct()
 	{
-		messages[exDone] = "EXERCISE_DONE";
-		messages[start] = "PLAY";
-		messages[repeat] = "REPEAT";
-		messages[pause] = "PAUSE";
-		messages[play] = "RESUME";
-		messages[setDone] = "SET_DONE";
-		messages[repStart] = "CYCLE_START";
-		messages[repEnd] = "CYCLE_DONE";
-		messages[finish] = "ENDTCP";
-		messages[msgEnd] = "END";
-		messages[msg_none] = " ";
+		messages[exDone] = "EXERCISE_DONE;0";
+		messages[start] = "PLAY;0";
+		messages[repeat] = "REPEAT;0";
+		messages[pause] = "PAUSE;0";
+		messages[play] = "RESUME;0";
+		messages[setDone] = "SET_DONE;0";
+		messages[repStart] = "CYCLE_START;0";
+		messages[repEnd] = "CYCLE_DONE;0";
+		messages[finish] = "ENDTCP;0";
+		messages[msgEnd] = "END;0";
+		messages[msg_none] = "0;0";
 		messages[res1] = "RESISTANCE;1";
 		messages[res2] = "RESISTANCE;2";
 		messages[res3] = "RESISTANCE;3";
@@ -108,6 +125,23 @@ public:
 		messages[res8] = "RESISTANCE;8";
 		messages[res9] = "RESISTANCE;9";
 		messages[res10] = "RESISTANCE;10";
+		// Additions for the SAS implementation to the interface
+		messages[pulseWidth] = "PULSE_WIDTH;9";		// int 9
+		messages[amplitude] = "AMPLITUDE;9";		// int 9
+		messages[frequency] = "FREQUENCY;99";		// int 99
+		messages[exercise] = "EXERCISE;1";			// kneeFlex
+		messages[method] = "METHOD;0";				// th_SD05
+		messages[triggerGain] = "TRIGGER_GAIN;9";	// int 9
+		messages[startBut] = "START;6";				// Move3_start	
+		messages[stopbut] = "STOP;5";				// Move3_stop
+		messages[autoTrigg] = "AUTO_TRIGGER;false";	// bool false
+		messages[timeVelTh] = "TIME_VEL_THRESHOLD;9"; // int 9
+		messages[velTh] = "VEL_THRESHOLD;9";		// int 9
+		messages[stimPort] = "STIM_PORT;6";			// int 6
+		messages[recPort] = "RECORD_PORT;4";		// int 4
+		messages[channel] = "CHANNEL;1";			// emgCh1
+		messages[velocity] = "VELOCITY;9";			// int 9
+		messages[th_start] = "THRESHOLD_PRESSED;false"; // bool false
 		status = msg_none;
 	}
 
@@ -424,73 +458,122 @@ void keyboard()
 	ch = _getch();
 	ch = toupper(ch);
 	printf("---> Key pressed: %c <---\n", ch);
-	switch (ch)
-	{
-	case '0':
-		end_programme = true;
-		break;
-// ------------------- TCP -----------------------
-	case 'A':
-		stimulator_code = Move3_ramp_less;
-		break;
-	case 'D':
-		stimulator_code = Move3_ramp_more;
-		break;
-	case 'M':
-		// Modify threshold
-		recorder_code = Inge_decr;
-		break;
-	case 'P':
-		// Modify threshold
-		recorder_code = Inge_incr;
-		break;
-	case 'R':
-		// Add more repetitions
-		rep_nr++;
-		break;
-	case 'S':
-		stimulator_code = Move3_decr;
-		break;
-	case 'T':
-		// Reduce repetitions
-		rep_nr--;
-	case 'W':
-		stimulator_code = Move3_incr;
-		break;
-// ------------------- UDP -----------------------
-	// Two of the values had to be assigned to letters 
-	// because there were no enough numbers
-	case 'X':
-		msgList.status = exDone;
-		break;
-	case 'I':
-		msgList.status = msg_none;
-		break;
-	case 'F':
-		msgList.status = res1;
-		break;
-	case 'G':
-		msgList.status = res2;
-		break;
-	case 'H':
-		msgList.status = res3;
-		break;
-	case 'J':
-		msgList.status = res4;
-		break;
-	case 'K':
-		msgList.status = res5;
-		break;
-	case 'L':
-		msgList.status = res6;
-		break;
-	}
-	if (ch >= '1' && ch <= '9')
-	{
-		int temp = (int)ch - '0';
-		msgList.status = (tcp_msg_Type) temp;
-		printf(" status = %d", msgList.status);
-	}
+	switch (ch) {
+		case '0':
+			end_programme = true;
+			break;
+	// ------------------- TCP -----------------------
+			/*
+		case 'A':
+			stimulator_code = Move3_ramp_less;
+			break;
+		case 'D':
+			stimulator_code = Move3_ramp_more;
+			break;
+		case 'M':
+			// Modify threshold
+			recorder_code = Inge_decr;
+			break;
+		case 'P':
+			// Modify threshold
+			recorder_code = Inge_incr;
+			break;
+		case 'R':
+			// Add more repetitions
+			rep_nr++;
+			break;
+		case 'S':
+			stimulator_code = Move3_decr;
+			break;
+		//case 'T':
+			// Reduce repetitions
+			//rep_nr--;
+		case 'W':
+			stimulator_code = Move3_incr;
+			break;
+			*/
+	// ------------------- UDP -----------------------
+		// Two of the values had to be assigned to letters 
+		// because there were no enough numbers
+		case 'X':
+			msgList.status = exDone;	// State = exDone
+			break;
+		case 'I':
+			msgList.status = msg_none;	// State = msg_none
+			break;
+		case 'Q':
+			msgList.status = res1;		// Increase the value of the rsistance to 1
+			break;
+		case 'G':
+			msgList.status = res2;		// Increase the value of the rsistance to 2
+			break;
+		case 'Y':
+			msgList.status = res3;		// Increase the value of the rsistance to 3
+			break;
+		case 'J':
+			msgList.status = res4;		// Increase the value of the rsistance to 4
+			break;
+		case 'K':
+			msgList.status = res5;		// Increase the value of the rsistance to 5
+			break;
+		case 'W':
+			msgList.status = res6;		// Increase the value of the resistance to 6
+			break;
+		case 'P':
+			msgList.status = pulseWidth;
+			break;
+		case 'A':
+			msgList.status = amplitude;
+			break;
+		case 'F':
+			msgList.status = frequency;
+			break;
+		case 'E':
+			msgList.status = exercise;
+			break;
+		case 'M':
+			msgList.status = method;
+			break;
+		case 'T':
+			msgList.status = triggerGain;
+			break;
+		case 'S':
+			msgList.status = startBut;
+			break;
+		case 'O':
+			msgList.status = stopbut;
+			break;
+		case 'U':
+			msgList.status = autoTrigg;
+			break;
+		case 'H':
+			msgList.status = timeVelTh;
+			break;
+		case 'L':
+			msgList.status = velTh;
+			break;
+		case 'Z':
+			msgList.status = stimPort;
+			break;
+		case 'R':
+			msgList.status = recPort;
+			break;
+		case 'C':
+			msgList.status = channel;
+			break;
+		case 'V':
+			msgList.status = velocity;
+			break;
+		case 'B':
+			msgList.status = th_start;
+			break;
+		}
+		if (ch >= '1' && ch <= '9')		// Values for the workflow of SAS a.k.a. states
+		{
+			int temp = (int)ch - '0';
+			msgList.status = (tcp_msg_Type) temp;
+			printf(" status = %d", msgList.status);
+		}
 }
 
 bool TCP_decode(float &value1, float &value2, float &value3, char *message)
@@ -639,8 +722,8 @@ void runUDP_30()
 
 		index = (int)msgList.status;
 		cout << "Selected : " << msgList.messages[index] << endl;
-		sprintf(touchPanel.message, "%s", msgList.messages[index].c_str());
-		touchPanel.get();
+		sprintf(touchPanel.message, "%s", msgList.messages[index].c_str());		// This is where client.message is updated!!
+		touchPanel.get();	// Here the specific message is sent through the UDP
 	}
 
 	// end

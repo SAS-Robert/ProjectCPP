@@ -23,7 +23,7 @@
 #include <windows.h>
 #include <ws2tcpip.h>
 #include <iostream>
-#include <string>
+#include <string.h>
 // ------------------------------------------------------------------------
 
 using std::string;
@@ -45,7 +45,7 @@ typedef struct tcp_msg_struct
 public:
     const int size = 11;
     tcp_msg_Type status;
-    string messages[30];
+    string messages[40];
     // Constructor
     tcp_msg_struct()
     {
@@ -70,7 +70,6 @@ public:
         messages[res8] = "RESISTANCE;8";
         messages[res9] = "RESISTANCE;9";
         messages[res10] = "RESISTANCE;10";
-        // Additions for the SAS implementation to the interface
         messages[pulseWidth] = "PULSE_WIDTH";
         messages[amplitude] = "AMPLITUDE";
         messages[frequency] = "FREQUENCY";
@@ -240,98 +239,110 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         tcp_msg_Type& result)
 {
     string delimiter = ";";
-    char *token, *value;
+    string token, value;
+    //string token1, value2;
     int length = strlen(message), i = 0;
-    string messageStr = convert_to_string(message, length);
-    bool valid_msg = false;
+    string messageStr = convert_to_string(message, length+1);
+    int valid_msg = 1;
 
     // Store the data received, the string contains: "MSG_TYPE;msg_value" 
     // >> token = MSG_TYPE, value = msg_value
+    /*
     strcpy(token, (messageStr.substr(0, messageStr.find(delimiter))).c_str());
     strcpy(value, (messageStr.substr(1, messageStr.find(delimiter))).c_str());
-   
+    */
+    int pos = 0;
+    pos = messageStr.find(delimiter);
+    token = messageStr.substr(0, pos);
+    messageStr.erase(0, pos + delimiter.length());
+    value = messageStr.substr(0, pos);
 
-    for (i; i < MSG_SCREEN_COUNT; i++)
-    {
-        valid_msg = (strcmp(token, msgList.messages[i].c_str()) == 0);
-        if (valid_msg)
+    if (messageStr != " "){
+        for (i; i < MSG_SCREEN_COUNT; i++)
         {
-            msgList.status = (tcp_msg_Type)i;
-            break;
+            //valid_msg = ((token == msgList.messages[i]) == 0);
+            valid_msg = token.compare(msgList.messages[i]);
+            if (valid_msg == 0)
+            {
+                msgList.status = (tcp_msg_Type)i;
+                break;
+            }
         }
     }
 
-    if (valid_msg)
+    if (valid_msg == 0)
     {
         if (i < 11)     // screen_status will update with the state of the program only (exDone - msgEnd)
             result = msgList.status;
 
-        if (msgList.status == (play || pause))
-            playPause = (bool)value;
+        if ((msgList.status == play) || (msgList.status == pause))
+            playPause = (value.c_str() == "true");
 
         if (msgList.status >= res1 && msgList.status <= res10)
-            res_level = (int)value;
+            res_level = stoi(value.c_str());
 
         if (msgList.status == finish)
-            finished = (bool)value;
+            finished = (value.c_str() == "true");
 
         if (msgList.status == pulseWidth)
-            pulse_width = (int)value;
+            pulse_width = stoi(value.c_str());
 
         if (msgList.status == amplitude)
-            _amplitude = (int)value;
+            _amplitude = stoi(value.c_str());
 
         if (msgList.status == frequency)
-            _frequency = (int)value;
+            _frequency = stoi(value.c_str());
 
         if (msgList.status == exercise) {
-            int e = (int)value;
+            int e = stoi(value.c_str());
             _exercise = (exercise_Type)e;
         }
-
+         
         if (msgList.status == method) {
-            int m = (int)value;
+            int m = stoi(value.c_str());
             _method = (threshold_Type)m;
         }
 
         if (msgList.status == triggerGain)
-            _triggerGain = (int)value;
+            _triggerGain = stoi(value.c_str());
 
-        if (msgList.status == (startBut || stopbut)) {
-        int ss = (int)value;
-        _startStop = (RehaMove3_Req_Type)ss;
+        if ((msgList.status == startBut) || (msgList.status ==  stopbut)) {
+            int ss = stoi(value.c_str());
+            _startStop = (RehaMove3_Req_Type)ss;
         }
 
         if (msgList.status == autoTrigg)
-            _autoTrigg = (bool)value;
+            _autoTrigg = (value.c_str() == "true");
 
         if (msgList.status == timeVelTh)
-            _timeVel = (int)value;
+            _timeVel = stoi(value.c_str());
 
         if (msgList.status == velTh)
-            _velTh = (int)velTh;
+            _velTh = stoi(value.c_str());
 
         if (msgList.status == stimPort)
-            stim_port = (int)value;
+            stim_port = stoi(value.c_str());
 
         if (msgList.status == recPort)
-            rec_port = (int)value;
+            rec_port = stoi(value.c_str());
 
         if (msgList.status == channel){
-            int c = (int)value;
+            int c = stoi(value.c_str());
             _channel = (emgCh_Type)c;
         }
 
         if (msgList.status == velocity)
-            _velocity = (int)value;
+            _velocity = stoi(value.c_str());
 
         if (msgList.status == th_start){
-            int t = (int)value;
+            int t = stoi(value.c_str());
             theshold_pressed = (User_Req_Type)t;
         }
+        return true;
     }
-
-    return valid_msg;
+    else {
+        return false;
+    }
 }
 
 // ------------------ Objects definition ------------------
@@ -658,7 +669,7 @@ struct UdpServer
         vel_th = 0;
         stim_port = 1;
         rec_port = 1;
-        channel = emgCh1;
+        channel = emgCh0;
         velocity = 1;
         start_stop = Move3_stop;      // Assume starts = false
         auto_trigger = false;
