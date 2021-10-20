@@ -100,6 +100,7 @@ emgCh_Type previous_channel = emgCh0;
 // State process variables
 bool stim_done = false,
 stim_userX = false, stim_auto_done = false, stim_pause = false;
+double threshold_to_screen;
 
 // Stimulation timing settings
 double stimA_cycle = 8.0; // how long the stimulator is allowed to be active (seconds)
@@ -287,16 +288,13 @@ void update_localGui() {
     switch (user_gui)
     {
     case User_th:
-        if (GL_state == st_th)
-        {
-            rec_status.req = true;
-            msg_gui = "Start threshold.";
-        }
+        rec_status.req = true;
+        msg_gui = "Start threshold.";
         break;
     }
 
-    // Pull down command flags ---- These flags are technically pulled down from the screen
-    //user_gui = User_none;
+    // Pull down command flags
+    user_gui = User_none;
     //GL_UI.User_hmi = User_none;
     //GL_UI.Move3_hmi = Move3_none;
 
@@ -379,13 +377,23 @@ void sendData_thread()
     {
         bool stimulating_now = stimulator.active;
         bool disconnection_now = (stim_status.error || rec_status.error);
-        double threshold_now = THRESHOLD;
+        double threshold_now = threshold_to_screen;
 
         if (stimulating_now != stimulating_previous)
         {
-            ostringstream now_str;
-            now_str << boolalpha << stimulating_now;
-            screenData.streamCommands("STIM_STATUS;" + now_str.str());
+            string now_str;
+            now_str = stimulating_now ? "true" : "false";
+            // Bæmark: The sequence of if-else if should be in this specific order
+            if (now_str == "false") {
+                screenData.streamCommands("STIM_STATUS;" + now_str);
+            }
+            else if (!stimulator.checkElectrodeStatus()) {
+                screenData.streamCommands("STIM_STATUS;red");
+            }
+            else if (now_str == "true") {
+                screenData.streamCommands("STIM_STATUS;" + now_str);
+            }
+
             stimulating_previous = stimulating_now;
         }
 
@@ -421,11 +429,8 @@ void sendEmgData_thread()
 
     screenEMG.check();
 
-    // main loop of the sending thread
     while (!MAIN_to_all.end && (GL_state != st_end))
     {
-        //if (GL_state != st_stop && GL_state != st_repeat)
-        //{
         if (live_data != live_previous)
         {
             screenEMG.stream(live_data);
@@ -435,7 +440,6 @@ void sendEmgData_thread()
         {
             // Do nothing
         }
-        //}
     }
 
     screenEMG.end();
@@ -674,11 +678,12 @@ void mainSAS_thread()
                 }
                 else if (GL_thMethod != th_MVC05 && GL_thMethod != th_MVC10) {
                     GL_state = st_wait;
-                    msg_main = "Threshold saved. Press patient button to begin exercise.";
+                    msg_main = "Threshold saved.";
                     // Update exercise settings
                     robert.playPause = false; // start the first set with the stimulation disabled
                     main_1stSet = false;
                     main_thEN = false;
+                    user_gui = User_none; // update user key for setting threshold
                 }
                 else if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && !GL_UI.set_MVC)
                 {
@@ -1591,11 +1596,15 @@ void recording_sas()
                 rec_fl4 = false;
                 rec_fl5 = false;
                 // ----
+                
+                // When threshold button is pressed, user_th (user key for recording th) makes the 
+                // state machine jump directly to st_th state, clears the previous data received and
+                // main_thEN which is the flag for the threshold button to be pressed, is true right away
+                //main_thEN = true;
             }
             // Set threshold button has been pressed
             if (rec_status.req && main_thEN)
             {
-                //tic();
                 if (recorder.data_received && recorder.data_start && (!fileFILTERS.is_open() || !fileVALUES.is_open()))
                 {
                     fileFILTERS.open(filter_s);
@@ -1653,9 +1662,8 @@ void recording_sas()
                             THRESHOLD = MEAN;
                         }
 
-                        //tendEMG = toc();
-                        //timeEFile << tendEMG << "\n";
                         sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
+                        threshold_to_screen = THRESHOLD;
                         rec_status.th = true;
                         rec_status.req = false;
                     }

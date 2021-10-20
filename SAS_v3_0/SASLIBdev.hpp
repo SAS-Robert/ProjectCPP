@@ -301,6 +301,7 @@ private:
     Smpt_ml_get_current_data ml_get_current_data;
     Smpt_get_device_id_ack device_id_ack;
     Smpt_get_stim_status_ack device_stim_ack;
+    Smpt_ml_get_current_data_ack ml_get_current_data_ack;
     uint8_t packet;
     int turn_on = 0; //Time if the device gets turned on in the middle of the process
     bool smpt_port, smpt_check, smpt_next, smpt_end, smpt_get, smpt_ack;
@@ -326,6 +327,7 @@ public:
         device = {0};
         ml_init = {0};
         ml_get_current_data = {0};
+        ml_get_current_data_ack = { 0 };
         smpt_port = false;
         smpt_check = false;
         smpt_next = false;
@@ -525,6 +527,16 @@ public:
 
         return getStatus;
     };
+
+    bool checkElectrodeStatus() {
+        // this just returns if the device is red blinking; true is not blinking + yellow and false is red blinking
+        if (smpt_get_ml_get_current_data_ack(&device, &ml_get_current_data_ack)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 };
 
 // Recorder
