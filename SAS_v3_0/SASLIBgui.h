@@ -1158,7 +1158,7 @@ namespace SASv30 {
 			this->stimInfo->ForeColor = System::Drawing::SystemColors::ButtonHighlight;
 		}
 		// ii. Stimulation disabled
-		if (!GL_UI.playPause || !GL_UI.stimReady)
+		if ((!GL_UI.playPause || !GL_UI.stimReady) && state != st_calM)
 		{
 			this->stimButton->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->stimButton->Text = L"STIMULATION DISABLED";
@@ -1209,7 +1209,7 @@ namespace SASv30 {
 
 		// ii. Record threshold button
 		// First: for 1st threshold (does not matter what method)
-		if (state == st_th && !GL_UI.recReq && !GL_UI.th1 && GL_UI.main_thEN)
+		if (state == st_calM && !GL_UI.recReq && !GL_UI.th1 && GL_UI.main_thEN)
 		{
 			this->thButton->BackColor = System::Drawing::Color::LimeGreen;
 
@@ -1225,7 +1225,7 @@ namespace SASv30 {
 		// Second: recording threshold
 		else if ((state == st_th && GL_UI.recReq && !GL_UI.th1) || (state == st_mvc && !GL_UI.th2))
 		{
-			this->thButton->BackColor = System::Drawing::SystemColors::Highlight;
+			this->thButton->BackColor = System::Drawing::SystemColors::InactiveCaption;
 			this->thButton->Text = L"RECORDING...";
 		}
 		// Fourth: 1st threshold has been recording and it is necessary to press for the 2nd one

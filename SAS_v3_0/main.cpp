@@ -238,6 +238,18 @@ void update_local_variables() {
     modify_stimulation(hmi_channel);
     Move3_key = screen.start_stop;
     user_gui = screen.threshold_pressed;
+
+    // Logical operations based on the user commands - What is this ?? (12.10.21)
+    if (user_gui == User_th) {
+        if (GL_state == st_calM) {
+            rec_status.req = true;  // At some point this rec_status.req flag is not necessary
+                                    // because of the way the worflow is coded for the calM-threshold state
+            msg_gui = "Start threshold.";
+        }
+    }
+
+    // Pull down command flags
+   // user_gui = User_none; - Once the threshold has been save, this command is executed
 }
 
 void update_localGui() {
@@ -284,17 +296,6 @@ void update_localGui() {
     //Move3_key = GL_UI.Move3_gui;  // All user interactions to the stim values removed 
     //user_gui = GL_UI.User_hmi;    // All user interactions to the threshold flag removed
 
-    // Logical operations based on the user commands - What is this ?? (12.10.21)
-    switch (user_gui)
-    {
-    case User_th:
-        rec_status.req = true;
-        msg_gui = "Start threshold.";
-        break;
-    }
-
-    // Pull down command flags
-    user_gui = User_none;
     //GL_UI.User_hmi = User_none;
     //GL_UI.Move3_hmi = Move3_none;
 
@@ -383,7 +384,7 @@ void sendData_thread()
         {
             string now_str;
             now_str = stimulating_now ? "true" : "false";
-            // Bæmark: The sequence of if-else if should be in this specific order
+            // Bæmark: The sequence of 'if-else if' should be in this specific order
             if (now_str == "false") {
                 screenData.streamCommands("STIM_STATUS;" + now_str);
             }
@@ -479,7 +480,7 @@ void robot_thread()
             sprintf(robert.message, "%d;STATUS", udp_cnt);
             robert.get();
         }
-        // local GUI update
+        // local GUI update - JUST DEBUGGING
         update_localGui();
 
         // Controlling thread cycle time
@@ -522,7 +523,7 @@ void screen_thread()
             if (decode_successful)
             {
                 update_local_variables();
-                update_localGui();
+                update_localGui();  // Just for debugging purposes
                 if (screen.display)
                 {
                     sprintf(longMsg, "Message from SCREEN received");
@@ -640,10 +641,11 @@ void mainSAS_thread()
 
         case st_calM:
             // New: set up done when the first set up finishes
-            if (rec_status.ready && screen_status == setDone && !stimulator.active)
+            //if (rec_status.ready && screen_status == setDone && !stimulator.active)
+            if (rec_status.ready && (user_gui == User_th) && !stimulator.active)
             {
-                msg_main = "Calibration set completed. Waiting to start exercise set.";
-                statusList[(int)st_th] = "On hold";
+                msg_main = "Calculating threshold...";
+                statusList[(int)st_th] = "Setting threshold";
                 GL_state = st_th;
             }
             else if (screen_status == exDone || screen_status == msgEnd)
@@ -653,22 +655,20 @@ void mainSAS_thread()
             else if (screen_status != setDone && screen_status != exDone)
             {
                 msg_main = "Set up stimulation parameters.\n";
-                //msg_main += msg_stimulating; // add the stimulator messages
                 msg_main += "\n- Complete first set to start exercise.";
             }
             break;
 
-            // Normal SAS process
         case st_th:
             // New: wait until the user is at the beginning of a repetition
-            if (screen_status == start && !main_thEN)
+            if ((user_gui == User_th) && !main_thEN)
             {
                 statusList[(int)st_th] = "Setting threshold";
-                msg_main = "Select a method and press RECORD THRESHOLD";
+                msg_main = "RECORD THRESHOLD pressed";
                 main_thEN = true;
             }
 
-            if (rec_status.th) // && screen_status == repStart
+            if (rec_status.th) 
             {
                 //differenciate bettween single-th and MVC methods
                 if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && GL_UI.set_MVC)
@@ -677,7 +677,8 @@ void mainSAS_thread()
                     msg_main = "Setting MVC - 2nd threshold.";
                 }
                 else if (GL_thMethod != th_MVC05 && GL_thMethod != th_MVC10) {
-                    GL_state = st_wait;
+                    //GL_state = st_wait;
+                    GL_state = st_calM;
                     msg_main = "Threshold saved.";
                     // Update exercise settings
                     robert.playPause = false; // start the first set with the stimulation disabled
@@ -1115,29 +1116,10 @@ void stimulating_sas()
         switch (GL_state)
         {
         case st_init:
-            // initialization
-            // Select Stimulation Channel = Recording Channel 
-            /* This is all handled in a new thread that updates the port and channel variables
-            * which values come from the screen
-            if (!stimulator.ch_ready)
-            {
-                emgCH = GL_UI.next_channel;
-            }
-            if (emgCH == emgCh1)
-            {
-                hmi_channel = Smpt_Channel_Black;
-                stimulator.channel = hmi_channel;
-                stimulator.ch_ready = true;
-            }
-            else if (emgCH == emgCh2)
-            {
-                hmi_channel = Smpt_Channel_White;
-                stimulator.channel = hmi_channel;
-                stimulator.ch_ready = true;
-            }
-            */
-            // For debugging purposes --- OUTCOMMENT NEXT LINE FOR REAL UDP SCREEN-SAS
-            update_local_variables();
+            // Next out-commented lines are already being updated in a separate thread: screen_thread()
+            // update_local_variables();
+            // Just for debugging
+            // update_localGui();
 
             if (emgCH == emgCh0) // Channel not selected yet
             {
@@ -1145,13 +1127,6 @@ void stimulating_sas()
             }
             if (!stimulator.ready && stimulator.ch_ready)
             {
-                /*
-                // Select port from the GUI
-                if (GL_UI.PORT_STIM[3] >= '1' && GL_UI.PORT_STIM[3] <= '9')
-                {
-                    PORT_STIM[3] = GL_UI.PORT_STIM[3];
-                }
-                */
                 countPort++;
                 // Connect to the device and initialize settings
                 sprintf(msg_stimulating, "Starting stimulator on port %s, try nr %d", PORT_STIM, countPort);
@@ -1503,26 +1478,15 @@ void recording_sas()
 
             if (!recorder.ready)
             {
-                // Select port from the GUI
-                /*
-                if (GL_UI.PORT_REC[3] >= '1' && GL_UI.PORT_REC[3] <= '9')
-                {
-                    PORT_REC[3] = GL_UI.PORT_REC[3];            // this is maybe too redundant
-                }
-                */
-                // normal start up
                 sprintf(msg_recording, "Starting recorder on port %s.", PORT_REC);
                 Sleep(250);
                 recorder.display = true;
                 recorder.init_hasomed(PORT_REC);
-                if (recorder.found) { recorder.start(); }
+                if (recorder.found) { 
+                    recorder.start(); 
+                }
 
-                // This is just in case the user needs to move the stuff around
-                //if (!recorder.ready) {
-                    //Sleep(2500);
-                //}
-                if (recorder.ready)
-                {
+                if (recorder.ready) {
                     sprintf(msg_recording, "Recorder ready");
                 }
             }
@@ -1539,14 +1503,10 @@ void recording_sas()
             if (emgCH == emgCh1)
             {
                 GL_sampleNr = recorder_emg1.size();
-                //string msg = "From EMG1, GL_sampleNr = " + to_string(GL_sampleNr) + "\n";
-                //OutputDebugString(msg.c_str()); // print
             }
             else if (emgCH == emgCh2)
             {
                 GL_sampleNr = recorder_emg2.size();
-                //string msg = "From EMG2, GL_sampleNr = " + to_string(GL_sampleNr) + "\n";
-                //OutputDebugString(msg.c_str()); // print
             }
 
             N_len = GL_sampleNr - GL_processed;
@@ -1555,36 +1515,17 @@ void recording_sas()
                 // Get mean
                 if (emgCH == emgCh1)
                 {
-                    //int tr;
                     live_data = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder);
-                    //tr = process_th_proper_mean(GL_sampleNr);
-                    //string msg = "Live data = " + to_string(GL_sampleNr) + "\n";
-                    //OutputDebugString(msg.c_str()); // print
                 }
                 else if (emgCH == emgCh2)
                 {
-                    //int tr;
                     live_data = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder);
-                    //tr = process_th_proper_mean(GL_sampleNr);
-                    //string msg = "Live data = " + to_string(GL_sampleNr) + "\n";
-                    //OutputDebugString(msg.c_str()); // print
                 }
             }
-
-            // This data discarding need to be done somewhere else so that in calM state it can be actually 
-            // calibrated by playing around with the graph in the SCREEN interface - Following lines out-commented
-            // Discard data - Old
-            //recorder_emg1.clear();
-            //recorder_emg2.clear();
-            //MEAN = 0;
-            //MVC = 0;
-            //THRESHOLD = 0;
-            //rec_fl4 = false;
-            //rec_fl5 = false;
             break;
 
         case st_th:
-            received_data = recorder.record();
+            /*
             if (!main_thEN)
             {
                 // ---- Comes from recording SAS - st_calM
@@ -1596,13 +1537,9 @@ void recording_sas()
                 rec_fl4 = false;
                 rec_fl5 = false;
                 // ----
-                
-                // When threshold button is pressed, user_th (user key for recording th) makes the 
-                // state machine jump directly to st_th state, clears the previous data received and
-                // main_thEN which is the flag for the threshold button to be pressed, is true right away
-                //main_thEN = true;
-            }
-            // Set threshold button has been pressed
+            }*/
+            received_data = recorder.record();
+            // Set threshold button has been pressed - rec_status.req flag is no longer necessary
             if (rec_status.req && main_thEN)
             {
                 if (recorder.data_received && recorder.data_start && (!fileFILTERS.is_open() || !fileVALUES.is_open()))
@@ -1672,9 +1609,9 @@ void recording_sas()
             }
             else if (rec_status.th == false && (GL_thMethod != th_MVC05 || GL_thMethod != th_MVC10))
             {
-                // Discard data until button is pressed
-                recorder_emg1.clear();
-                recorder_emg2.clear();
+                // Discard data until button is pressed - Maybe this is preventing the EMG visualization to show in SCREEN
+                //recorder_emg1.clear();
+                //recorder_emg2.clear();
             }
             else if (rec_status.th == true && (GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && !GL_UI.set_MVC)
             {
