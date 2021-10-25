@@ -142,10 +142,12 @@ typedef enum
     channel = 34,        // Channel selected for SAS use
     velocity = 35,       // Velocity value corresponding minVelocity in the old SAS
     th_start = 36,       // Threshold button has been pressed
+    calM_stop = 37,      // Manual calibration ended from screen
+    calM_start = 38,     // Start Manual calibration from screen
 } tcp_msg_Type;
 
 const int MSG_AMOUNT = (int)res10 + 1;
-const int MSG_SCREEN_COUNT = (int)th_start + 1; // Number of messages that may be valid for reception
+const int MSG_SCREEN_COUNT = (int)calM_start + 1; // Number of messages that may be valid for reception
 // ------------------ Global variables ------------------
 const int DATE_LENGTH = 256;
 // Threads cycles

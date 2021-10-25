@@ -86,6 +86,8 @@ public:
         messages[channel] = "CHANNEL";
         messages[velocity] = "VELOCITY";
         messages[th_start] = "THRESHOLD_PRESSED";
+        messages[calM_stop] = "STIM_CALIBRATION_DONE";
+        messages[calM_start] = "STIM_CALIBRATION_START";
         status = msg_none;
     }
 };
@@ -236,7 +238,7 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
         int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, int& _triggerGain, RehaMove3_Req_Type& _startStop,
         bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity, User_Req_Type& theshold_pressed,
-        tcp_msg_Type& result)
+        bool& calM_stop_r, bool& calM_start_r, tcp_msg_Type& result)
 {
     string delimiter = ";";
     string token, value;
@@ -275,14 +277,19 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         if (i < 11)     // screen_status will update with the state of the program only (exDone - msgEnd)
             result = msgList.status;
 
-        if ((msgList.status == play) || (msgList.status == pause))
-            playPause = (value.c_str() == "true");
+        if ((msgList.status == play) || (msgList.status == pause)) {
+            if (strcmp(value.c_str(), "true") == 0)
+                playPause = true;
+            else
+                playPause = false;
+        }
 
         if (msgList.status >= res1 && msgList.status <= res10)
             res_level = stoi(value.c_str());
 
         if (msgList.status == finish)
-            finished = (value.c_str() == "true");
+            if (strcmp(value.c_str(), "true") == 0)
+                finished = true;
 
         if (msgList.status == pulseWidth)
             pulse_width = stoi(value.c_str());
@@ -312,7 +319,8 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         }
 
         if (msgList.status == autoTrigg)
-            _autoTrigg = (value.c_str() == "true");
+            if (strcmp(value.c_str(), "true") == 0)
+                _autoTrigg = true;
 
         if (msgList.status == timeVelTh)
             _timeVel = stoi(value.c_str());
@@ -334,10 +342,21 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         if (msgList.status == velocity)
             _velocity = stoi(value.c_str());
 
-        if (msgList.status == th_start){
+        if (msgList.status == th_start) {
             int t = stoi(value.c_str());
             theshold_pressed = (User_Req_Type)t;
         }
+
+        if (msgList.status == calM_stop) {
+            if (strcmp(value.c_str(), "true") == 0)
+                calM_stop_r = true;
+        }
+
+        if (msgList.status == calM_start) {
+            if(strcmp(value.c_str(), "true") == 0)
+                calM_start_r = true;
+        }
+
         return true;
     }
     else {
@@ -637,7 +656,7 @@ struct UdpServer
   public:
     char recvbuf[BUFLEN];
     char senbuf[BUFLEN];
-    bool error, new_message, finish, display, error_lim, playPause, auto_trigger;
+    bool error, new_message, finish, display, error_lim, playPause, auto_trigger, calM_stop, calM_start;
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
@@ -670,6 +689,8 @@ struct UdpServer
         stim_port = 1;
         rec_port = 1;
         channel = emgCh0;
+        calM_stop = false;
+        calM_start = false;
         velocity = 1;
         start_stop = Move3_stop;      // Assume starts = false
         auto_trigger = false;

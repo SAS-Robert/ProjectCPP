@@ -237,12 +237,15 @@ void update_local_variables() {
     // Modifying stimulation 
     modify_stimulation(hmi_channel);
     Move3_key = screen.start_stop;
-    user_gui = screen.threshold_pressed;
+    user_gui = screen.threshold_pressed;    // User_gui is not needed - threshold_pressed replaces it
     if (user_gui == User_th) {
         rec_status.req = true;
         msg_gui = "Start threshold.";
+        OutputDebugString(" rec_status.req = true");
     }
     user_gui = User_none;
+    screen.threshold_pressed = User_none;
+    //Move3_key = Move3_none;
 }
 
 void update_localGui() {
@@ -511,7 +514,7 @@ void screen_thread()
             decode_successful = decode_screen(screen.recvbuf, screen.finish, screen.playPause, screen.res_level, screen.pulse_width,
                 screen.amplitude, screen.frequency, screen.exercise, screen.method, screen.trigger_gain, screen.start_stop,
                 screen.auto_trigger, screen.time_vel_th, screen.vel_th, screen.stim_port, screen.rec_port, screen.channel, screen.velocity,
-                screen.threshold_pressed, screen_status);
+                screen.threshold_pressed, screen.calM_stop, screen.calM_start, screen_status);
 
             if (decode_successful)
             {
@@ -610,10 +613,12 @@ void mainSAS_thread()
             // New: no more automatic calibration
             // when the first sets starts, it allows to set up the stimulation
             // Edit: choosing method on the threshold state
-            if (devicesReady && screen_status == start)
+            //if (devicesReady && screen_status == start)
+            if (devicesReady && screen.calM_start)
             {
                 msg_main = "Set up stimulation parameters.\n- Complete first set to start exercise.";
                 GL_state = st_calM;
+                screen.calM_start = false;
             }
             else if (devicesReady && !screen_status == start)
             {
@@ -649,7 +654,12 @@ void mainSAS_thread()
             {
                 msg_main = "Set up stimulation parameters.\n";
                 //msg_main += "\n- Complete first set to start exercise.";
-                OutputDebugString(" Waiting for screen to send a command\n");
+                //OutputDebugString(" Waiting for screen to send a command\n");
+            }
+            else if (screen.calM_stop) {
+                // Manual calibration ended from screen (confirm button pressed)
+                GL_state = st_init;
+                screen.calM_stop = false;
             }
             break;
 
@@ -676,7 +686,7 @@ void mainSAS_thread()
                     GL_state = st_calM;
                     msg_main = "Threshold saved.";
                     // Update exercise settings
-                    robert.playPause = false; // start the first set with the stimulation disabled
+                    //robert.playPause = false;
                     main_1stSet = false;
                     main_thEN = false;
                     rec_status.th = false;
@@ -696,6 +706,7 @@ void mainSAS_thread()
                 //msg_main = "Choose a method and press SET THRESHOLD";
                 //GL_thMethod = GL_UI.next_method;
                 GL_thMethod = screen.method;
+                OutputDebugString("\n WE ARE STUCKED!");
             }
 
             // Abort
@@ -1082,7 +1093,7 @@ void modify_stimulation(Smpt_Channel sel_ch)
     // Update commands
     //code = Move3_none;
     //Move3_cmd = Move3_none;
-    Move3_key = Move3_none; // Should this flag come down or just wait for screen to set it down?
+    //Move3_key = Move3_none; // Should this flag come down or just wait for screen to set it down?
     GL_UI.Move3_hmi = Move3_none;   // Should this flag come down or just wait for screen to set it down?
 }
 
