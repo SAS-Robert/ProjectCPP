@@ -234,6 +234,7 @@ void update_local_variables() {
         }
         // previous_channel = emgCH; // This value gets updated in stimulating_sas() after reconnecting to the new channel
     }
+
     // Modifying stimulation 
     modify_stimulation(hmi_channel);
     Move3_key = screen.start_stop;
@@ -532,6 +533,10 @@ void screen_thread()
                     MAIN_to_all.end = true;
                     break;
                 }
+
+                if (screen_status == triggerGain)
+                    THRESHOLD += THRESHOLD * screen.trigger_gain;
+
             }
             else if (!decode_successful && screen.display)
             {
@@ -979,52 +984,16 @@ void modify_stimulation(Smpt_Channel sel_ch)
     // Values that are going to be assigned
     Smpt_ml_channel_config next_val = stimulator.stim[sel_ch];
 
-    float Dcurr = 0.0, DHz = 0.0;
-    uint8_t Dramp = 0, Dnr = 0;
-    bool autoCal_process = (GL_state == st_calA_go) || (GL_state == st_calA_stop); // Automatic cal in progress
-    
-    /*
-    // Automatic calibration
-    if (autoCal_process)
-    {
-        // Select type of increments
-        if (next_val.points[0].current <= 20)
-        {
-            Dcurr = D_CUR_HIGH;
-            next_val.ramp = D_RAMP_LOW;
-            next_val.number_of_points = D_RAMP_LOW;
-        }
-        else if (next_val.points[0].current <= 30)
-        {
-            Dcurr = D_CUR_MED;
-            next_val.ramp = D_RAMP_MED;
-            next_val.number_of_points = D_RAMP_MED;
-        }
-        else if (next_val.points[0].current <= 40)
-        {
-            Dcurr = D_CUR_LOW;
-            next_val.ramp = D_RAMP_HIGH;
-            next_val.number_of_points = D_RAMP_HIGH;
-        }
-    }
-    // Manual calibration or standard process
-    else {
-        Dcurr = D_CUR_MAN;
-        Dramp = D_RAMP_MAN;
-        Dnr = D_POINT_MAN;
-        DHz = D_FQ_MAN;
-    }*/
-
     // Apply changes
     next_val.points[0].current = screen.amplitude;
-    next_val.points[2].current = -screen.amplitude;     // Biphasic pulse with the same amplitude --ии|__--
+    next_val.points[0].time = screen.pulse_width;
+    next_val.points[1].time = screen.pulse_width;
+    next_val.points[2].time = screen.pulse_width;
+    next_val.points[2].current = -screen.amplitude;     // Biphasic pulse with the same amplitude --'иии|___.--'иии|___.--
     next_val.period = screen.frequency;
-    // TODO
-    //nex_val.pulse_width = screen.pulse_width;
-       
+
     // Update values
     stimulator.stim[sel_ch] = next_val;
-    //stimulator.fq[sel_ch] = next_fq;
     sprintf(msg_modify, "RehaMove3 message: Stimulation update -> current = %2.2f, period = %2.7f, frequency = %2.2f\n", stimulator.stim[sel_ch].points[0].current, stimulator.stim[sel_ch].period, stimulator.fq[sel_ch]);
 
     GL_UI.Move3_hmi = Move3_none;   // Should this flag come down or just wait for screen to set it down?
@@ -1523,7 +1492,9 @@ void recording_sas()
                         default:
                             THRESHOLD = MEAN;
                         }
-
+                        
+                        // Update the threshold according to the trigger gain from the interface
+                        THRESHOLD += THRESHOLD*screen.trigger_gain;
                         sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
                         threshold_to_screen = THRESHOLD;
                         OutputDebugString("\n Threshold calculated and sent");
@@ -1531,7 +1502,6 @@ void recording_sas()
                         rec_status.req = false;
                     }
                 }
-
             }
             else if (rec_status.th == false && (GL_thMethod != th_MVC05 || GL_thMethod != th_MVC10))
             {

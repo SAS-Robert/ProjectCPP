@@ -243,17 +243,13 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
 {
     string delimiter = ";";
     string token, value;
-    //string token1, value2;
     int length = strlen(message), i = 0;
     string messageStr = convert_to_string(message, length+1);
     int valid_msg = 1;
 
     // Store the data received, the string contains: "MSG_TYPE;msg_value" 
     // >> token = MSG_TYPE, value = msg_value
-    /*
-    strcpy(token, (messageStr.substr(0, messageStr.find(delimiter))).c_str());
-    strcpy(value, (messageStr.substr(1, messageStr.find(delimiter))).c_str());
-    */
+
     int pos = 0;
     pos = messageStr.find(delimiter);
     token = messageStr.substr(0, pos);
@@ -263,7 +259,6 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
     if (messageStr != " "){
         for (i; i < MSG_SCREEN_COUNT; i++)
         {
-            //valid_msg = ((token == msgList.messages[i]) == 0);
             valid_msg = token.compare(msgList.messages[i]);
             if (valid_msg == 0)
             {
@@ -685,7 +680,7 @@ struct UdpServer
         ERROR_CNT_LIM = 5;
         displayMsg = " ";
         res_level = 5;
-        pulse_width = 0;
+        pulse_width = 300;
         amplitude = 2;
         frequency = 50;
         trigger_gain = 0;
