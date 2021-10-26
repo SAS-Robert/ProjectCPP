@@ -981,7 +981,8 @@ void modify_stimulation(Smpt_Channel sel_ch)
     float Dcurr = 0.0, DHz = 0.0;
     uint8_t Dramp = 0, Dnr = 0;
     bool autoCal_process = (GL_state == st_calA_go) || (GL_state == st_calA_stop); // Automatic cal in progress
-
+    
+    /*
     // Automatic calibration
     if (autoCal_process)
     {
@@ -1011,7 +1012,7 @@ void modify_stimulation(Smpt_Channel sel_ch)
         Dramp = D_RAMP_MAN;
         Dnr = D_POINT_MAN;
         DHz = D_FQ_MAN;
-    }
+    }*/
 
     // Apply changes
     next_val.points[0].current = screen.amplitude;
@@ -1019,81 +1020,12 @@ void modify_stimulation(Smpt_Channel sel_ch)
     next_val.period = screen.frequency;
     // TODO
     //nex_val.pulse_width = screen.pulse_width;
-        
-    //switch (code) --- OLD
-    //{
-        /*  RAMP is hardcoded to 10 in the final version of SAS and cannot be modified from the interface
-    case Move3_ramp_more:
-        next_val.number_of_points += Dnr;
-        next_val.ramp += Dramp;
-        break;
-    case Move3_ramp_less:
-        next_val.number_of_points -= Dnr;
-        next_val.ramp -= Dramp;
-        break;
-        // Rest of the values are assigned to the value that comes from SCREEN - Old interface removed
-    case Move3_decr:
-        next_val.points[0].current -= Dcurr;
-        next_val.points[2].current += Dcurr;
-        break;
-    case Move3_incr:
-        next_val.points[0].current += Dcurr;
-        next_val.points[2].current -= Dcurr;
-        break;
-    case Move3_Hz_mr:
-        next_fq += DHz;
-        next_val.period = MS_TO_HZ / next_fq;
-        break;
-    case Move3_Hz_ls:
-        next_fq -= DHz;
-        next_val.period = MS_TO_HZ / next_fq;
-        break;
-        */
-    //}
-
-    // Checking max and min possible values:
-    /*
-    if (next_val.ramp > MAX_STIM_RAMP)
-    {
-        next_val.ramp = MAX_STIM_RAMP;
-        next_val.number_of_points = MAX_STIM_RAMP;
-    }
-    else if (next_val.ramp < MIN_STIM_RAMP)
-    {
-        next_val.ramp = MIN_STIM_RAMP;
-        next_val.number_of_points = MIN_STIM_RAMP;
-    }
-    
-    if (next_val.points[0].current > MAX_STIM_CUR)
-    {
-        next_val.points[0].current = MAX_STIM_CUR;
-        next_val.points[2].current = -MAX_STIM_CUR;
-    }
-    else if (next_val.points[0].current < MIN_STIM_CUR)
-    {
-        next_val.points[0].current = MIN_STIM_CUR;
-        next_val.points[2].current = MIN_STIM_CUR;
-    }Move3_user
-    
-    if (next_fq > MAX_STIM_FQ)
-    {
-        next_fq = MAX_STIM_FQ;
-        next_val.period = MS_TO_HZ / next_fq;
-    }
-    else if (next_fq < MIN_STIM_FQ)
-    {
-        next_fq = MIN_STIM_FQ;
-        next_val.period = MS_TO_HZ / next_fq;
-    }
-    */
+       
     // Update values
     stimulator.stim[sel_ch] = next_val;
     //stimulator.fq[sel_ch] = next_fq;
     sprintf(msg_modify, "RehaMove3 message: Stimulation update -> current = %2.2f, period = %2.7f, frequency = %2.2f\n", stimulator.stim[sel_ch].points[0].current, stimulator.stim[sel_ch].period, stimulator.fq[sel_ch]);
-    // Update commands
-    //code = Move3_none;
-    //Move3_cmd = Move3_none;
-    //Move3_key = Move3_none; // Should this flag come down or just wait for screen to set it down?
+
     GL_UI.Move3_hmi = Move3_none;   // Should this flag come down or just wait for screen to set it down?
 }
 
@@ -1189,7 +1121,8 @@ void stimulating_sas()
                 }
 
                 //Move3_hmi = Move3_none;
-                Move3_key = Move3_none; // Should this flag come down or just wait for screen to set it down?
+                Move3_key = Move3_none; 
+                screen.start_stop = Move3_stop; 
             }
 
             if ((stimulator.active || Move3_key == Move3_start) && !stim_timeout && robert.playPause)
@@ -1529,7 +1462,6 @@ void recording_sas()
             // Set threshold button has been pressed - rec_status.req flag is no longer necessary
             if (rec_status.req && main_thEN)
             {
-                OutputDebugString("\n Calculating threshold code running");
                 if (recorder.data_received && recorder.data_start && (!fileFILTERS.is_open() || !fileVALUES.is_open()))
                 {
                     fileFILTERS.open(filter_s);
@@ -1604,8 +1536,8 @@ void recording_sas()
                 // Recorder buffer cleared out and the filters are re-started to not calculate TH based on unwanted data
                 recorder_emg1.clear();
                 recorder_emg2.clear();
-                startup_filters();
-                OutputDebugString("\n In the first loop, the recorder buffer is cleared out and filters re-started");
+                restartup();
+                OutputDebugString("\n In the first loop, the recorder filters are re-started");
             }
             else if (rec_status.th == true && (GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && !GL_UI.set_MVC)
             {

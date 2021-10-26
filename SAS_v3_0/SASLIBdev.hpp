@@ -350,7 +350,7 @@ public:
         // Stimulation values
         stim_act[channel] = false;
         stim[channel].number_of_points = 3; // Set the number of points
-        stim[channel].ramp = 3;             // Three lower pre-pulses
+        stim[channel].ramp = 10;            // Three lower pre-pulses
         stim[channel].period = 20;          // Frequency: 50 Hz
         // Set the stimulation pulse
         stim[channel].points[0].current = 0;

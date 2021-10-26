@@ -110,6 +110,20 @@ void startup_filters() {
         old_nr[i] = 0;
     }
 }
+void restartup() {
+    bPass_result.clear();
+    b50_result.clear();
+    GL_processed = 0;
+    GL_processed_MVC = 0;
+    MEAN = 0;
+    MVC = 0;
+    THRESHOLD = 0.0;
+    for (int i = 0; i < FLEX_WINDOW; i++)
+    {
+        old_value[i] = 0;
+        old_nr[i] = 0;
+    }
+}
 // EMG activity
 static double process_data_iir(unsigned long long int v_size, vector<double> raw_data, std::ofstream& stimFile, stimFileInfo placeholder)
 {
