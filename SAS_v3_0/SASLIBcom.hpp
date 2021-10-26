@@ -88,6 +88,7 @@ public:
         messages[th_start] = "THRESHOLD_PRESSED";
         messages[calM_stop] = "STIM_CALIBRATION_DONE";
         messages[calM_start] = "STIM_CALIBRATION_START";
+        messages[aan] = "AAN";
         status = msg_none;
     }
 };
@@ -238,7 +239,7 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
         int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, int& _triggerGain, RehaMove3_Req_Type& _startStop,
         bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity, User_Req_Type& theshold_pressed,
-        bool& calM_stop_r, bool& calM_start_r, tcp_msg_Type& result)
+        bool& calM_stop_r, bool& calM_start_r, bool& _aan, tcp_msg_Type& result)
 {
     string delimiter = ";";
     string token, value;
@@ -356,6 +357,10 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
             if(strcmp(value.c_str(), "true") == 0)
                 calM_start_r = true;
         }
+
+        if (msgList.status == aan)
+            if (strcmp(value.c_str(), "true") == 0)
+                _aan = true;
 
         return true;
     }
@@ -656,7 +661,7 @@ struct UdpServer
   public:
     char recvbuf[BUFLEN];
     char senbuf[BUFLEN];
-    bool error, new_message, finish, display, error_lim, playPause, auto_trigger, calM_stop, calM_start;
+    bool error, new_message, finish, display, error_lim, playPause, auto_trigger, calM_stop, calM_start, aan;
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
@@ -697,6 +702,7 @@ struct UdpServer
         exercise = kneeExt;
         method = th_SD05;
         threshold_pressed = User_none;
+        aan = false;
     }
     // methods
     void start()

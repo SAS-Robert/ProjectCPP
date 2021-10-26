@@ -121,7 +121,7 @@ auto time2trigger_end = std::chrono::steady_clock::now();
 auto time2complete_start = std::chrono::steady_clock::now();
 auto time2complete_end = std::chrono::steady_clock::now();
 bool mech_as_needed = false; // AAN prerequisites: Active return + assist in completion + SASFlag = true
-bool velocity_trigg = false; // AAN prerequisites: Velocity needs to be lower than 7.5mm/s in e.g. 2s
+bool velocity_trigg;         // AAN prerequisites: Velocity needs to be lower than 7.5mm/s in e.g. 2s
 bool trigger_timeout = false, complete_timeout = false; // Flags for timing handling of AAN
 
 // ----------------------------- Timing -----------------------------
@@ -245,6 +245,7 @@ void update_local_variables() {
     }
     user_gui = User_none;
     screen.threshold_pressed = User_none;
+    mech_as_needed = screen.aan;
     //Move3_key = Move3_none;
 }
 
@@ -514,7 +515,7 @@ void screen_thread()
             decode_successful = decode_screen(screen.recvbuf, screen.finish, screen.playPause, screen.res_level, screen.pulse_width,
                 screen.amplitude, screen.frequency, screen.exercise, screen.method, screen.trigger_gain, screen.start_stop,
                 screen.auto_trigger, screen.time_vel_th, screen.vel_th, screen.stim_port, screen.rec_port, screen.channel, screen.velocity,
-                screen.threshold_pressed, screen.calM_stop, screen.calM_start, screen_status);
+                screen.threshold_pressed, screen.calM_stop, screen.calM_start, screen.aan, screen_status);
 
             if (decode_successful)
             {
@@ -1062,6 +1063,7 @@ void stimulating_sas()
             if (emgCH == emgCh0) // Channel not selected yet
             {
                 stimulator.ch_ready = false;
+                sprintf(msg_stimulating, "Channel not selected yet. Needed to connect");
             }
             if (!stimulator.ready && stimulator.ch_ready)
             {
@@ -1835,14 +1837,6 @@ void recording_sas()
     {  
         if (!recorder.ready)
         {
-            // Select port from the GUI
-            /*
-            if (GL_UI.PORT_REC[3] >= '1' && GL_UI.PORT_REC[3] <= '9')
-            {
-                PORT_REC[3] = GL_UI.PORT_REC[3];            // this is maybe too redundant
-            }
-            // normal start up
-            */
             sprintf(msg_recording, "Re-start manually the recorder. Reconnecting recorder on port %s.", PORT_REC);
             Sleep(2500);
             recorder.display = true;
@@ -1851,11 +1845,6 @@ void recording_sas()
                 recorder.start(); 
             }
 
-            // This is just in case the user needs to move the stuff around
-            //if (!recorder.ready) 
-            //{
-            //    Sleep(2500);
-            //}
         }
         if (recorder.ready && recorder.found)
         {
