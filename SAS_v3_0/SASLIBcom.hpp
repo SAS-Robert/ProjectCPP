@@ -237,7 +237,7 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 }
 
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
-        int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, int& _triggerGain, RehaMove3_Req_Type& _startStop,
+        int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, double& _triggerGain, RehaMove3_Req_Type& _startStop,
         bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity, User_Req_Type& theshold_pressed,
         bool& calM_stop_r, bool& calM_start_r, bool& _aan, tcp_msg_Type& result)
 {
@@ -307,7 +307,7 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         }
 
         if (msgList.status == triggerGain)
-            _triggerGain = stoi(value.c_str());
+            _triggerGain = stod(value.c_str());
 
         if ((msgList.status == startBut) || (msgList.status ==  stopbut)) {
             int ss = stoi(value.c_str());
@@ -336,7 +336,7 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         }
 
         if (msgList.status == velocity)
-            _velocity = stoi(value.c_str());
+            _velocity = stod(value.c_str());
 
         if (msgList.status == th_start) {
             int t = stoi(value.c_str());
@@ -660,9 +660,9 @@ struct UdpServer
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
-    int res_level, pulse_width, amplitude, frequency, trigger_gain, time_vel_th, vel_th, stim_port, rec_port;
+    int res_level, pulse_width, amplitude, frequency, time_vel_th, vel_th, stim_port, rec_port;
     threshold_Type method;
-    double velocity;
+    double velocity, trigger_gain;
     exercise_Type exercise;
     emgCh_Type channel;
     RehaMove3_Req_Type start_stop;
@@ -683,7 +683,7 @@ struct UdpServer
         pulse_width = 300;
         amplitude = 2;
         frequency = 50;
-        trigger_gain = 0;
+        trigger_gain = 1;
         time_vel_th = 0;
         vel_th = 0;
         stim_port = 1;

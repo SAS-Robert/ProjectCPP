@@ -132,8 +132,8 @@ typedef enum
     exercise = 24,       // Exercise selected in main screen
     method = 25,         // Method for threshold collection
     triggerGain = 26,    // Trigger gain for the threshold (multiplier)
-    startBut = 27,       // Start button pressed on the Screen
-    stopbut = 28,        // Stop button pressed on the Screen
+    startBut = 27,       // Start stimulation button pressed on the Screen
+    stopbut = 28,        // Stop stimulation button pressed on the Screen
     autoTrigg = 29,      // Auto trigger
     timeVelTh = 30,      // Time velocity threshold - AAN variable to be fixed
     velTh = 31,          // Velocity threshold - AAN variable to be fixed

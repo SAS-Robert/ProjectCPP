@@ -498,6 +498,7 @@ void screen_thread()
     // to send: stimulation parameters + exercise settings + current status -> guiMsg
     // char stimMsg[BUFLEN], setMsg[BUFLEN], disMsg[BUFLEN], guiMsg[BUFLEN];
     // char itoaNr[32];
+    tcp_msg_Type msg_status = msgList.status;
     bool decode_successful;
     char longMsg[BUFLEN];
     // Start
@@ -534,8 +535,8 @@ void screen_thread()
                     break;
                 }
 
-                if (screen_status == triggerGain)
-                    THRESHOLD += THRESHOLD * screen.trigger_gain;
+                if (msg_status == triggerGain)
+                    THRESHOLD = THRESHOLD * screen.trigger_gain;
 
             }
             else if (!decode_successful && screen.display)
@@ -604,6 +605,7 @@ void mainSAS_thread()
             msg_main += "Waiting for screen server to be set up.\n";
         }
     }
+
     // ------------- State machine loop -------------
     while (!MAIN_to_all.end && GL_state != st_end)
     {
@@ -616,27 +618,24 @@ void mainSAS_thread()
         {
         case st_init:
             devicesReady = rec_status.ready && stim_status.ready;
-            // New: no more automatic calibration
-            // when the first sets starts, it allows to set up the stimulation
-            // Edit: choosing method on the threshold state
-            //if (devicesReady && screen_status == start)
-            if (devicesReady && screen.calM_start)
-            {
+
+            if (devicesReady && screen.calM_start) {
                 msg_main = "Set up stimulation parameters.\n- Complete first set to start exercise.";
                 GL_state = st_calM;
-                screen.calM_start = false;
             }
-            else if (devicesReady && !screen_status == start)
-            {
-                msg_main = "Stimulator and recorder ready.\n- Select and exercise.\n";
-                msg_main += "- Plan on ROBERT a calibration set + at least one exercise set.";
+            else if (devicesReady && !screen.calM_start) {
+                msg_main = "Stimulator and recorder ready.\n";
+                msg_main += "Waiting to start mamual calibration.";
             }
-            else if (!devicesReady)
-            {
+            else if (!devicesReady) {
                 msg_main = "\nRehaMove3: ";
                 msg_main += msg_stimulating;
                 msg_main += "\nRehaIngest: ";
                 msg_main += msg_recording;
+            }
+            else if (devicesReady && screen_status == start) {
+                msg_main = "Starting exercise...";
+                GL_state = st_wait;
             }
 
             //GL_exercise = GL_UI.next_exercise;
@@ -646,18 +645,15 @@ void mainSAS_thread()
         case st_calM:
             // New: set up done when the first set up finishes
             //if (rec_status.ready && screen_status == setDone && !stimulator.active)
-            if (rec_status.ready && rec_status.req && !stimulator.active)
-            {
+            if (rec_status.ready && rec_status.req && !stimulator.active) {
                 msg_main = "Calculating threshold...";
                 statusList[(int)st_th] = "Setting threshold";
                 GL_state = st_th;
             }
-            else if (screen_status == exDone || screen_status == msgEnd)
-            {
+            else if (screen_status == exDone || screen_status == msgEnd) {
                 GL_state = st_init;
             }
-            else if (screen_status != setDone && screen_status != exDone)
-            {
+            else if (screen_status != setDone && screen_status != exDone) {
                 msg_main = "Set up stimulation parameters.\n";
                 //msg_main += "\n- Complete first set to start exercise.";
                 //OutputDebugString(" Waiting for screen to send a command\n");
@@ -671,24 +667,20 @@ void mainSAS_thread()
 
         case st_th:
             // New: wait until the user is at the beginning of a repetition
-            if (rec_status.req && !main_thEN)
-            {
+            if (rec_status.req && !main_thEN) {
                 statusList[(int)st_th] = "Setting threshold";
                 msg_main = "RECORD THRESHOLD pressed";
                 OutputDebugString("\n RECORD THRESHOLD pressed, main_thEN = true");
                 main_thEN = true;
             }
 
-            if (rec_status.th) 
-            {
+            if (rec_status.th)  {
                 //differenciate bettween single-th and MVC methods
-                if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && GL_UI.set_MVC)
-                {
+                if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && GL_UI.set_MVC) {
                     GL_state = st_mvc;
                     msg_main = "Setting MVC - 2nd threshold.";
                 }
                 else if (GL_thMethod != th_MVC05 && GL_thMethod != th_MVC10) {
-                    //GL_state = st_wait;
                     GL_state = st_calM;
                     msg_main = "Threshold saved.";
                     // Update exercise settings
@@ -697,18 +689,15 @@ void mainSAS_thread()
                     main_thEN = false;
                     rec_status.th = false;
                 }
-                else if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && !GL_UI.set_MVC)
-                {
+                else if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && !GL_UI.set_MVC) {
                     msg_main = "Threshold saved. Press Set MVC for 2nd threshold.";
                 }
             }
-            else if (rec_status.req && !rec_status.th)
-            {
+            else if (rec_status.req && !rec_status.th) {
                 statusList[(int)st_th] = "Recording threshold";
                 msg_main = "Recording threshold.";
             }
-            else if (!rec_status.req && !rec_status.th)
-            {
+            else if (!rec_status.req && !rec_status.th) {
                 //msg_main = "Choose a method and press SET THRESHOLD";
                 //GL_thMethod = GL_UI.next_method;
                 GL_thMethod = screen.method;
@@ -752,27 +741,24 @@ void mainSAS_thread()
 
         case st_wait:
             // screen message on the run
-            if (robert.playPause)
-            {
-                msg_main = "Waiting for trigger.";
-            }
-            else if (!robert.playPause)
-            {
-                msg_main = "Press patient button to allow stimulation.";
-                time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
+            if (screen_status == start) {
+                if (robert.playPause) {
+                    msg_main = "Waiting for trigger.";
+                }
+                else if (!robert.playPause) {
+                    msg_main = "Press patient button to allow stimulation.";
+                    time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
+                }
             }
 
-            if (screen_status == exDone || screen_status == msgEnd || rec_status.error)
-            {
+            if (screen_status == exDone || screen_status == msgEnd || rec_status.error) {
                 // Exercise has been aborted
                 msg_main = "Exercise done.";
-
                 GL_state = st_repeat;
                 fileLOGS << "2.0, " << GL_processed << "\n";
                 main_force_repeat = rec_status.error;
             }
-            else if (rec_status.start && robert.playPause)
-            {
+            else if (rec_status.start && robert.playPause) {
                 // normal trigger in any case (normal SAS or AAN)
                 GL_state = st_running;
                 msg_main = "Stimulation triggered";
@@ -780,13 +766,12 @@ void mainSAS_thread()
                 time2complete_start = std::chrono::steady_clock::now();
                 complete_timeout = false;
             }
-            else if (mech_as_needed && !rec_status.start && robert.playPause)
-            {
+            else if (mech_as_needed && !rec_status.start && robert.playPause && screen_status == start) {
                 // analyse the timing for the AAN timeout
                 time2trigger_end = std::chrono::steady_clock::now();
                 time2trigger_diff = time2trigger_end - time2trigger_start;
-                if (time2trigger_diff.count() >= time2trigger)
-                {
+
+                if (time2trigger_diff.count() >= time2trigger) {
                     //OutputDebugString(std::to_string(time2trigger_diff.count()).c_str());
                     // AAN not triggered in time
                     GL_state = st_running;
@@ -799,13 +784,11 @@ void mainSAS_thread()
                 complete_timeout = false;
             }
             // The end point has been reached before the stimulation has been triggered
-            else if (screen_status == repEnd)
-            {
+            else if (screen_status == repEnd) {
                 // Patient has reached end of repetition
                 msg_main = "End-Point reached";
 
-                if (robert.Reached || robert.isMoving)
-                {
+                if (robert.Reached || robert.isMoving) {
                     msg_main += ". Waiting for robot to return to start position.";
                 }
 
@@ -817,13 +800,11 @@ void mainSAS_thread()
 
         case st_running:
             // screen message on the run
-            if (!(screen_status == exDone || screen_status == msgEnd) && !robert.Reached)
-            {
+            if (!(screen_status == exDone || screen_status == msgEnd) && !robert.Reached) {
                 msg_main = msg_stimulating;
             }
 
-            if ((screen_status == exDone || screen_status == msgEnd || rec_status.error) && !stimulator.active)
-            {
+            if ((screen_status == exDone || screen_status == msgEnd || rec_status.error) && !stimulator.active) {
                 // Exercise has been aborted
                 msg_main = "Exercise done";
 
@@ -832,13 +813,11 @@ void mainSAS_thread()
                 main_force_repeat = rec_status.error;
             }
             // End Point reached or set finished 
-            else if (((robert.Reached && robert.valid_msg) || screen_status == setDone) && !stimulator.active)
-            {
+            else if (((robert.Reached && robert.valid_msg) || screen_status == setDone) && !stimulator.active) {
                 // Patient has reached end of repetition
                 msg_main = "End-Point reached";
 
-                if (robert.Reached || robert.isMoving)
-                {
+                if (robert.Reached || robert.isMoving) {
                     msg_main += ". Waiting for robot to return to start position.";
                 }
 
@@ -847,13 +826,11 @@ void mainSAS_thread()
                 fileLOGS << "3.0, " << GL_processed << "\n";
             }
             // Completion timeout for AAN
-            else if (mech_as_needed && stimulator.active && (!robert.Reached && robert.valid_msg))
-            {
+            else if (mech_as_needed && stimulator.active && (!robert.Reached && robert.valid_msg)) {
                 // analyse the timing for the AAN timeout
                 time2complete_end = std::chrono::steady_clock::now();
                 time2complete_diff = time2complete_end - time2complete_start;
-                if ((double)time2complete_diff.count() >= time2complete)
-                {
+                if ((double)time2complete_diff.count() >= time2complete) {
                     complete_timeout = true;
                     // Mechanical assistance needed for completion
                     msg_main = "Mechanical assistance activated. Waiting to complete exercise.";
@@ -985,12 +962,12 @@ void modify_stimulation(Smpt_Channel sel_ch)
     Smpt_ml_channel_config next_val = stimulator.stim[sel_ch];
 
     // Apply changes
-    next_val.points[0].current = screen.amplitude;
-    next_val.points[0].time = screen.pulse_width;
-    next_val.points[1].time = screen.pulse_width;
-    next_val.points[2].time = screen.pulse_width;
+    next_val.points[0].current = screen.amplitude;      // Amplitude
+    next_val.points[0].time = screen.pulse_width;       // Pulse Width
+    next_val.points[1].time = screen.pulse_width;       // Pulse width
+    next_val.points[2].time = screen.pulse_width;       // Pulse width
     next_val.points[2].current = -screen.amplitude;     // Biphasic pulse with the same amplitude --'иии|___.--'иии|___.--
-    next_val.period = screen.frequency;
+    next_val.period = screen.frequency;                 // Frequency
 
     // Update values
     stimulator.stim[sel_ch] = next_val;
@@ -1494,8 +1471,8 @@ void recording_sas()
                         }
                         
                         // Update the threshold according to the trigger gain from the interface
-                        THRESHOLD += THRESHOLD*screen.trigger_gain;
-                        sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f", GL_thMethod, THRESHOLD);
+                        THRESHOLD = THRESHOLD*screen.trigger_gain;
+                        sprintf(msg_recording, "EMG activity: method = %d, threshold = %2.6f, gain = %1.4f", GL_thMethod, THRESHOLD, screen.trigger_gain);
                         threshold_to_screen = THRESHOLD;
                         OutputDebugString("\n Threshold calculated and sent");
                         rec_status.th = true;
