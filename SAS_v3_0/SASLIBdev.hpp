@@ -112,6 +112,12 @@ void fill_ml_get_current_data(Smpt_device *const device, Smpt_ml_get_current_dat
     ml_get_current_data->data_selection[Smpt_Ml_Data_Stimulation] = true; /* get stimulation data */
 }
 
+void fill_ml_get_current_data_ack(Smpt_device* const device, Smpt_ml_get_current_data_ack* const ml_get_current_data_ack)
+{
+    ml_get_current_data_ack->packet_number = smpt_packet_number_generator_next(device);
+    ml_get_current_data_ack->data_selection[Smpt_Ml_Data_Stimulation] = true; 
+}
+
 void fill_dl_init(Smpt_device *const device, Smpt_dl_init *const dl_init)
 {
     dl_init->ads129x.ch1set = 16;
@@ -327,7 +333,7 @@ public:
         device = {0};
         ml_init = {0};
         ml_get_current_data = {0};
-        ml_get_current_data_ack = { 0 };
+        ml_get_current_data_ack = {0};
         smpt_port = false;
         smpt_check = false;
         smpt_next = false;
@@ -368,6 +374,7 @@ public:
         fill_ml_update(&device, &ml_update, channel, stim_act[channel], stim[channel]); // <- comment out this one
         smpt_send_ml_update(&device, &ml_update);
         fill_ml_get_current_data(&device, &ml_get_current_data);
+        fill_ml_get_current_data_ack(&device, &ml_get_current_data_ack);
         // This last command check if it's received all the data requested
         smpt_get = smpt_send_ml_get_current_data(&device, &ml_get_current_data);
         // This all is true when it is connected to the wrong port. Therefore it is necessary to check the device ID
@@ -529,6 +536,7 @@ public:
     };
 
     bool checkElectrodeStatus() {
+        fill_ml_get_current_data_ack(&device, &ml_get_current_data_ack);
         // this just returns if the device is red blinking; true is not blinking + yellow and false is red blinking
         if (smpt_get_ml_get_current_data_ack(&device, &ml_get_current_data_ack)) {
             return true;

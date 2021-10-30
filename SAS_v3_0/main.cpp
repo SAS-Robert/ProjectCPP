@@ -634,7 +634,7 @@ void mainSAS_thread()
                 msg_main += msg_recording;
             }
             else if (devicesReady && screen_status == start) {
-                msg_main = "Starting exercise...";
+                sprintf(msg_stimulating, "Starting exercise... ");
                 GL_state = st_wait;
             }
 
@@ -662,6 +662,7 @@ void mainSAS_thread()
                 // Manual calibration ended from screen (confirm button pressed)
                 GL_state = st_init;
                 screen.calM_stop = false;
+                screen_status = msg_none;
             }
             break;
 
