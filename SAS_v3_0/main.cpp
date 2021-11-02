@@ -60,7 +60,7 @@ char PORT_STIM[5] = "COM6";
 RehaMove3 stimulator;
 int countPort = 0;
 
-char PORT_REC[5] = "COM4";
+char PORT_REC[5] = "COM7";
 RehaIngest recorder;
 int GL_iterator = 0;
 
@@ -78,7 +78,7 @@ int udp_cnt = 0;
 char ROBOT_IP_E[15] = "127.0.0.1";
 char ROBOT_IP[15] = "172.31.1.147";
 uint32_t ROBOT_PORT = 30009;
-UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
+UdpClient robert(ROBOT_IP, ROBOT_PORT);
 
 char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address
 char SCREEN_PORT[15] = "30002";
@@ -429,7 +429,7 @@ void sendEmgData_thread()
 
     while (!MAIN_to_all.end && (GL_state != st_end))
     {
-        if (GL_state == st_wait || GL_state == st_calM || GL_state == st_running) {
+        if (GL_state == st_wait || GL_state == st_calM || GL_state == st_running || GL_state == st_th) {
             if ((live_data != live_previous) && !isnan(live_data)) {
                 screenEMG.stream(live_data);
                 live_previous = live_data;
@@ -497,7 +497,7 @@ void screen_thread()
     // to send: stimulation parameters + exercise settings + current status -> guiMsg
     // char stimMsg[BUFLEN], setMsg[BUFLEN], disMsg[BUFLEN], guiMsg[BUFLEN];
     // char itoaNr[32];
-    tcp_msg_Type msg_status = msgList.status;
+    tcp_msg_Type* msg_status = &msgList.status;
     bool decode_successful;
     char longMsg[BUFLEN];
     // Start
@@ -534,7 +534,7 @@ void screen_thread()
                     break;
                 }
 
-                if (msg_status == triggerGain)
+                if (*msg_status == triggerGain)
                     THRESHOLD = THRESHOLD * screen.trigger_gain;
 
             }
@@ -675,7 +675,7 @@ void mainSAS_thread()
             }
 
             if (rec_status.th)  {
-                //differenciate bettween single-th and MVC methods
+                //differenciate bettween single-th and MVC methods - TODO: erase MVC
                 if ((GL_thMethod == th_MVC05 || GL_thMethod == th_MVC10) && GL_UI.set_MVC) {
                     GL_state = st_mvc;
                     msg_main = "Setting MVC - 2nd threshold.";
@@ -698,10 +698,7 @@ void mainSAS_thread()
                 msg_main = "Recording threshold.";
             }
             else if (!rec_status.req && !rec_status.th) {
-                //msg_main = "Choose a method and press SET THRESHOLD";
-                //GL_thMethod = GL_UI.next_method;
                 GL_thMethod = screen.method;
-                OutputDebugString("\n WE ARE STUCKED!");
             }
 
             // Abort
@@ -855,8 +852,8 @@ void mainSAS_thread()
             //velocity_trigg = false;
 
             devicesReady = stim_status.ready && (rec_status.ready || rec_status.error);
-            //robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
-            robotReady = true;
+            robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
+            //robotReady = true;    // Debug only
 
             // Next repetition
             if (screen_status == repStart && devicesReady && robert.valid_msg)
@@ -886,8 +883,8 @@ void mainSAS_thread()
             trigger_timeout = false;
             //velocity_trigg = false;
             devicesReady = rec_status.ready && stim_status.ready && !stim_status.error && !rec_status.error;
-            //robotReady = robert.valid_msg; // && !robert.Reached 
-            robotReady = true;
+            robotReady = robert.valid_msg; // && !robert.Reached 
+            //robotReady = true;    // Debug only
 
             // 1. Finish program (if required)
             if (MAIN_to_all.end && devicesReady)
@@ -1075,7 +1072,7 @@ void stimulating_sas()
 
                 //Move3_hmi = Move3_none;
                 Move3_key = Move3_none; 
-                screen.start_stop = Move3_stop; 
+                screen.start_stop = Move3_none; 
             }
 
             if ((stimulator.active || Move3_key == Move3_start) && !stim_timeout && robert.playPause)
@@ -1605,7 +1602,9 @@ void recording_sas()
                 // For GUI testing
                 //st_wait_jump = !rec_status.start && robert.playPause;
                 // Final version
-                robert.isMoving = robert.isVelocity >= GL_UI.isVelocity_limit;
+                //robert.isMoving = robert.isVelocity > 0;
+                robert.isMoving = false;
+                robert.valid_msg = true;
                 st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg && robert.playPause;
 
                 if (mean >= THRESHOLD && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)
@@ -1752,7 +1751,7 @@ void recording_sas()
 
     // checking
     recAvailable = ((GL_state == st_init || GL_state == st_end) || (received_data && recorder.data_start) || (recorder.found && recorder.ready && recorder.data_start));
-    //recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready)); // old handling for REHAINGEST disconnection
+    //recAvailable = (GL_state == st_init || GL_state == st_end) || ((received_data && recorder.data_start) || (!recorder.data_start && recorder.ready)); // old handling for REHAINGEST disconnection causing RehaIngest forcibly disconnect
     //sprintf(msg_recording, "recAva %d, status %d, received %d, start %d", recAvailable, (GL_state == st_init || GL_state == st_end), (received_data&& recorder.data_start), (!recorder.data_start&& recorder.ready));
 
 

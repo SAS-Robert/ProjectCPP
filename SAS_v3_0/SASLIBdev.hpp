@@ -536,13 +536,48 @@ public:
     };
 
     bool checkElectrodeStatus() {
-        fill_ml_get_current_data_ack(&device, &ml_get_current_data_ack);
-        // this just returns if the device is red blinking; true is not blinking + yellow and false is red blinking
-        if (smpt_get_ml_get_current_data_ack(&device, &ml_get_current_data_ack)) {
-            return true;
+        int counter = 0;
+        bool pack = false, error = false, data = false;
+        smpt_clear_ml_get_current_data(&ml_get_current_data);
+        //ml_get_current_data.packet_number = smpt_packet_number_generator_next(&device);
+
+        //ml_get_current_data.data_selection[Smpt_Ml_Data_Stimulation] = 1;
+        smpt_send_ml_get_current_data(&device, &ml_get_current_data);
+
+        pack = smpt_new_packet_received(&device);
+        Sleep(30);
+        while (pack) {
+            OutputDebugString("\nNew packet received");
+            Smpt_ack ack;
+            smpt_clear_ack(&ack);
+
+            smpt_last_ack(&device, &ack);
+            if (ack.command_number == Smpt_Cmd_Ml_Get_Current_Data_Ack) {
+                Smpt_ml_get_current_data_ack mlGetCurrentDataAck;
+                smpt_clear_ml_get_current_data_ack(&mlGetCurrentDataAck);
+                smpt_get_ml_get_current_data_ack(&device, &mlGetCurrentDataAck);
+                data = mlGetCurrentDataAck.data_selection[Smpt_Ml_Data_Stimulation];
+                if (data) {
+                    bool stimulationState = (mlGetCurrentDataAck.stimulation_data.stimulation_state ==
+                        Smpt_Ml_Stimulation_Running);
+                    for (int i = 0; i < Smpt_Length_Number_Of_Channels; i++) {
+                        error = mlGetCurrentDataAck.stimulation_data.electrode_error[i];
+                        if (error) {
+                            counter++;
+                        }
+                    }
+                }
+            }
+            pack = smpt_new_packet_received(&device);
+            Sleep(30);
+        }
+
+        // this just returns if the device is red blinking; true = blinking + yellow // false = red blinking
+        if (counter != 0) {
+            return false;
         }
         else {
-            return false;
+            return true;
         }
     }
 };

@@ -401,7 +401,7 @@ public:
         display = true;
         // Robot variables
         isMoving = false;
-        playPause = true;
+        playPause = false;
         buttonPressed = false;
         playPause_cnt = 0;
         Reached = false;
@@ -673,7 +673,7 @@ struct UdpServer
         nPORT = 30001;
         slen = sizeof(si_other);
         display = false;
-        playPause = true;         // Assume play = true
+        playPause = false;         // Assume play = true
         finish = false;
         nPORT = atoi(PORTc);
         strcpy(SERVERc, S_address);
@@ -692,7 +692,7 @@ struct UdpServer
         calM_stop = false;
         calM_start = false;
         velocity = 1;
-        start_stop = Move3_stop;      // Assume starts = false
+        start_stop = Move3_none;      // Assume starts = false
         auto_trigger = false;
         exercise = kneeExt;
         method = th_SD03;
