@@ -695,7 +695,7 @@ struct UdpServer
         start_stop = Move3_stop;      // Assume starts = false
         auto_trigger = false;
         exercise = kneeExt;
-        method = th_SD05;
+        method = th_SD03;
         threshold_pressed = User_none;
         aan = false;
     }

@@ -559,6 +559,7 @@ private:
     //Process variables
     bool smpt_port, smpt_check, smpt_stop, smpt_next, smpt_end;
     char ID_dev[64], ID_INGEST[64] = "190751110";
+    char ID_new[64] = "200851109";
     int packet_cnt = 0, error_cnt = 0;
     const int ERROR_LIM = 10;
 

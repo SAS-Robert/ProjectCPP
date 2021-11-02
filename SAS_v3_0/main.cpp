@@ -88,7 +88,7 @@ char SCREEN_DATA_PORT[15] = "30011";
 UdpServer screen(SCREEN_ADDRESS, SCREEN_PORT); // Using UDP-IP protocol 
 UdpServer screenEMG(SCREEN_ADDRESS, SCREEN_EMG_PORT); // Using UPD-IP protocol for sending EMG permanently when recording
 UdpServer screenData(SCREEN_ADDRESS, SCREEN_DATA_PORT);
-tcp_msg_Type screen_status;
+tcp_msg_Type screen_status = msg_none;
 
 bool start_train = false;
 
@@ -140,7 +140,6 @@ auto time3_end = std::chrono::steady_clock::now();
 // Files variables for names and handling
 char date[DATE_LENGTH];
 // Location on the SAS computer
-//char folder[DATE_LENGTH] = "C:\\Users\\User\\Documents\\SASData\\"; // Old version
 //char folder[DATE_LENGTH] = "C:\\SAS Interface\\SASData\\";
 char folder[DATE_LENGTH] = "C:\\Users\\AAS\\Documents\\LSR\\Toni\\SAS_Data\\Trash\\";
 //char folder[DATE_LENGTH] = "C:\\Users\\Kasper Leerskov\\Downloads\\SASData\\";
@@ -430,14 +429,14 @@ void sendEmgData_thread()
 
     while (!MAIN_to_all.end && (GL_state != st_end))
     {
-        if ((live_data != live_previous) && !isnan(live_data))
-        {
-            screenEMG.stream(live_data);
-            live_previous = live_data;
-        }
-        else
-        {
-            // Do nothing
+        if (GL_state == st_wait || GL_state == st_calM || GL_state == st_running) {
+            if ((live_data != live_previous) && !isnan(live_data)) {
+                screenEMG.stream(live_data);
+                live_previous = live_data;
+            }
+            else {
+                // Do nothing
+            }
         }
     }
 
@@ -617,15 +616,13 @@ void mainSAS_thread()
         switch (GL_state)
         {
         case st_init:
+            OutputDebugString("\n State = st_init");
             devicesReady = rec_status.ready && stim_status.ready;
 
             if (devicesReady && screen.calM_start) {
                 msg_main = "Set up stimulation parameters.\n- Complete first set to start exercise.";
                 GL_state = st_calM;
-            }
-            else if (devicesReady && !screen.calM_start) {
-                msg_main = "Stimulator and recorder ready.\n";
-                msg_main += "Waiting to start mamual calibration.";
+                screen_status = msg_none;
             }
             else if (!devicesReady) {
                 msg_main = "\nRehaMove3: ";
@@ -633,7 +630,7 @@ void mainSAS_thread()
                 msg_main += "\nRehaIngest: ";
                 msg_main += msg_recording;
             }
-            else if (devicesReady && screen_status == start) {
+            else if (devicesReady && screen_status == start && !screen.calM_start) {
                 sprintf(msg_stimulating, "Starting exercise... ");
                 GL_state = st_wait;
             }
@@ -643,8 +640,7 @@ void mainSAS_thread()
             break;
 
         case st_calM:
-            // New: set up done when the first set up finishes
-            //if (rec_status.ready && screen_status == setDone && !stimulator.active)
+            OutputDebugString("\n State = st_calM");
             if (rec_status.ready && rec_status.req && !stimulator.active) {
                 msg_main = "Calculating threshold...";
                 statusList[(int)st_th] = "Setting threshold";
@@ -652,15 +648,17 @@ void mainSAS_thread()
             }
             else if (screen_status == exDone || screen_status == msgEnd) {
                 GL_state = st_init;
+                screen.calM_start = false;
+                screen.calM_stop = false;
+                screen_status = msg_none;
             }
             else if (screen_status != setDone && screen_status != exDone) {
                 msg_main = "Set up stimulation parameters.\n";
-                //msg_main += "\n- Complete first set to start exercise.";
-                //OutputDebugString(" Waiting for screen to send a command\n");
             }
             else if (screen.calM_stop) {
                 // Manual calibration ended from screen (confirm button pressed)
                 GL_state = st_init;
+                screen.calM_start = false;
                 screen.calM_stop = false;
                 screen_status = msg_none;
             }
@@ -668,6 +666,7 @@ void mainSAS_thread()
 
         case st_th:
             // New: wait until the user is at the beginning of a repetition
+            OutputDebugString("\n State = st_th");
             if (rec_status.req && !main_thEN) {
                 statusList[(int)st_th] = "Setting threshold";
                 msg_main = "RECORD THRESHOLD pressed";
@@ -716,7 +715,7 @@ void mainSAS_thread()
 
             // New MVC methods state
         case st_mvc:
-
+            OutputDebugString("\n State = st_mvc");
             if (rec_status.th2)
             {
                 msg_main = "MVC threshold set. Press patient button to begin exercise.";
@@ -741,6 +740,7 @@ void mainSAS_thread()
             break;
 
         case st_wait:
+            OutputDebugString("\n State = st_wait");
             // screen message on the run
             if (screen_status == start) {
                 if (robert.playPause) {
@@ -758,6 +758,12 @@ void mainSAS_thread()
                 GL_state = st_repeat;
                 fileLOGS << "2.0, " << GL_processed << "\n";
                 main_force_repeat = rec_status.error;
+            }
+            else if (screen_status == setDone) {
+                GL_state = st_init;
+                screen.calM_start = false;
+                screen.calM_stop = false;
+                screen_status = msg_none;
             }
             else if (rec_status.start && robert.playPause) {
                 // normal trigger in any case (normal SAS or AAN)
@@ -800,6 +806,7 @@ void mainSAS_thread()
             break;
 
         case st_running:
+            OutputDebugString("\n State = st_running");
             // screen message on the run
             if (!(screen_status == exDone || screen_status == msgEnd) && !robert.Reached) {
                 msg_main = msg_stimulating;
@@ -840,6 +847,7 @@ void mainSAS_thread()
             break;
 
         case st_stop:
+            OutputDebugString("\n State = st_stop");
             // Display message
             msg_main = "Reached end-point. Waiting for robot to return to the start.";
             complete_timeout = false;
@@ -847,14 +855,13 @@ void mainSAS_thread()
             //velocity_trigg = false;
 
             devicesReady = stim_status.ready && (rec_status.ready || rec_status.error);
-            robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
-            // For GUI testing: screen_status == repStart && devicesReady, taken out && robotReady
-            // For robot testing ? = devicesReady && robotReady
+            //robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
+            robotReady = true;
+
             // Next repetition
             if (screen_status == repStart && devicesReady && robert.valid_msg)
             {
                 msg_main = "Starting next repetition";
-
                 GL_state = st_wait;
                 fileLOGS << "4.0, " << GL_sampleNr << "\n";
             }
@@ -871,13 +878,16 @@ void mainSAS_thread()
             break;
 
         case st_repeat:
+            // TODO: ASK Oliver what does this send screen to **************************
+            OutputDebugString("\n State = st_repeat");
             main_1stSet = false;
             main_init = false;
             complete_timeout = false;
             trigger_timeout = false;
             //velocity_trigg = false;
             devicesReady = rec_status.ready && stim_status.ready && !stim_status.error && !rec_status.error;
-            robotReady = robert.valid_msg; // && !robert.Reached 
+            //robotReady = robert.valid_msg; // && !robert.Reached 
+            robotReady = true;
 
             // 1. Finish program (if required)
             if (MAIN_to_all.end && devicesReady)
@@ -921,6 +931,9 @@ void mainSAS_thread()
                 startup_filters();
                 start_files();
                 GL_state = st_init;
+                screen.calM_start = false;
+                screen.calM_stop = false;
+                screen_status = msg_none;
                 main_force_repeat = false;
             }
 
@@ -1002,10 +1015,6 @@ void stimulating_sas()
         switch (GL_state)
         {
         case st_init:
-            // Next out-commented lines are already being updated in a separate thread: screen_thread()
-            // update_local_variables();
-            // Just for debugging
-            // update_localGui();
 
             if (emgCH == emgCh0) // Channel not selected yet
             {
@@ -1041,12 +1050,7 @@ void stimulating_sas()
                 stimulator.fq[hmi_channel] = INIT_FQ;
                 set_stimulation(GL_exercise, stimulator.stim[hmi_channel], INIT_FQ);
             }
-            Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start);
-            //Update stimulation parameters if a key associated with parameters has been pressed
-            if (Move3_user_key)
-            {
-                //modify_stimulation(Move3_key, hmi_channel);
-            }
+
             screen_stop = (screen_status == setDone) || (screen_status == exDone);
             robot_stop = !robert.playPause || robert.Reached;
             // Quit
@@ -1098,25 +1102,10 @@ void stimulating_sas()
             stim_status.ready = true;
             stim_done = false;
             trigger_timeout = false;
-            // modify parameters if a button is pressed
-            Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start) && (Move3_key != Move3_en_ch);
 
-            if (Move3_user_key)
-            {
-                //modify_stimulation(Move3_key, hmi_channel);
-            }
             break;
 
         case st_running:
-            // modify parameters if a button is pressed - No longer done in the old interface
-            Move3_user_key = (Move3_key != Move3_done) && (Move3_key != Move3_stop) && (Move3_key != Move3_none) && (Move3_key != Move3_start);
-
-            if (Move3_user_key)
-            {
-                //modify_stimulation(Move3_key, hmi_channel);
-                //Move3_hmi = Move3_none;
-                Move3_key = Move3_none; // Should this flag come down or just wait for screen to set it down?
-            }
 
             screen_stop = (screen_status == setDone) || (screen_status == exDone) || (screen_status == msgEnd);
             robot_stop = !robert.playPause || robert.Reached;
@@ -1362,7 +1351,7 @@ void recording_sas()
                 sprintf(msg_recording, "Starting recorder on port %s.", PORT_REC);
                 Sleep(250);
                 recorder.display = true;
-                recorder.init_hasomed(PORT_REC);
+                recorder.init(PORT_REC);
                 if (recorder.found) { 
                     recorder.start(); 
                 }
@@ -1788,7 +1777,7 @@ void recording_sas()
             sprintf(msg_recording, "Re-start manually the recorder. Reconnecting recorder on port %s.", PORT_REC);
             Sleep(2500);
             recorder.display = true;
-            recorder.init_hasomed(PORT_REC);
+            recorder.init(PORT_REC);
             if (recorder.found) { 
                 recorder.start(); 
             }
