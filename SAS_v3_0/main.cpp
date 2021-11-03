@@ -110,6 +110,7 @@ auto stimA_end = std::chrono::steady_clock::now();
 bool stimA_start_b = false, stimA_end_b = false;
 bool stimA_active = false, stimM_active = false;
 bool stim_timing = false, stim_timeout = false;
+double min_isVelocity = 100.0;  // [mm/s]
 
 // Assist as need flags and timing - AAN feature 
 int time2trigger = 10; // seconds to trigger for starting FES
@@ -140,8 +141,8 @@ auto time3_end = std::chrono::steady_clock::now();
 // Files variables for names and handling
 char date[DATE_LENGTH];
 // Location on the SAS computer
-//char folder[DATE_LENGTH] = "C:\\SAS Interface\\SASData\\";
-char folder[DATE_LENGTH] = "C:\\Users\\AAS\\Documents\\LSR\\Toni\\SAS_Data\\Trash\\";
+char folder[DATE_LENGTH] = "C:\\SAS Interface\\SASData\\";
+//char folder[DATE_LENGTH] = "C:\\Users\\AAS\\Documents\\LSR\\Toni\\SAS_Data\\Trash\\";
 //char folder[DATE_LENGTH] = "C:\\Users\\Kasper Leerskov\\Downloads\\SASData\\";
 char Sname[DATE_LENGTH] = "subject";
 char file_dir[256], th_s[256], date_s[256], filter_s[256], logs_s[256], stim_s[256];
@@ -623,6 +624,8 @@ void mainSAS_thread()
                 msg_main = "Set up stimulation parameters.\n- Complete first set to start exercise.";
                 GL_state = st_calM;
                 screen_status = msg_none;
+                screen.calM_start = false;
+                Move3_key = Move3_none;
             }
             else if (!devicesReady) {
                 msg_main = "\nRehaMove3: ";
@@ -633,6 +636,7 @@ void mainSAS_thread()
             else if (devicesReady && screen_status == start && !screen.calM_start) {
                 sprintf(msg_stimulating, "Starting exercise... ");
                 GL_state = st_wait;
+                robert.playPause = false;
             }
 
             //GL_exercise = GL_UI.next_exercise;
@@ -665,7 +669,6 @@ void mainSAS_thread()
             break;
 
         case st_th:
-            // New: wait until the user is at the beginning of a repetition
             OutputDebugString("\n State = st_th");
             if (rec_status.req && !main_thEN) {
                 statusList[(int)st_th] = "Setting threshold";
@@ -684,7 +687,6 @@ void mainSAS_thread()
                     GL_state = st_calM;
                     msg_main = "Threshold saved.";
                     // Update exercise settings
-                    //robert.playPause = false;
                     main_1stSet = false;
                     main_thEN = false;
                     rec_status.th = false;
@@ -710,7 +712,7 @@ void mainSAS_thread()
             break;
 
 
-            // New MVC methods state
+            // TODO: outcomment MVC methods - old stuff
         case st_mvc:
             OutputDebugString("\n State = st_mvc");
             if (rec_status.th2)
@@ -769,6 +771,7 @@ void mainSAS_thread()
                 fileLOGS << "1.0, " << GL_processed << "\n";
                 time2complete_start = std::chrono::steady_clock::now();
                 complete_timeout = false;
+                Move3_key = Move3_none;
             }
             else if (mech_as_needed && !rec_status.start && robert.playPause && screen_status == start) {
                 // analyse the timing for the AAN timeout
@@ -818,9 +821,9 @@ void mainSAS_thread()
                 main_force_repeat = rec_status.error;
             }
             // End Point reached or set finished 
-            else if (((robert.Reached && robert.valid_msg) || screen_status == setDone) && !stimulator.active) {
+            else if (((robert.Reached && robert.valid_msg) || screen_status == repEnd) && !stimulator.active) {
                 // Patient has reached end of repetition
-                msg_main = "End-Point reached";
+                msg_main = "Repetition's end-point reached";
 
                 if (robert.Reached || robert.isMoving) {
                     msg_main += ". Waiting for robot to return to start position.";
@@ -851,12 +854,12 @@ void mainSAS_thread()
             trigger_timeout = false;
             //velocity_trigg = false;
 
-            devicesReady = stim_status.ready && (rec_status.ready || rec_status.error);
+            devicesReady = stim_status.ready && rec_status.ready;
             robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
             //robotReady = true;    // Debug only
 
             // Next repetition
-            if (screen_status == repStart && devicesReady && robert.valid_msg)
+            if (screen_status == repStart && devicesReady && robotReady)
             {
                 msg_main = "Starting next repetition";
                 GL_state = st_wait;
@@ -916,8 +919,8 @@ void mainSAS_thread()
                 startup_filters();
                 start_files();
 
-                statusList[(int)st_th] = "On hold";
-                GL_state = st_th;
+                statusList[(int)st_wait] = "On hold";
+                GL_state = st_wait;
                 main_force_repeat = false;
             }
             // 4. Exercise done. Go back to the beginning
@@ -1104,7 +1107,7 @@ void stimulating_sas()
 
         case st_running:
 
-            screen_stop = (screen_status == setDone) || (screen_status == exDone) || (screen_status == msgEnd);
+            screen_stop = (screen_status == setDone) || (screen_status == exDone) || (screen_status == msgEnd) || (screen_status == repEnd);
             robot_stop = !robert.playPause || robert.Reached;
             // Stop stimulation
             if ((Move3_key == Move3_stop || screen_stop || stim_timeout || robot_stop || rec_status.error) && stimulator.active)
@@ -1602,9 +1605,9 @@ void recording_sas()
                 // For GUI testing
                 //st_wait_jump = !rec_status.start && robert.playPause;
                 // Final version
-                //robert.isMoving = robert.isVelocity > 0;
-                robert.isMoving = false;
-                robert.valid_msg = true;
+                //robert.isMoving = (robert.isVelocity >= min_isVelocity);  // Old version of AAN
+                robert.isMoving = false;  // This always needs to be false, or just remove it from wait_jump condition
+                //robert.valid_msg = true;  // Only for debugging
                 st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg && robert.playPause;
 
                 if (mean >= THRESHOLD && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)

@@ -873,7 +873,7 @@ namespace SASv30 {
 			emgList[2] = "Emg Channel 2";
 
 			// for isMoving testing
-			isVelocity = 100.0;
+			isVelocity = 100.0;	// [mm/s]
 			// Update display
 			std::stringstream tempValue;
 

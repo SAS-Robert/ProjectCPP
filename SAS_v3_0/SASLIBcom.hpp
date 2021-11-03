@@ -123,7 +123,8 @@ bool decode_robot(char* message, double& value1, bool& value2, bool& value3)
                 tempVal = -1;
             }
 
-            valid[0] = (tempVal >= tempMin) && (tempVal <= tempMax);
+            //valid[0] = (tempVal >= tempMin) && (tempVal <= tempMax);  // This is the check for velocity which now is AAN
+            valid[0] = true;
         case 1:
             value[1] = (token == "true");
             valid[1] = (token == "true") || (token == "false");
@@ -692,7 +693,7 @@ struct UdpServer
         calM_stop = false;
         calM_start = false;
         velocity = 1;
-        start_stop = Move3_none;      // Assume starts = false
+        start_stop = Move3_stop;      // Assume starts = false
         auto_trigger = false;
         exercise = kneeExt;
         method = th_SD03;
