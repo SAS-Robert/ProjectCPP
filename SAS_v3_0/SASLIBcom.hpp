@@ -90,6 +90,8 @@ public:
         messages[calM_stop] = "STIM_CALIBRATION_DONE";
         messages[calM_start] = "STIM_CALIBRATION_START";
         messages[aan] = "AAN";
+        messages[ten_seconds_ann] = "TEN_SECONDS";
+        messages[velocity_aan] = "VEL_MECH_ASSIST";
         status = msg_none;
     }
 };
@@ -241,7 +243,7 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
         int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, double& _triggerGain, double& _thresh, RehaMove3_Req_Type& _startStop,
         bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity, User_Req_Type& theshold_pressed,
-        bool& calM_stop_r, bool& calM_start_r, bool& _aan, tcp_msg_Type& result)
+        bool& calM_stop_r, bool& calM_start_r, bool& _aan, bool& ten_sec_aan, bool& vel_mech_ann, tcp_msg_Type& result)
 {
     string delimiter = ";";
     string token, value;
@@ -361,6 +363,14 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         if (msgList.status == aan)
             if (strcmp(value.c_str(), "true") == 0)
                 _aan = true;
+
+        if (msgList.status == ten_seconds_ann)
+            if (strcmp(value.c_str(), "true") == 0)
+                ten_sec_aan = true;
+
+        if (msgList.status == velocity_aan)
+            if (strcmp(value.c_str(), "true") == 0)
+                vel_mech_ann = true;
 
         return true;
     }
@@ -661,7 +671,7 @@ struct UdpServer
   public:
     char recvbuf[BUFLEN];
     char senbuf[BUFLEN];
-    bool error, new_message, finish, display, error_lim, playPause, auto_trigger, calM_stop, calM_start, aan;
+    bool error, new_message, finish, display, error_lim, playPause, auto_trigger, calM_stop, calM_start, aan, ten_sec_ann, velocity_aan;
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
@@ -704,6 +714,8 @@ struct UdpServer
         method = th_SD03;
         threshold_pressed = User_none;
         aan = false;
+        ten_sec_ann = false;
+        velocity_aan = false;
     }
     // methods
     void start()

@@ -274,10 +274,10 @@ typedef enum /* Limit */
 typedef enum
 {
     // Updated values - Red=0, Blue=1, White=2, Black=3
-    Smpt_Channel_Red   = 0, // Old wires
-    Smpt_Channel_Blue  = 1, // Old wires
-    Smpt_Channel_White = 2, // Ny wires - Known as CHANNEL 2 or channel BLUE
-    Smpt_Channel_Black = 3, // Ny wires - Known as CHANNEL 1 or channel RED
+    Smpt_Channel_Red   = 3, // Old wires
+    Smpt_Channel_Blue  = 2, // Old wires
+    Smpt_Channel_White = 1, // Ny wires - Known as CHANNEL 2 or channel BLUE
+    Smpt_Channel_Black = 0, // Ny wires - Known as CHANNEL 1 or channel RED
     Smpt_Channel_Undefined = -1
 } Smpt_Channel; /**< \enum Smpt_Channel Channel colors*/
 

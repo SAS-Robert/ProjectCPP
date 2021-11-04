@@ -146,10 +146,12 @@ typedef enum
     calM_stop = 38,      // Manual calibration ended from screen
     calM_start = 39,     // Start Manual calibration from screen
     aan = 40,            // assisted as needed
+    ten_seconds_ann = 41,// 10 seconds to go into stimulation directly with AAN
+    velocity_aan = 42,   // velocity average for the mechanical assist in aan
 } tcp_msg_Type;
 
 const int MSG_AMOUNT = (int)res10 + 1;
-const int MSG_SCREEN_COUNT = (int)aan + 1; // Number of messages that may be valid for reception
+const int MSG_SCREEN_COUNT = (int)velocity_aan + 1; // Number of messages that may be valid for reception
 // ------------------ Global variables ------------------
 const int DATE_LENGTH = 256;
 // Threads cycles
