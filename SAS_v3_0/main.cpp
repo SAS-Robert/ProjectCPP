@@ -56,11 +56,11 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 bool stim_abort = false, stimAvailable = false, recAvailable = false;
 double fixed_value = 0;
 
-char PORT_STIM[5] = "COM6";
+char PORT_STIM[5] = "COM5";
 RehaMove3 stimulator;
 int countPort = 0;
 
-char PORT_REC[5] = "COM7";
+char PORT_REC[5] = "COM4";
 RehaIngest recorder;
 int GL_iterator = 0;
 
@@ -430,7 +430,7 @@ void sendEmgData_thread()
 
     while (!MAIN_to_all.end && (GL_state != st_end))
     {
-        if (GL_state == st_wait || GL_state == st_calM || GL_state == st_running || GL_state == st_th) {
+        if (GL_state == st_wait || GL_state == st_calM || GL_state == st_running || GL_state == st_th || GL_state == st_stop) {
             if ((live_data != live_previous) && !isnan(live_data)) {
                 screenEMG.stream(live_data);
                 live_previous = live_data;
@@ -515,7 +515,7 @@ void screen_thread()
         if (!screen.error && GL_tcpActive)
         {
             decode_successful = decode_screen(screen.recvbuf, screen.finish, screen.playPause, screen.res_level, screen.pulse_width,
-                screen.amplitude, screen.frequency, screen.exercise, screen.method, screen.trigger_gain, screen.start_stop,
+                screen.amplitude, screen.frequency, screen.exercise, screen.method, screen.trigger_gain, screen.threshold, screen.start_stop,
                 screen.auto_trigger, screen.time_vel_th, screen.vel_th, screen.stim_port, screen.rec_port, screen.channel, screen.velocity,
                 screen.threshold_pressed, screen.calM_stop, screen.calM_start, screen.aan, screen_status);
 
@@ -537,6 +537,9 @@ void screen_thread()
 
                 if (*msg_status == triggerGain)
                     THRESHOLD = THRESHOLD * screen.trigger_gain;
+
+                if (*msg_status == thresh_value)
+                    THRESHOLD = screen.threshold * screen.trigger_gain;
 
             }
             else if (!decode_successful && screen.display)

@@ -142,9 +142,10 @@ typedef enum
     channel = 34,        // Channel selected for SAS use
     velocity = 35,       // Velocity value corresponding minVelocity in the old SAS
     th_start = 36,       // Threshold button has been pressed
-    calM_stop = 37,      // Manual calibration ended from screen
-    calM_start = 38,     // Start Manual calibration from screen
-    aan = 39,            // assisted as needed
+    thresh_value = 37,   // Threshold value in the beginning of an exercise
+    calM_stop = 38,      // Manual calibration ended from screen
+    calM_start = 39,     // Start Manual calibration from screen
+    aan = 40,            // assisted as needed
 } tcp_msg_Type;
 
 const int MSG_AMOUNT = (int)res10 + 1;

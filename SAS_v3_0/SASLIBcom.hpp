@@ -45,7 +45,7 @@ typedef struct tcp_msg_struct
 public:
     const int size = 11;
     tcp_msg_Type status;
-    string messages[40];
+    string messages[45];
     // Constructor
     tcp_msg_struct()
     {
@@ -86,6 +86,7 @@ public:
         messages[channel] = "CHANNEL";
         messages[velocity] = "VELOCITY";
         messages[th_start] = "THRESHOLD_PRESSED";
+        messages[thresh_value] = "THRESHOLD_VALUE";
         messages[calM_stop] = "STIM_CALIBRATION_DONE";
         messages[calM_start] = "STIM_CALIBRATION_START";
         messages[aan] = "AAN";
@@ -238,7 +239,7 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 }
 
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
-        int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, double& _triggerGain, RehaMove3_Req_Type& _startStop,
+        int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, double& _triggerGain, double& _thresh, RehaMove3_Req_Type& _startStop,
         bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity, User_Req_Type& theshold_pressed,
         bool& calM_stop_r, bool& calM_start_r, bool& _aan, tcp_msg_Type& result)
 {
@@ -309,6 +310,9 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
 
         if (msgList.status == triggerGain)
             _triggerGain = stod(value.c_str());
+
+        if (msgList.status == thresh_value)
+            _thresh = stod(value.c_str());
 
         if ((msgList.status == startBut) || (msgList.status ==  stopbut)) {
             int ss = stoi(value.c_str());
@@ -663,7 +667,7 @@ struct UdpServer
     string displayMsg;
     int res_level, pulse_width, amplitude, frequency, time_vel_th, vel_th, stim_port, rec_port;
     threshold_Type method;
-    double velocity, trigger_gain;
+    double velocity, trigger_gain, threshold;
     exercise_Type exercise;
     emgCh_Type channel;
     RehaMove3_Req_Type start_stop;
@@ -685,6 +689,7 @@ struct UdpServer
         amplitude = 2;
         frequency = 50;
         trigger_gain = 1;
+        threshold = 0;
         time_vel_th = 0;
         vel_th = 0;
         stim_port = 1;

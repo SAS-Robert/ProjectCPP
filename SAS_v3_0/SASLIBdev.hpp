@@ -398,7 +398,8 @@ public:
             getID_cnt++;
         }
         sprintf(ID_dev, "%s", device_id_ack.device_id);
-        bool id_comp = strcmp(ID_dev, ID_MOVE) == 0;
+        //bool id_comp = strcmp(ID_dev, ID_MOVE) == 0;
+        bool id_comp = true;
 
         sprintf(displayMsg, "%s smpt_check %d, smpt_port %d, getID %d, smpt_get %d", port_name_rm, smpt_check, smpt_port, getID, smpt_get);
 
@@ -527,7 +528,8 @@ public:
             getID_cnt++;
         }
         sprintf(ID_dev, "%s", device_id_ack.device_id);
-        bool id_comp = strcmp(ID_dev, ID_MOVE) == 0;
+        //bool id_comp = strcmp(ID_dev, ID_MOVE) == 0;
+        bool id_comp = true;
 
         getStatus = getID && id_comp;
 
@@ -662,7 +664,7 @@ public:
             getID_cnt++;
         }
         sprintf(ID_dev, "%s", device_id_ack.device_id);
-        bool id_comp = strcmp(ID_dev, ID_INGEST) == 0;
+        bool id_comp = strcmp(ID_dev, ID_new) == 0;
         
         smpt_next = smpt_check && smpt_port && smpt_stop && getID && id_comp;
         // smpt_next = connection to the device was successful
@@ -889,7 +891,7 @@ public:
             getID_cnt++;
         }
         sprintf(ID_dev, "%s", device_id_ack.device_id);
-        bool id_comp = strcmp(ID_dev, ID_INGEST) == 0;
+        bool id_comp = strcmp(ID_dev, ID_new) == 0;
 
         smpt_next = smpt_check && smpt_port && smpt_stop && getID && id_comp;
         // smpt_next = connection to the device was successful
