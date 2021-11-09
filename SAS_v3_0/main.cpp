@@ -56,11 +56,11 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 bool stim_abort = false, stimAvailable = false, recAvailable = false;
 double fixed_value = 0;
 
-char PORT_STIM[5] = "COM5";
+char PORT_STIM[5] = "COM5"; // COM6 in ROBERT, COM5 in PC
 RehaMove3 stimulator;
 int countPort = 0;
 
-char PORT_REC[5] = "COM4";
+char PORT_REC[5] = "COM4";  // COM7 in ROBERT, COM4 in PC
 RehaIngest recorder;
 int GL_iterator = 0;
 
@@ -80,7 +80,7 @@ char ROBOT_IP[15] = "172.31.1.147";
 uint32_t ROBOT_PORT = 30009;
 UdpClient robert(ROBOT_IP, ROBOT_PORT);
 
-char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address
+char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address    º
 char SCREEN_PORT[15] = "30002";
 char SCREEN_EMG_PORT[15] = "30005";
 char SCREEN_DATA_PORT[15] = "30011";
@@ -113,17 +113,17 @@ bool stim_timing = false, stim_timeout = false;
 double min_isVelocity = 100.0;  // [mm/s]
 
 // Assist as need flags and timing - AAN feature 
-//int time2trigger = 10; // seconds to trigger for starting FES
+int time2trigger = 10; // seconds to trigger for starting FES
 //int time2complete = 5; // seconds to complete exercise with FES
-//std::chrono::duration<double> time2trigger_diff;
+std::chrono::duration<double> time2trigger_diff;
 //std::chrono::duration<double> time2complete_diff;
-//auto time2trigger_start = std::chrono::steady_clock::now();
-//auto time2trigger_end = std::chrono::steady_clock::now();
+auto time2trigger_start = std::chrono::steady_clock::now();
+auto time2trigger_end = std::chrono::steady_clock::now();
 //auto time2complete_start = std::chrono::steady_clock::now();
 //auto time2complete_end = std::chrono::steady_clock::now();
 bool mech_as_needed = false; // AAN prerequisites: Active return + assist in completion + SASFlag = true
 bool velocity_trigg;         // AAN prerequisites: Velocity needs to be lower than 7.5mm/s in e.g. 2s
-//bool trigger_timeout = false, complete_timeout = false; // Flags for timing handling of AAN
+bool trigger_timeout = false, complete_timeout = false; // Flags for timing handling of AAN
 
 // ----------------------------- Timing -----------------------------
 // Dummies - Measuring time:
@@ -387,7 +387,7 @@ void sendData_thread()
                 screenData.streamCommands("STIM_STATUS;" + now_str);
             }
             else if (!stimulator.checkElectrodeStatus()) {
-                screenData.streamCommands("STIM_STATUS;red");
+                screenData.streamCommands("STIM_STATUS;true");  // TODO: may be changed to "STIM_STATUS;red" for electrode error
             }
             else if (now_str == "true") {
                 screenData.streamCommands("STIM_STATUS;" + now_str);
@@ -500,6 +500,7 @@ void screen_thread()
     // char itoaNr[32];
     tcp_msg_Type* msg_status = &msgList.status;
     bool decode_successful;
+    double previous_gain = 1;
     char longMsg[BUFLEN];
     // Start
     screen.display = true;
@@ -535,8 +536,11 @@ void screen_thread()
                     break;
                 }
 
-                if (*msg_status == triggerGain)
-                    THRESHOLD = THRESHOLD * screen.trigger_gain;
+                if (*msg_status == triggerGain) {
+                    double gain_now = screen.trigger_gain - previous_gain;
+                    THRESHOLD = THRESHOLD + (THRESHOLD * gain_now);
+                    previous_gain = screen.trigger_gain;
+                }
 
                 if (*msg_status == thresh_value)
                     THRESHOLD = screen.threshold * screen.trigger_gain;
@@ -750,7 +754,7 @@ void mainSAS_thread()
                 }
                 else if (!robert.playPause) {
                     msg_main = "Press patient button to allow stimulation.";
-                    //time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
+                    time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
                 }
             }
 
@@ -768,27 +772,41 @@ void mainSAS_thread()
                 screen_status = msg_none;
             }
             else if (rec_status.start && robert.playPause) {
-                // normal trigger in any case (normal SAS or AAN)
-                GL_state = st_running;
-                msg_main = "Stimulation triggered";
-                fileLOGS << "1.0, " << GL_processed << "\n";
-                //time2complete_start = std::chrono::steady_clock::now();
-                //complete_timeout = false;
-                Move3_key = Move3_none;
+                if (mech_as_needed) {
+                    // normal trigger AAN
+                    msg_main = "Trigger surpassed, waiting for exercise completion without assistance.";
+                    OutputDebugString(" We are waiting for completion or timeout :)");
+                    fileLOGS << "1.0, " << GL_processed << "\n";
+                    Move3_key = Move3_none;
+                    if (screen.velocity_aan) {
+                        // same trigger as normal SAS
+                        GL_state = st_running;
+                        msg_main = "Stimulation triggered due to timeout - 2sec. avg. vel.";
+                        fileLOGS << "1.0, " << GL_processed << "\n";
+                        Move3_key = Move3_none;
+                    }
+                }
+                else {
+                    // normal trigger SAS
+                    GL_state = st_running;
+                    msg_main = "Stimulation triggered";
+                    fileLOGS << "1.0, " << GL_processed << "\n";
+                    Move3_key = Move3_none;
+                }
             }
             else if (mech_as_needed && !rec_status.start && robert.playPause && screen_status == start) {
                 // analyse the timing for the AAN timeout
-                //time2trigger_end = std::chrono::steady_clock::now();
-                //time2trigger_diff = time2trigger_end - time2trigger_start;
+                time2trigger_end = std::chrono::steady_clock::now();
+                time2trigger_diff = time2trigger_end - time2trigger_start;
 
-                if (screen.ten_sec_ann) {
+                if (time2trigger_diff.count() >= time2trigger) {
                     //OutputDebugString(std::to_string(time2trigger_diff.count()).c_str());
                     // AAN not triggered in time
                     GL_state = st_running;
                     msg_main = "Stimulation not triggered. Timeout.";
                     fileLOGS << "5.0, " << GL_processed << "\n";
                     // Inmediately after, FES need to be activated - flag updated
-                    //trigger_timeout = true;
+                    trigger_timeout = true;
                     //time2complete_start = std::chrono::steady_clock::now();
                 }
                 //complete_timeout = false;
@@ -836,16 +854,16 @@ void mainSAS_thread()
 
                 fileLOGS << "3.0, " << GL_processed << "\n";
             }
-            // Completion timeout for AAN
+            // Completion timeout for AAN final step
             else if (mech_as_needed && stimulator.active && (!robert.Reached && robert.valid_msg)) {
                 // analyse the timing for the AAN timeout
                 //time2complete_end = std::chrono::steady_clock::now();
                 //time2complete_diff = time2complete_end - time2complete_start;
-                if (screen.velocity_aan) {
-                    //complete_timeout = true;
-                    // Mechanical assistance needed for completion
-                    msg_main = "Mechanical assistance activated. Waiting to complete exercise.";
-                }
+                //if (screen.velocity_aan) {
+                //complete_timeout = true;
+                // Mechanical assistance needed for completion
+                msg_main = "Mechanical assistance activated. Waiting to complete exercise.";
+                //}
             }
             break;
 
