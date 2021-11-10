@@ -92,6 +92,7 @@ public:
         messages[aan] = "AAN";
         messages[ten_seconds_ann] = "TEN_SECONDS";
         messages[velocity_aan] = "VEL_MECH_ASSIST";
+        messages[FEStriggered] = "FES_TRIGGERED";
         status = msg_none;
     }
 };
@@ -242,7 +243,7 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
         int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, double& _triggerGain, double& _thresh, RehaMove3_Req_Type& _startStop,
-        bool& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity, User_Req_Type& theshold_pressed,
+        int& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity, User_Req_Type& theshold_pressed,
         bool& calM_stop_r, bool& calM_start_r, bool& _aan, bool& ten_sec_aan, bool& vel_mech_ann, tcp_msg_Type& result)
 {
     string delimiter = ";";
@@ -321,9 +322,10 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
             _startStop = (RehaMove3_Req_Type)ss;
         }
 
-        if (msgList.status == autoTrigg)
-            if (strcmp(value.c_str(), "true") == 0)
-                _autoTrigg = true;
+        if (msgList.status == autoTrigg) {
+            int at = stoi(value.c_str());
+            _autoTrigg = at;
+        }
 
         if (msgList.status == timeVelTh)
             _timeVel = stoi(value.c_str());
@@ -416,7 +418,7 @@ public:
         display = true;
         // Robot variables
         isMoving = false;
-        playPause = false;
+        playPause = true;
         buttonPressed = false;
         playPause_cnt = 0;
         Reached = false;
@@ -671,11 +673,11 @@ struct UdpServer
   public:
     char recvbuf[BUFLEN];
     char senbuf[BUFLEN];
-    bool error, new_message, finish, display, error_lim, playPause, auto_trigger, calM_stop, calM_start, aan, ten_sec_ann, velocity_aan;
+    bool error, new_message, finish, display, error_lim, playPause, calM_stop, calM_start, aan, ten_sec_ann, velocity_aan;
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
-    int res_level, pulse_width, amplitude, frequency, time_vel_th, vel_th, stim_port, rec_port;
+    int res_level, pulse_width, amplitude, frequency, time_vel_th, vel_th, stim_port, rec_port, auto_trigger;
     threshold_Type method;
     double velocity, trigger_gain, threshold;
     exercise_Type exercise;
@@ -688,7 +690,7 @@ struct UdpServer
         nPORT = 30001;
         slen = sizeof(si_other);
         display = false;
-        playPause = false;         // Assume play = true
+        playPause = true;         // Assume play = true
         finish = false;
         nPORT = atoi(PORTc);
         strcpy(SERVERc, S_address);
@@ -709,7 +711,7 @@ struct UdpServer
         calM_start = false;
         velocity = 1;
         start_stop = Move3_stop;      // Assume starts = false
-        auto_trigger = false;
+        auto_trigger = 10;
         exercise = kneeExt;
         method = th_SD03;
         threshold_pressed = User_none;

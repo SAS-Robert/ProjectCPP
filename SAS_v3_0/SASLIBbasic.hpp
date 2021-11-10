@@ -148,10 +148,11 @@ typedef enum
     aan = 40,            // assisted as needed
     ten_seconds_ann = 41,// 10 seconds to go into stimulation directly with AAN
     velocity_aan = 42,   // velocity average for the mechanical assist in aan
+    FEStriggered = 43,   // FOr the screen to know in AAN
 } tcp_msg_Type;
 
 const int MSG_AMOUNT = (int)res10 + 1;
-const int MSG_SCREEN_COUNT = (int)velocity_aan + 1; // Number of messages that may be valid for reception
+const int MSG_SCREEN_COUNT = (int)FEStriggered + 1; // Number of messages that may be valid for reception
 // ------------------ Global variables ------------------
 const int DATE_LENGTH = 256;
 // Threads cycles
