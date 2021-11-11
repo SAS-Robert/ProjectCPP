@@ -45,7 +45,7 @@ typedef struct tcp_msg_struct
 public:
     const int size = 11;
     tcp_msg_Type status;
-    string messages[45];
+    string messages[46];
     // Constructor
     tcp_msg_struct()
     {
@@ -93,6 +93,7 @@ public:
         messages[ten_seconds_ann] = "TEN_SECONDS";
         messages[velocity_aan] = "VEL_MECH_ASSIST";
         messages[FEStriggered] = "FES_TRIGGERED";
+        messages[endu_stren] = "END_STR";
         status = msg_none;
     }
 };
@@ -244,7 +245,7 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
         int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, double& _triggerGain, double& _thresh, RehaMove3_Req_Type& _startStop,
         int& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity, User_Req_Type& theshold_pressed,
-        bool& calM_stop_r, bool& calM_start_r, bool& _aan, bool& ten_sec_aan, bool& vel_mech_ann, tcp_msg_Type& result)
+        bool& calM_stop_r, bool& calM_start_r, bool& _aan, bool& ten_sec_aan, bool& vel_mech_ann, int& _endu_stren, tcp_msg_Type& result)
 {
     string delimiter = ";";
     string token, value;
@@ -259,7 +260,7 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
     pos = messageStr.find(delimiter);
     token = messageStr.substr(0, pos);
     messageStr.erase(0, pos + delimiter.length());
-    value = messageStr.substr(0, pos);
+    value = messageStr;
 
     if (messageStr != " "){
         for (i; i < MSG_SCREEN_COUNT; i++)
@@ -363,8 +364,12 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         }
 
         if (msgList.status == aan)
-            if (strcmp(value.c_str(), "true") == 0)
+        { 
+            if (strcmp(value.c_str(), "True") == 0)
                 _aan = true;
+            else
+                _aan = false;
+        }
 
         if (msgList.status == ten_seconds_ann)
             if (strcmp(value.c_str(), "true") == 0)
@@ -373,6 +378,11 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         if (msgList.status == velocity_aan)
             if (strcmp(value.c_str(), "true") == 0)
                 vel_mech_ann = true;
+
+        if (msgList.status == endu_stren) {
+            int es = stoi(value.c_str());
+            _endu_stren = es;
+        }
 
         return true;
     }
@@ -677,7 +687,7 @@ struct UdpServer
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
-    int res_level, pulse_width, amplitude, frequency, time_vel_th, vel_th, stim_port, rec_port, auto_trigger;
+    int res_level, pulse_width, amplitude, frequency, time_vel_th, vel_th, stim_port, rec_port, auto_trigger, endu_stren;
     threshold_Type method;
     double velocity, trigger_gain, threshold;
     exercise_Type exercise;
@@ -709,7 +719,7 @@ struct UdpServer
         channel = emgCh0;
         calM_stop = false;
         calM_start = false;
-        velocity = 1;
+        velocity = 5;
         start_stop = Move3_stop;      // Assume starts = false
         auto_trigger = 10;
         exercise = kneeExt;
@@ -718,6 +728,7 @@ struct UdpServer
         aan = false;
         ten_sec_ann = false;
         velocity_aan = false;
+        endu_stren = 30;
     }
     // methods
     void start()

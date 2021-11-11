@@ -125,7 +125,7 @@ void restartup() {
     }
 }
 // EMG activity
-static double process_data_iir(unsigned long long int v_size, vector<double> raw_data, std::ofstream& stimFile, stimFileInfo placeholder)
+static double process_data_iir(unsigned long long int v_size, vector<double> raw_data, std::ofstream& stimFile, stimFileInfo placeholder, int timestamp)
 {
     double mean = 0, temp = 0, value = 0, raw_sample = 0.0;
     double flex_num = 0.0, flex_den = 0.0;
@@ -162,10 +162,10 @@ static double process_data_iir(unsigned long long int v_size, vector<double> raw
     fileVALUES << GL_thMethod << "," << GL_processed << "," << v_size << "," << N_len << "," << mean << "," << THRESHOLD << "," << MEAN << "," << GL_exercise << "," << 3 << "\n";
     
     // The following should be removed after testing at RRD or should be implemented nicer - it is simply a bandaid that resolves a current issue of missing data-values to "isVelocity" during testing
-    stimFile << placeholder.current << ", " << placeholder.ramp << ", " << placeholder.fq << ", " << GL_exercise << ", " << placeholder.isVelocity << ", " << placeholder.legWeight << ", " << placeholder.screenLevel << ", " << GL_processed << "\n";
+    stimFile << placeholder.current << ", " << placeholder.ramp << ", " << placeholder.fq << ", " << GL_exercise << ", " << placeholder.isVelocity << ", " << placeholder.legWeight << ", " << placeholder.screenLevel << ", " << GL_processed << ";" << placeholder.auto_trigger << ";" << placeholder.time_velocity << ";" << placeholder.velocity << ";" << timestamp << "\n";
 
     // The following should be removed after testing at RRD or should be implemented nicer - it is simply a bandaid that resolves a current issue of missing data-values to "isVelocity" during testing
-    stimFile << placeholder.current << ", " << placeholder.ramp << ", " << placeholder.fq << ", " << GL_exercise << ", " << placeholder.isVelocity << ", " << placeholder.legWeight << ", " << placeholder.screenLevel << ", " << GL_processed << "\n"; 
+    stimFile << placeholder.current << ", " << placeholder.ramp << ", " << placeholder.fq << ", " << GL_exercise << ", " << placeholder.isVelocity << ", " << placeholder.legWeight << ", " << placeholder.screenLevel << ", " << GL_processed << ";" << placeholder.auto_trigger << ";" << placeholder.time_velocity << ";" << placeholder.velocity << ";" << timestamp << "\n";
     
     // Update GL_processed data parameters
     GL_processed = i;
