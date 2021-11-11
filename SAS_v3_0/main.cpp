@@ -56,11 +56,11 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 bool stim_abort = false, stimAvailable = false, recAvailable = false;
 double fixed_value = 0;
 
-char PORT_STIM[5] = "COM7"; // COM6 in ROBERT, COMX in PC
+char PORT_STIM[5] = "COM6"; // COM6 in ROBERT, COMX in PC
 RehaMove3 stimulator;
 int countPort = 0;
 
-char PORT_REC[5] = "COM4";  // COM7 in ROBERT, COM4 in PC
+char PORT_REC[5] = "COM7";  // COM7 in ROBERT, COM4 in PC
 RehaIngest recorder;
 int GL_iterator = 0;
 
@@ -78,9 +78,9 @@ int udp_cnt = 0;
 char ROBOT_IP_E[15] = "127.0.0.1";
 char ROBOT_IP[15] = "172.31.1.147";
 uint32_t ROBOT_PORT = 30009;
-UdpClient robert(ROBOT_IP_E, ROBOT_PORT);
+UdpClient robert(ROBOT_IP, ROBOT_PORT);
 
-char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address    º
+char SCREEN_ADDRESS[15] = "127.0.0.1"; // main screen IP address
 char SCREEN_PORT[15] = "30002";
 char SCREEN_EMG_PORT[15] = "30005";
 char SCREEN_DATA_PORT[15] = "30011";
@@ -646,7 +646,7 @@ void mainSAS_thread()
                 screen_status = msg_none;
                 screen.calM_start = false;
                 Move3_key = Move3_none;
-                robert.playPause = true;
+                robert.playPause = true;    // Start the manual calibration with the stimulation being enabled for operator
             }
             else if (!devicesReady) {
                 msg_main = "\nRehaMove3: ";
@@ -901,8 +901,8 @@ void mainSAS_thread()
             velocity_trigg = false;
 
             devicesReady = stim_status.ready && rec_status.ready;
-            //robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
-            robotReady = true;    // Debug only
+            robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
+            //robotReady = true;    // Debug only
 
             // Next repetition
             if (screen_status == repStart && devicesReady && robotReady)
@@ -932,8 +932,8 @@ void mainSAS_thread()
             trigger_timeout = false;
             velocity_trigg = false;
             devicesReady = rec_status.ready && stim_status.ready && !stim_status.error && !rec_status.error;
-            //robotReady = robert.valid_msg; // && !robert.Reached 
-            robotReady = true;    // Debug only
+            robotReady = robert.valid_msg; // && !robert.Reached 
+            //robotReady = true;    // Debug only
 
             // 1. Finish program (if required)
             if (MAIN_to_all.end && devicesReady)
@@ -1654,7 +1654,7 @@ void recording_sas()
                 // Final version
                 //robert.isMoving = (robert.isVelocity >= min_isVelocity);  // Old version of AAN
                 robert.isMoving = false;  // This always needs to be false, or just remove it from wait_jump condition
-                robert.valid_msg = true;  // Only for debugging
+                //robert.valid_msg = true;  // Only for debugging
                 st_wait_jump = !rec_status.start && !robert.isMoving && robert.valid_msg && robert.playPause;
 
                 if (mean >= THRESHOLD && (GL_thWaitCnt > TH_WAIT) && st_wait_jump)
