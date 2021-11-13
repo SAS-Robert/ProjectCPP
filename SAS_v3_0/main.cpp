@@ -427,6 +427,7 @@ void sendData_thread()
             screenData.streamCommands("AAN_TRIGGER");
             trigger_aan = false;
             trigger_aan_count++;
+            OutputDebugString("AAN_TRIGGER");
         }
     }
 
@@ -791,12 +792,14 @@ void mainSAS_thread()
                 GL_state = st_repeat;
                 fileLOGS << "2.0, " << GL_processed << "\n";
                 main_force_repeat = rec_status.error;
+                Move3_key = Move3_none;
             }
             else if (screen_status == setDone) {
                 GL_state = st_init;
                 screen.calM_start = false;
                 screen.calM_stop = false;
                 screen_status = msg_none;
+                Move3_key = Move3_none;
             }
             else if (rec_status.start && robert.playPause) {    // Trigger surpassed in any case due to rec_status.start
                 if (mech_as_needed) {   //mech_as_needed
@@ -809,7 +812,7 @@ void mainSAS_thread()
                     Move3_key = Move3_none;
                     if (velocity_trigg) {
                         // same trigger workflow as normal trigger in SAS
-                        trigger_aan_count = 0;
+                        //trigger_aan_count = 0;
                         trigger_aan = false;
                         GL_state = st_running;
                         msg_main = "Stimulation triggered due to timeout - 2sec. avg. vel.";
@@ -819,7 +822,7 @@ void mainSAS_thread()
                     }
                     else if (screen_status == repEnd) {
                         // Patient has reached end of repetition
-                        trigger_aan_count = 0;
+                        //trigger_aan_count = 0;
                         trigger_aan = false;
                         msg_main = "End-Point reached";
 
@@ -853,6 +856,7 @@ void mainSAS_thread()
                     fileLOGS << "5.0, " << GL_processed << "\n";
                     // Inmediately after, FES need to be activated - flag updated
                     trigger_timeout = true;
+                    Move3_key = Move3_none;
                     //time2complete_start = std::chrono::steady_clock::now();
                 }
                 //complete_timeout = false;
@@ -867,6 +871,7 @@ void mainSAS_thread()
                 }
 
                 GL_state = st_stop;
+                Move3_key = Move3_none;
                 fileLOGS << "2.0, " << GL_processed << "\n";
             }
 
@@ -882,7 +887,7 @@ void mainSAS_thread()
             if ((screen_status == exDone || screen_status == msgEnd || rec_status.error) && !stimulator.active) {
                 // Exercise has been aborted
                 msg_main = "Exercise done";
-
+                trigger_aan = false;
                 GL_state = st_repeat;
                 fileLOGS << "3.0, " << GL_processed << "\n";
                 main_force_repeat = rec_status.error;
@@ -891,7 +896,8 @@ void mainSAS_thread()
             else if (((robert.Reached && robert.valid_msg) || screen_status == repEnd) && !stimulator.active) {
                 // Patient has reached end of repetition
                 msg_main = "Repetition's end-point reached";
-
+                trigger_aan = false;
+                //trigger_aan_count = 0;
                 if (robert.Reached || robert.isMoving) {
                     msg_main += ". Waiting for robot to return to start position.";
                 }
@@ -908,6 +914,7 @@ void mainSAS_thread()
                 //if (screen.velocity_aan) {
                 //complete_timeout = true;
                 // Mechanical assistance needed for completion
+                trigger_aan = false;
                 msg_main = "Mechanical assistance activated. Waiting to complete exercise.";
                 //}
             }
@@ -920,7 +927,8 @@ void mainSAS_thread()
             //complete_timeout = false;
             trigger_timeout = false;
             velocity_trigg = false;
-
+            trigger_aan_count = 0;
+            trigger_aan = false;
             devicesReady = stim_status.ready && rec_status.ready;
             robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
             //robotReady = true;    // Debug only
@@ -931,6 +939,7 @@ void mainSAS_thread()
                 msg_main = "Starting next repetition";
                 GL_state = st_wait;
                 fileLOGS << "4.0, " << GL_sampleNr << "\n";
+                time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
             }
             // No more repetitions coming
             else if ((screen_status == setDone || screen_status == msgEnd || screen_status == exDone || rec_status.error) && devicesReady)
@@ -1691,6 +1700,7 @@ void recording_sas()
                 {
                     sprintf(msg_recording, "EMG activity: threshold exceeded");
                     rec_status.start = true;
+                    OutputDebugString("rec_status.start = true");
                     rec_fl2 = false;
                 }
                 else if (mean < THRESHOLD)
@@ -1741,6 +1751,7 @@ void recording_sas()
             }
             rec_status.ready = false;
             rec_status.start = false;
+            ("rec_status.start = false 1");
             break;
 
         case st_stop:
@@ -1784,6 +1795,8 @@ void recording_sas()
             rec_status.th2 = false;
             rec_fl5 = false;
             rec_fl4 = false;
+            rec_status.start = false;
+            ("rec_status.start = false 2");
             break;
 
         case st_repeat:

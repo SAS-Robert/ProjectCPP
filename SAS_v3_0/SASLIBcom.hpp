@@ -376,7 +376,7 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
                 ten_sec_aan = true;
 
         if (msgList.status == velocity_aan)
-            if (strcmp(value.c_str(), "true") == 0)
+            if (strcmp(value.c_str(), "True") == 0)
                 vel_mech_ann = true;
 
         if (msgList.status == endu_stren) {
