@@ -45,7 +45,7 @@ typedef struct tcp_msg_struct
 public:
     const int size = 11;
     tcp_msg_Type status;
-    string messages[46];
+    string messages[50];
     // Constructor
     tcp_msg_struct()
     {
@@ -94,6 +94,7 @@ public:
         messages[velocity_aan] = "VEL_MECH_ASSIST";
         messages[FEStriggered] = "FES_TRIGGERED";
         messages[endu_stren] = "END_STR";
+        messages[aan_stage] = "AAN_STAGE";
         status = msg_none;
     }
 };
@@ -245,7 +246,7 @@ bool decode_extGui(char* message, bool& finished, bool& playPause, int& level, t
 bool decode_screen(char* message, bool& finished, bool& playPause, int& res_level, int& pulse_width,
         int& _amplitude, int& _frequency, exercise_Type& _exercise, threshold_Type& _method, double& _triggerGain, double& _thresh, RehaMove3_Req_Type& _startStop,
         int& _autoTrigg, int& _timeVel, int& _velTh, int& stim_port, int& rec_port, emgCh_Type& _channel, double& _velocity, User_Req_Type& theshold_pressed,
-        bool& calM_stop_r, bool& calM_start_r, bool& _aan, bool& ten_sec_aan, bool& vel_mech_ann, int& _endu_stren, tcp_msg_Type& result)
+        bool& calM_stop_r, bool& calM_start_r, bool& _aan, bool& ten_sec_aan, bool& vel_mech_ann, int& _endu_stren, int& stage, tcp_msg_Type& result)
 {
     string delimiter = ";";
     string token, value;
@@ -382,6 +383,11 @@ bool decode_screen(char* message, bool& finished, bool& playPause, int& res_leve
         if (msgList.status == endu_stren) {
             int es = stoi(value.c_str());
             _endu_stren = es;
+        }
+
+        if (msgList.status == endu_stren) {
+            int sta = stoi(value.c_str());
+            stage = sta;
         }
 
         return true;
@@ -687,7 +693,7 @@ struct UdpServer
     struct timeval timeout;
     int error_cnt, ERROR_CNT_LIM;
     string displayMsg;
-    int res_level, pulse_width, amplitude, frequency, time_vel_th, vel_th, stim_port, rec_port, auto_trigger, endu_stren;
+    int res_level, pulse_width, amplitude, frequency, time_vel_th, vel_th, stim_port, rec_port, auto_trigger, endu_stren, stage;
     threshold_Type method;
     double velocity, trigger_gain, threshold;
     exercise_Type exercise;
@@ -729,6 +735,7 @@ struct UdpServer
         ten_sec_ann = false;
         velocity_aan = false;
         endu_stren = 30;
+        stage = 0;
     }
     // methods
     void start()

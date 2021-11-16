@@ -56,7 +56,7 @@ User_Req_Type User_cmd = User_none, user_gui = User_none;
 bool stim_abort = false, stimAvailable = false, recAvailable = false;
 double fixed_value = 0;
 
-char PORT_STIM[5] = "COM6"; // COM6 in ROBERT, COMX in PC
+char PORT_STIM[5] = "COM6"; // COM6 in ROBERT, COM6 in PC
 RehaMove3 stimulator;
 int countPort = 0;
 
@@ -196,6 +196,7 @@ int Main()
     Application::SetCompatibleTextRenderingDefault(false);
 
     SASv30::MyForm form;
+    form.Opacity = 0.0;
     Application::Run(% form);
 
     // Force to all the other threads to close when the local GUI is closed
@@ -497,7 +498,7 @@ void robot_thread()
             robert.get();
         }
         // local GUI update - JUST DEBUGGING
-        update_localGui();
+        //update_localGui();
 
         // Controlling thread cycle time
         System::Threading::Thread::Sleep(control_thread(INTERFACE_THREAD, THREAD_END, GL_state));
@@ -536,7 +537,8 @@ void screen_thread()
             decode_successful = decode_screen(screen.recvbuf, screen.finish, screen.playPause, screen.res_level, screen.pulse_width,
                 screen.amplitude, screen.frequency, screen.exercise, screen.method, screen.trigger_gain, screen.threshold, screen.start_stop,
                 screen.auto_trigger, screen.time_vel_th, screen.vel_th, screen.stim_port, screen.rec_port, screen.channel, screen.velocity,
-                screen.threshold_pressed, screen.calM_stop, screen.calM_start, screen.aan, screen.ten_sec_ann, screen.velocity_aan, screen.endu_stren, screen_status);
+                screen.threshold_pressed, screen.calM_stop, screen.calM_start, screen.aan, screen.ten_sec_ann, screen.velocity_aan, screen.endu_stren,
+                screen.stage, screen_status);
 
             if (decode_successful)
             {
@@ -558,8 +560,16 @@ void screen_thread()
                 if (*msg_status == endu_stren)
                     screen.frequency = screen.endu_stren;
 
+                if (screen_status == play) {      // Stimulation resumed from screen
+                    Move3_key = Move3_start;
+                    robert.playPause = true;
+                }
+
+                //if (screen_status == pause)     // Only for debugging when not connected to ROBERT
+                //    robert.playPause = false;
+
                 update_local_variables();
-                update_localGui();  // Just for debugging purposes
+                //update_localGui();  // Just for debugging purposes
                 if (screen.display)
                 {
                     sprintf(longMsg, "Message from SCREEN received");
@@ -779,11 +789,14 @@ void mainSAS_thread()
                 if (robert.playPause) {
                     msg_main = "Waiting for trigger.";
                 }
-                else if (!robert.playPause) {
-                    msg_main = "Press patient button to allow stimulation.";
-                    time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
-                    //robert.playPause = true; // Debug only
-                }
+            }
+
+            if (!robert.playPause) {
+                msg_main = "Press patient button to allow stimulation.";
+                time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
+                trigger_timeout = false;
+                trigger_aan = false;
+                //robert.playPause = true; // Debug only
             }
 
             if (screen_status == exDone || screen_status == msgEnd || rec_status.error) {
@@ -813,6 +826,7 @@ void mainSAS_thread()
                     if (velocity_trigg) {
                         // same trigger workflow as normal trigger in SAS
                         //trigger_aan_count = 0;
+                        
                         trigger_aan = false;
                         GL_state = st_running;
                         msg_main = "Stimulation triggered due to timeout - 2sec. avg. vel.";
@@ -853,7 +867,7 @@ void mainSAS_thread()
                     GL_state = st_running;
                     msg_main = "Stimulation not triggered. AAN timeout.";
                     sprintf(msg_stimulating, "FES ON due to auto trigger timeout in AAN");
-                    fileLOGS << "5.0, " << GL_processed << "\n";
+                    fileLOGS << "5.0, " << GL_processed <<"\n";
                     // Inmediately after, FES need to be activated - flag updated
                     trigger_timeout = true;
                     Move3_key = Move3_none;
@@ -862,7 +876,8 @@ void mainSAS_thread()
                 //complete_timeout = false;
             }
             // The end point has been reached before the stimulation has been triggered
-            else if (screen_status == repEnd) {
+            
+            if (screen_status == repEnd) {
                 // Patient has reached end of repetition
                 msg_main = "End-Point reached";
 
@@ -897,26 +912,13 @@ void mainSAS_thread()
                 // Patient has reached end of repetition
                 msg_main = "Repetition's end-point reached";
                 trigger_aan = false;
-                //trigger_aan_count = 0;
                 if (robert.Reached || robert.isMoving) {
                     msg_main += ". Waiting for robot to return to start position.";
                 }
 
                 GL_state = st_stop;
 
-                fileLOGS << "3.0, " << GL_processed << "\n";
-            }
-            // Completion timeout for AAN final step
-            else if (mech_as_needed && stimulator.active && (!robert.Reached && robert.valid_msg)) {
-                // analyse the timing for the AAN timeout
-                //time2complete_end = std::chrono::steady_clock::now();
-                //time2complete_diff = time2complete_end - time2complete_start;
-                //if (screen.velocity_aan) {
-                //complete_timeout = true;
-                // Mechanical assistance needed for completion
-                trigger_aan = false;
-                msg_main = "Mechanical assistance activated. Waiting to complete exercise.";
-                //}
+                fileLOGS << "3.0, " << GL_processed << "," << robert.playPause << "\n";
             }
             break;
 
@@ -924,11 +926,6 @@ void mainSAS_thread()
             OutputDebugString("\n State = st_stop");
             // Display message
             msg_main = "Reached end-point. Waiting for robot to return to the start.";
-            //complete_timeout = false;
-            trigger_timeout = false;
-            velocity_trigg = false;
-            trigger_aan_count = 0;
-            trigger_aan = false;
             devicesReady = stim_status.ready && rec_status.ready;
             robotReady = !robert.Reached && !robert.isMoving && robert.valid_msg;
             //robotReady = true;    // Debug only
@@ -936,9 +933,14 @@ void mainSAS_thread()
             // Next repetition
             if (screen_status == repStart && devicesReady && robotReady)
             {
+                screen.velocity_aan = false;
+                trigger_timeout = false;
+                velocity_trigg = false;
+                trigger_aan_count = 0;
+                trigger_aan = false;
                 msg_main = "Starting next repetition";
                 GL_state = st_wait;
-                fileLOGS << "4.0, " << GL_sampleNr << "\n";
+                fileLOGS << "4.0, " << GL_sampleNr << "," << robert.playPause << "\n";
                 time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
             }
             // No more repetitions coming
@@ -949,18 +951,22 @@ void mainSAS_thread()
                 GL_state = st_repeat;
                 robert.legSaved = false;
                 main_force_repeat = rec_status.error;
+                screen.velocity_aan = false;
+                trigger_timeout = false;
+                velocity_trigg = false;
+                trigger_aan_count = 0;
+                trigger_aan = false;
             }
 
             break;
 
         case st_repeat:
-            // TODO: ASK Oliver what does this send screen to **************************
             OutputDebugString("\n State = st_repeat");
             main_1stSet = false;
             main_init = false;
             //complete_timeout = false;
             trigger_timeout = false;
-            velocity_trigg = false;
+            //velocity_trigg = false;
             devicesReady = rec_status.ready && stim_status.ready && !stim_status.error && !rec_status.error;
             robotReady = robert.valid_msg; // && !robert.Reached 
             //robotReady = true;    // Debug only
@@ -977,6 +983,7 @@ void mainSAS_thread()
             else if (screen_status == start && devicesReady && !main_force_repeat)
             {
                 msg_main = "Starting next set.";
+                velocity_trigg = false;
                 GL_state = st_wait;
             }
             // 3. Repeat exercise with the same settings
@@ -996,6 +1003,7 @@ void mainSAS_thread()
                 start_files();
 
                 statusList[(int)st_wait] = "On hold";
+                velocity_trigg = false;
                 GL_state = st_wait;
                 main_force_repeat = false;
             }
@@ -1178,8 +1186,8 @@ void stimulating_sas()
             stim_status.ready = true;
             stim_done = false;
             trigger_timeout = false;
-            velocity_trigg = false;
-
+            //velocity_trigg = false;
+            //FES_triggered = false;
             break;
 
         case st_running:
@@ -1202,6 +1210,7 @@ void stimulating_sas()
                 else if (!robert.playPause)
                 {
                     sprintf(msg_stimulating, "Stimulation stopped by the patient");
+                    time2trigger_start = std::chrono::steady_clock::now(); // AAN timer
                 }
                 else if (stim_timeout)
                 {
@@ -1225,23 +1234,9 @@ void stimulating_sas()
                         sprintf(msg_stimulating, "Stimulation active due to trigger timout or velocity triggerr");
                         stimulator.update2(hmi_channel);   
                     }
-                    //else if(!trigger_timeout)
-                    //{
-                    //    // Waiting for velocity trigger - FES only if needed
-                    //    if (velocity_trigg)
-                    //    {
-                    //        sprintf(msg_stimulating, "Velocity timeout reached");
-                    //        stimulator.update2(hmi_channel);
-                    //    }
-                    //    else if (!velocity_trigg)
-                    //    {
-                    //        // Do nothing and wait for end or timeout
-                    //        sprintf(msg_stimulating, "Velocity timeout not reached yet");
-
-                    //        // The exercise can be completed without assistance at this point
-                    //        // stim or mechanical assistance not activated yet
-                    //    }
-                    //}
+                    else {
+                        FES_triggered = false;
+                    }
                 }
                 // Normal SAS
                 else
@@ -1289,6 +1284,7 @@ void stimulating_sas()
             { // Stop stimulator
                 stimulator.pause();
                 fileLOGS << "6.0, " << GL_processed << "\n";
+                FES_triggered = false;
             }
             else
             {
@@ -1463,11 +1459,17 @@ void recording_sas()
                 // Get mean
                 if (emgCH == emgCh1)
                 {
-                    live_data = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, 0);
+                    if(mech_as_needed)
+                        live_data = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, 0, screen.stage, robert);
+                    else
+                        live_data = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, 0, 0, robert);
                 }
                 else if (emgCH == emgCh2)
                 {
-                    live_data = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, 0);
+                    if (mech_as_needed)
+                        live_data = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, 0, screen.stage, robert);
+                    else
+                        live_data = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, 0, 0, robert);
                 }
             }
             break;
@@ -1581,12 +1583,20 @@ void recording_sas()
                     int t = std::chrono::duration_cast<std::chrono::seconds>(timestamp.time_since_epoch()).count();
                     if (emgCH == emgCh1)
                     {
-                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t); // returned value sent to the main SCREEN for live streaming
+                        if (mech_as_needed)
+                            mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t, screen.stage, robert);
+                        else
+                            mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t, 0, robert); // returned value sent to the main SCREEN for live streaming
+
                         live_data = mean;
                     }
                     else if (emgCH == emgCh2)
                     {
-                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t); // returned value sent to the main SCREEN for live streaming
+                        if (mech_as_needed)
+                            mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t, screen.stage, robert);
+                        else
+                            mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t, 0, robert); // returned value sent to the main SCREEN for live streaming
+                        
                         live_data = mean;
                     }
                 }
@@ -1677,12 +1687,20 @@ void recording_sas()
                 int t = std::chrono::duration_cast<std::chrono::seconds>(timestamp.time_since_epoch()).count();
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t);
+                    if (mech_as_needed)
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t, screen.stage, robert);
+                    else
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t, 0, robert);
+
                     live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t);
+                    if (mech_as_needed)
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t, screen.stage, robert);
+                    else
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t, 0, robert);
+
                     live_data = mean;
                 }
 
@@ -1740,17 +1758,26 @@ void recording_sas()
                 int t = std::chrono::duration_cast<std::chrono::seconds>(timestamp.time_since_epoch()).count();
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t);
+                    if (mech_as_needed)
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t, screen.stage, robert);
+                    else
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t, 0, robert);
+
                     live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t);
+                    if (mech_as_needed)
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t, screen.stage, robert);
+                    else
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t, 0, robert);
+
                     live_data = mean;
                 }
             }
             rec_status.ready = false;
             rec_status.start = false;
+            trigger_aan = false;
             ("rec_status.start = false 1");
             break;
 
@@ -1781,12 +1808,20 @@ void recording_sas()
                 int t = std::chrono::duration_cast<std::chrono::seconds>(timestamp.time_since_epoch()).count();
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t);
+                    if (mech_as_needed)
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t, screen.stage, robert);
+                    else
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t, 0, robert);
+
                     live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t);
+                    if (mech_as_needed)
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t, screen.stage, robert);
+                    else
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t, 0, robert);
+
                     live_data = mean;
                 }
             }
@@ -1825,12 +1860,20 @@ void recording_sas()
                 int t = std::chrono::duration_cast<std::chrono::seconds>(timestamp.time_since_epoch()).count();
                 if (emgCH == emgCh1)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t);
+                    if (mech_as_needed)
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t, screen.stage, robert);
+                    else
+                        mean = process_data_iir(GL_sampleNr, recorder_emg1, stimFile, placeholder, t, 0, robert);
+
                     live_data = mean;
                 }
                 else if (emgCH == emgCh2)
                 {
-                    mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t);
+                    if (mech_as_needed)
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t, screen.stage, robert);
+                    else
+                        mean = process_data_iir(GL_sampleNr, recorder_emg2, stimFile, placeholder, t, 0, robert);
+
                     live_data = mean;
                 }
 

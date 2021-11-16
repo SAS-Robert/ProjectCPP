@@ -150,10 +150,11 @@ typedef enum
     velocity_aan = 42,   // velocity average for the mechanical assist in aan
     FEStriggered = 43,   // FOr the screen to know in AAN
     endu_stren = 44,     // endurance-strength value for frequency update - 30 for endurance and 50 for strength
+    aan_stage = 45       // AAN stage
 } tcp_msg_Type;
 
 const int MSG_AMOUNT = (int)res10 + 1;
-const int MSG_SCREEN_COUNT = (int)endu_stren + 1; // Number of messages that may be valid for reception
+const int MSG_SCREEN_COUNT = (int)aan_stage + 1; // Number of messages that may be valid for reception
 // ------------------ Global variables ------------------
 const int DATE_LENGTH = 256;
 // Threads cycles
