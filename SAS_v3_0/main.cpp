@@ -1008,7 +1008,7 @@ void mainSAS_thread()
                 main_force_repeat = false;
             }
             // 4. Exercise done. Go back to the beginning
-            else if (screen_status == exDone && devicesReady && robotReady)
+            else if (screen_status == exDone && devicesReady && robotReady) // screen_status == setDone ||
             {
                 msg_main = "Exercise finished.";
                 end_files();

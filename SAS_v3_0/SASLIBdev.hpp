@@ -627,6 +627,7 @@ public:
         error_cnt = 0;
         packet_cnt = 0;
     }
+
     // Functions
     void init(char* port)
     {
